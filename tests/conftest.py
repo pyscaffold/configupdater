@@ -9,4 +9,28 @@
 """
 from __future__ import print_function, absolute_import, division
 
-# import pytest
+import os
+import inspect
+from io import StringIO
+
+import pytest
+
+
+@pytest.fixture
+def setup_cfg_path():
+    filepath = inspect.getfile(inspect.currentframe())
+    filedir = os.path.dirname(os.path.abspath(filepath))
+    return os.path.join(filedir, 'setup.cfg')
+
+
+@pytest.fixture
+def setup_cfg(setup_cfg_path):
+    with open(setup_cfg_path) as fh:
+        return fh.read()
+
+
+def parser_to_str(parser):
+    fh = StringIO()
+    parser.write(fh)
+    fh.seek(0)
+    return fh.read()
