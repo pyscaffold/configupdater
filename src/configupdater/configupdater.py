@@ -556,7 +556,7 @@ class LegacyInterpolation(Interpolation):
             return "%%(%s)s" % parser.optionxform(s)
 
 
-class RawConfigParser(MutableMapping):
+class ConfigUpdater(MutableMapping):
     """ConfigParser that does not do interpolation."""
 
     # Regular expressions for parsing section headers and options
@@ -583,6 +583,7 @@ class RawConfigParser(MutableMapping):
         (?P<value>.*))?$                   # everything up to eol
         """
     # Interpolation algorithm to be used if the user does not specify another
+    _DEFAULT_INTERPOLATION = BasicInterpolation()
     _DEFAULT_INTERPOLATION = Interpolation()
     # Compiled regular expression for matching sections
     SECTCRE = re.compile(_SECT_TMPL, re.VERBOSE)
@@ -1180,12 +1181,6 @@ class RawConfigParser(MutableMapping):
     def converters(self):
         return self._converters
 
-
-class ConfigParser(RawConfigParser):
-    """ConfigParser implementing interpolation."""
-
-    _DEFAULT_INTERPOLATION = BasicInterpolation()
-
     def set(self, section, option, value=None):
         """Set an option.  Extends RawConfigParser.set by validating type and
         interpolation syntax on the value."""
@@ -1198,19 +1193,6 @@ class ConfigParser(RawConfigParser):
         a string."""
         self._validate_value_types(section=section)
         super().add_section(section)
-
-
-class SafeConfigParser(ConfigParser):
-    """ConfigParser alias for backwards compatibility purposes."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        warnings.warn(
-            "The SafeConfigParser class has been renamed to ConfigParser "
-            "in Python 3.2. This alias will be removed in future versions."
-            " Use ConfigParser directly instead.",
-            DeprecationWarning, stacklevel=2
-        )
 
 
 class SectionProxy(MutableMapping):
