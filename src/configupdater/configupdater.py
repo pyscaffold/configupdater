@@ -138,6 +138,7 @@ ConfigParser -- responsible for parsing a list of
         between keys and values are surrounded by spaces.
 """
 
+from abc import ABC, abstractmethod
 from collections.abc import MutableMapping
 from collections import OrderedDict as _default_dict, ChainMap as _ChainMap
 import functools
@@ -556,7 +557,421 @@ class LegacyInterpolation(Interpolation):
             return "%%(%s)s" % parser.optionxform(s)
 
 
-class ConfigUpdater(MutableMapping):
+class Block(ABC):
+    def __init__(self):
+        self.orig_lines = []
+        self._updated = False
+
+    @property
+    def updated(self):
+        return self._updated
+
+    def add_line(self, line):
+        self.orig_lines.append(line)
+
+
+class Comment(Block):
+    def __init__(self):
+        super().__init__()
+
+
+class Space(Block):
+    def __init__(self):
+        super().__init__()
+
+
+class Section(Block):
+    def __init__(self):
+        self.entries = list()
+        self._curr_entry = None
+        super().__init__()
+
+    def add_option(self, entry):
+        self.entries.append(entry)
+        self._curr_entry = entry
+
+    def add_comment(self):
+        if not isinstance(self._curr_entry, Comment):
+            comment = Comment()
+            self.entries.append(comment)
+            self._curr_entry = comment
+
+    def add_space(self):
+        if not isinstance(self._curr_entry, Space):
+            space = Space()
+            self.entries.append(space)
+            self._curr_entry = space
+
+    @property
+    def curr_entry(self):
+        return self._curr_entry
+
+
+class Option(Block):
+    def __init__(self, key, value):
+        self.key = key
+        self.value = value  # reference to values
+        super().__init__()
+
+
+class ConfigUpdater(object):
+    # Regular expressions for parsing section headers and options
+    _SECT_TMPL = r"""
+        \[                                 # [
+        (?P<header>[^]]+)                  # very permissive!
+        \]                                 # ]
+        """
+    _OPT_TMPL = r"""
+        (?P<option>.*?)                    # very permissive!
+        \s*(?P<vi>{delim})\s*              # any number of space/tab,
+                                           # followed by any of the
+                                           # allowed delimiters,
+                                           # followed by any space/tab
+        (?P<value>.*)$                     # everything up to eol
+        """
+    _OPT_NV_TMPL = r"""
+        (?P<option>.*?)                    # very permissive!
+        \s*(?:                             # any number of space/tab,
+        (?P<vi>{delim})\s*                 # optionally followed by
+                                           # any of the allowed
+                                           # delimiters, followed by any
+                                           # space/tab
+        (?P<value>.*))?$                   # everything up to eol
+        """
+    # Compiled regular expression for matching sections
+    SECTCRE = re.compile(_SECT_TMPL, re.VERBOSE)
+    # Compiled regular expression for matching options with typical separators
+    OPTCRE = re.compile(_OPT_TMPL.format(delim="=|:"), re.VERBOSE)
+    # Compiled regular expression for matching options with optional values
+    # delimited using typical separators
+    OPTCRE_NV = re.compile(_OPT_NV_TMPL.format(delim="=|:"), re.VERBOSE)
+    # Compiled regular expression for matching leading whitespace in a line
+    NONSPACECRE = re.compile(r"\S")
+
+    _DEFAULT_INTERPOLATION = Interpolation()
+
+    def __init__(self, defaults=None, dict_type=_default_dict,
+                 allow_no_value=False, *, delimiters=('=', ':'),
+                 comment_prefixes=('#', ';'), inline_comment_prefixes=None,
+                 strict=True, empty_lines_in_values=True,
+                 default_section=DEFAULTSECT,
+                 interpolation=_UNSET, converters=_UNSET):
+        self.structure = []
+        self._curr_block = None
+
+        self._dict = dict_type
+        self._sections = self._dict()
+        self._defaults = self._dict()
+        self._converters = ConverterMapping(self)
+        self._proxies = self._dict()
+        self._proxies[default_section] = SectionProxy(self, default_section)
+        if defaults:
+            for key, value in defaults.items():
+                self._defaults[self.optionxform(key)] = value
+        self._delimiters = tuple(delimiters)
+        if delimiters == ('=', ':'):
+            self._optcre = self.OPTCRE_NV if allow_no_value else self.OPTCRE
+        else:
+            d = "|".join(re.escape(d) for d in delimiters)
+            if allow_no_value:
+                self._optcre = re.compile(self._OPT_NV_TMPL.format(delim=d),
+                                          re.VERBOSE)
+            else:
+                self._optcre = re.compile(self._OPT_TMPL.format(delim=d),
+                                          re.VERBOSE)
+        self._comment_prefixes = tuple(comment_prefixes or ())
+        self._inline_comment_prefixes = tuple(inline_comment_prefixes or ())
+        self._strict = strict
+        self._allow_no_value = allow_no_value
+        self._empty_lines_in_values = empty_lines_in_values      # empty lines sollte immer True sein
+        self.default_section=default_section
+        self._interpolation = interpolation
+        if self._interpolation is _UNSET:
+            self._interpolation = self._DEFAULT_INTERPOLATION
+        if self._interpolation is None:
+            self._interpolation = Interpolation()
+        if converters is not _UNSET:
+            self._converters.update(converters)
+
+    @property
+    def converters(self):
+        return self._converters
+
+    def read(self, filenames, encoding=None):
+        """Read and parse a filename or a list of filenames.
+
+        Files that cannot be opened are silently ignored; this is
+        designed so that you can specify a list of potential
+        configuration file locations (e.g. current directory, user's
+        home directory, systemwide directory), and all existing
+        configuration files in the list will be read.  A single
+        filename may also be given.
+
+        Return list of successfully read files.
+        """
+        if isinstance(filenames, (str, os.PathLike)):
+            filenames = [filenames]
+        read_ok = []
+        for filename in filenames:
+            try:
+                with open(filename, encoding=encoding) as fp:
+                    self._read(fp, filename)
+            except OSError:
+                continue
+            if isinstance(filename, os.PathLike):
+                filename = os.fspath(filename)
+            read_ok.append(filename)
+        return read_ok
+
+    def read_file(self, f, source=None):
+        """Like read() but the argument must be a file-like object.
+
+        The `f' argument must be iterable, returning one line at a time.
+        Optional second argument is the `source' specifying the name of the
+        file being read. If not given, it is taken from f.name. If `f' has no
+        `name' attribute, `<???>' is used.
+        """
+        if source is None:
+            try:
+                source = f.name
+            except AttributeError:
+                source = '<???>'
+        self._read(f, source)
+
+    def read_string(self, string, source='<string>'):
+        """Read configuration from a given string."""
+        sfile = io.StringIO(string)
+        self.read_file(sfile, source)
+
+    def optionxform(self, optionstr):
+        return optionstr.lower()
+
+    def _update_curr_block(self, block_type):
+        if not isinstance(self._curr_block, block_type):
+            new_block = block_type()
+            self.structure.append(new_block)
+            self._curr_block = new_block
+
+    def _add_comment(self, line):
+        if isinstance(self._curr_block, Section):
+            self._curr_block.add_comment()
+            self._curr_block.curr_entry.add_line(line)
+        else:
+            self._update_curr_block(Comment)
+            self._curr_block.add_line(line)
+
+    def _add_section(self, line):
+        new_section = Section()
+        new_section.add_line(line)
+        self.structure.append(new_section)
+        self._curr_block = new_section
+
+    def _add_space(self, line):
+        if isinstance(self._curr_block, Section):
+            self._curr_block.add_space()
+            self._curr_block.curr_entry.add_line(line)
+        else:
+            self._update_curr_block(Space)
+            self._curr_block.add_line(line)
+
+    def _add_entry(self, line):
+        self._update_curr_block(Option)
+        self._curr_block.add_line(line)
+
+    def _read(self, fp, fpname):
+        """Parse a sectioned configuration file.
+
+        Each section in a configuration file contains a header, indicated by
+        a name in square brackets (`[]'), plus key/value options, indicated by
+        `name' and `value' delimited with a specific substring (`=' or `:' by
+        default).
+
+        Values can span multiple lines, as long as they are indented deeper
+        than the first line of the value. Depending on the parser's mode, blank
+        lines may be treated as parts of multiline values or ignored.
+
+        Configuration files may include comments, prefixed by specific
+        characters (`#' and `;' by default). Comments may appear on their own
+        in an otherwise empty line or may be entered in lines holding values or
+        section names.
+
+        Note: This method was borrowed from ConfigParser and we keep this
+        mess here as close as possible to the original messod (pardon
+        this german pun) for consistency reasons and later upgrades.
+        """
+        elements_added = set()
+        cursect = None                        # None, or a dictionary
+        sectname = None
+        optname = None
+        lineno = 0
+        indent_level = 0
+        e = None                              # None, or an exception
+        for lineno, line in enumerate(fp, start=1):
+            print(f"line is {line}")
+            comment_start = sys.maxsize
+            # strip inline comments
+            inline_prefixes = {p: -1 for p in self._inline_comment_prefixes}
+            while comment_start == sys.maxsize and inline_prefixes:
+                next_prefixes = {}
+                for prefix, index in inline_prefixes.items():
+                    index = line.find(prefix, index+1)
+                    if index == -1:
+                        continue
+                    next_prefixes[prefix] = index
+                    if index == 0 or (index > 0 and line[index-1].isspace()):
+                        comment_start = min(comment_start, index)
+                inline_prefixes = next_prefixes
+            # strip full line comments
+            for prefix in self._comment_prefixes:
+                if line.strip().startswith(prefix):
+                    comment_start = 0
+                    self._add_comment(line)  # HOOK
+                    break
+            if comment_start == sys.maxsize:
+                comment_start = None
+            value = line[:comment_start].strip()
+            if not value:
+                if self._empty_lines_in_values:
+                    # add empty line to the value, but only if there was no
+                    # comment on the line
+                    if (comment_start is None and
+                        cursect is not None and
+                        optname and
+                        cursect[optname] is not None):
+                        cursect[optname].append('') # newlines added at join
+                        self._curr_block.curr_entry.add_line(line)  # HOOK
+                else:
+                    # empty line marks end of value
+                    indent_level = sys.maxsize
+                if comment_start is None:
+                    self._add_space(line)
+                continue
+            # continuation line?
+            first_nonspace = self.NONSPACECRE.search(line)
+            cur_indent_level = first_nonspace.start() if first_nonspace else 0
+            if (cursect is not None and optname and
+                cur_indent_level > indent_level):
+                cursect[optname].append(value)
+                self._curr_block.curr_entry.add_line(line)  # HOOK
+            # a section header or option header?
+            else:
+                indent_level = cur_indent_level
+                # is it a section header?
+                mo = self.SECTCRE.match(value)
+                if mo:
+                    sectname = mo.group('header')
+                    if sectname in self._sections:
+                        if self._strict and sectname in elements_added:
+                            raise DuplicateSectionError(sectname, fpname,
+                                                        lineno)
+                        cursect = self._sections[sectname]
+                        elements_added.add(sectname)
+                    elif sectname == self.default_section:
+                        cursect = self._defaults
+                    else:
+                        cursect = self._dict()
+                        self._sections[sectname] = cursect
+                        self._proxies[sectname] = SectionProxy(self, sectname)
+                        elements_added.add(sectname)
+                    # So sections can't start with a continuation line
+                    optname = None
+                    self._add_section(line)  # HOOK
+                # no section header in the file?
+                elif cursect is None:
+                    raise MissingSectionHeaderError(fpname, lineno, line)
+                # an option line?
+                else:
+                    mo = self._optcre.match(value)
+                    if mo:
+                        optname, vi, optval = mo.group('option', 'vi', 'value')
+                        if not optname:
+                            e = self._handle_error(e, fpname, lineno, line)
+                        optname = self.optionxform(optname.rstrip())
+                        if (self._strict and
+                            (sectname, optname) in elements_added):
+                            raise DuplicateOptionError(sectname, optname,
+                                                       fpname, lineno)
+                        elements_added.add((sectname, optname))
+                        # This check is fine because the OPTCRE cannot
+                        # match if it would set optval to None
+                        if optval is not None:
+                            optval = optval.strip()
+                            cursect[optname] = [optval]
+                        else:
+                            # valueless option handling
+                            cursect[optname] = None
+                        # HOOK
+                        entry = Option(optname, "None")
+                        entry.add_line(line)
+                        self._curr_block.add_option(entry)
+                    else:
+                        # a non-fatal parsing error occurred. set up the
+                        # exception but keep going. the exception will be
+                        # raised at the end of the file and will contain a
+                        # list of all bogus lines
+                        e = self._handle_error(e, fpname, lineno, line)
+        self._join_multiline_values()
+        # if any parsing errors occurred, raise an exception
+        if e:
+            raise e
+
+    def _handle_error(self, exc, fpname, lineno, line):
+        if not exc:
+            exc = ParsingError(fpname)
+        exc.append(lineno, repr(line))
+        return exc
+
+    def _join_multiline_values(self):
+        defaults = self.default_section, self._defaults
+        all_sections = itertools.chain((defaults,),
+                                       self._sections.items())
+        for section, options in all_sections:
+            for name, val in options.items():
+                if isinstance(val, list):
+                    val = '\n'.join(val).rstrip()
+                options[name] = self._interpolation.before_read(self,
+                                                                section,
+                                                                name, val)
+
+    def write(self, fp, space_around_delimiters=True):
+        """Write an .ini-format representation of the configuration state.
+
+        If `space_around_delimiters' is True (the default), delimiters
+        between keys and values are surrounded by spaces.
+        """
+        if space_around_delimiters:
+            d = " {} ".format(self._delimiters[0])
+        else:
+            d = self._delimiters[0]
+        if self._defaults:
+            self._write_section(fp, self.default_section,
+                                    self._defaults.items(), d)
+        for section in self._sections:
+            self._write_section(fp, section,
+                                self._sections[section].items(), d)
+
+    def _write_section(self, fp, section_name, section_items, delimiter):
+        """Write a single section to the specified `fp'."""
+        fp.write("[{}]\n".format(section_name))
+        for key, value in section_items:
+            value = self._interpolation.before_write(self, section_name, key,
+                                                     value)
+            if value is not None or not self._allow_no_value:
+                value = delimiter + str(value).replace('\n', '\n\t')
+            else:
+                value = ""
+            fp.write("{}{}\n".format(key, value))
+        fp.write("\n")
+
+    def update(self):
+        pass
+
+    def _validate_format(self):
+        """Call ConfigParser to validate config"""
+        pass
+
+
+class ConfigParser(MutableMapping):
     """ConfigParser that does not do interpolation."""
 
     # Regular expressions for parsing section headers and options
@@ -584,7 +999,6 @@ class ConfigUpdater(MutableMapping):
         """
     # Interpolation algorithm to be used if the user does not specify another
     _DEFAULT_INTERPOLATION = BasicInterpolation()
-    _DEFAULT_INTERPOLATION = Interpolation()
     # Compiled regular expression for matching sections
     SECTCRE = re.compile(_SECT_TMPL, re.VERBOSE)
     # Compiled regular expression for matching options with typical separators
