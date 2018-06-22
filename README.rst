@@ -4,7 +4,7 @@
     :target: https://coveralls.io/r/pyscaffold/configupdater
 
 =============
-configupdater
+ConfigUpdater
 =============
 
 WORK IN PROGRESS!
