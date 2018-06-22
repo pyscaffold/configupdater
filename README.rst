@@ -1,3 +1,11 @@
+.. image:: https://travis-ci.org/pyscaffold/configupdater.svg?branch=master
+    :target: https://travis-ci.org/pyscaffold/configupdater
+.. image:: https://coveralls.io/repos/pyscaffold/configupdater/badge.png
+    :target: https://coveralls.io/r/pyscaffold/configupdater
+.. image:: https://requires.io/github/pyscaffold/configupdater/requirements.png?branch=master
+    :target: https://requires.io/github/pyscaffold/configupdater/requirements/?branch=master
+    :alt: Requirements Status
+
 =============
 configupdater
 =============
