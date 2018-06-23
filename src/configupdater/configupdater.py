@@ -559,7 +559,7 @@ class LegacyInterpolation(Interpolation):
 
 class Block(ABC):
     def __init__(self):
-        self.orig_lines = []
+        self.lines = []
         self._updated = False
 
     @property
@@ -567,7 +567,7 @@ class Block(ABC):
         return self._updated
 
     def add_line(self, line):
-        self.orig_lines.append(line)
+        self.lines.append(line)
 
 
 class Comment(Block):
@@ -661,7 +661,7 @@ class ConfigUpdater(object):
 
         self._dict = dict_type
         self._sections = self._dict()
-        self._defaults = self._dict()
+        self._defaults = self._dict()  #  do not use this!
         self._converters = ConverterMapping(self)
         self._proxies = self._dict()
         self._proxies[default_section] = SectionProxy(self, default_section)
@@ -683,7 +683,7 @@ class ConfigUpdater(object):
         self._inline_comment_prefixes = tuple(inline_comment_prefixes or ())
         self._strict = strict
         self._allow_no_value = allow_no_value
-        self._empty_lines_in_values = empty_lines_in_values      # empty lines sollte immer True sein
+        self._empty_lines_in_values = False      # empty lines sollte immer False sein
         self.default_section=default_section
         self._interpolation = interpolation
         if self._interpolation is _UNSET:
@@ -807,7 +807,6 @@ class ConfigUpdater(object):
         indent_level = 0
         e = None                              # None, or an exception
         for lineno, line in enumerate(fp, start=1):
-            print(f"line is {line}")
             comment_start = sys.maxsize
             # strip inline comments
             inline_prefixes = {p: -1 for p in self._inline_comment_prefixes}
@@ -943,12 +942,16 @@ class ConfigUpdater(object):
             d = " {} ".format(self._delimiters[0])
         else:
             d = self._delimiters[0]
-        if self._defaults:
-            self._write_section(fp, self.default_section,
-                                    self._defaults.items(), d)
-        for section in self._sections:
-            self._write_section(fp, section,
-                                self._sections[section].items(), d)
+        for block in self.structure:
+            self._write_block(fp, block)
+
+    def _write_block(self, fp, block):
+        for line in block.lines:
+            fp.write(line)
+        if isinstance(block, Section):
+            for entry in block.entries:
+                for line in entry.lines:
+                    fp.write(line)
 
     def _write_section(self, fp, section_name, section_items, delimiter):
         """Write a single section to the specified `fp'."""
@@ -957,6 +960,7 @@ class ConfigUpdater(object):
             value = self._interpolation.before_write(self, section_name, key,
                                                      value)
             if value is not None or not self._allow_no_value:
+                # add indentation
                 value = delimiter + str(value).replace('\n', '\n\t')
             else:
                 value = ""
