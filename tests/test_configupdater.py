@@ -1,7 +1,5 @@
 from configupdater import ConfigUpdater
 
-from IPython import embed
-
 from conftest import parser_to_str
 
 
