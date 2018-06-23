@@ -1,4 +1,4 @@
-"""Configuration file parser.
+"""Configuration file updater.
 
 A configuration file consists of sections, lead by a "[section]" header,
 and followed by "name: value" entries, with continuations and such in
@@ -709,7 +709,9 @@ class ConfigUpdater(object):
 
         Return list of successfully read files.
         """
-        if isinstance(filenames, (str, os.PathLike)):
+        # os.Pathlike objects requires Python >=3.6
+        # if isinstance(filenames, (str, os.PathLike)):
+        if isinstance(filenames, str):
             filenames = [filenames]
         read_ok = []
         for filename in filenames:
@@ -718,8 +720,9 @@ class ConfigUpdater(object):
                     self._read(fp, filename)
             except OSError:
                 continue
-            if isinstance(filename, os.PathLike):
-                filename = os.fspath(filename)
+            # os.Pathlike objects requires Python >=3.6
+            # if isinstance(filename, os.PathLike):
+            #    filename = os.fspath(filename)
             read_ok.append(filename)
         return read_ok
 
