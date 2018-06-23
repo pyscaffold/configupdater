@@ -22,6 +22,7 @@ Differences
 The key differences to `ConfigParser`_ are:
 
 * inline comments are treated as part of a key's value,
+* only a single config file can be updated at a time,
 * empty lines in values are not valid,
 * the original case of sections and keys are kept,
 * control over the position of a new section/key

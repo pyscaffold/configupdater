@@ -178,6 +178,13 @@ class Error(Exception):
     __str__ = __repr__
 
 
+class NoConfigFileRead(Error):
+    """Raised when no configuration file was read but update requested."""
+    def __init__(self):
+        super().__init__(
+            "No configuration file was yet read! Use .read(...) first.")
+
+
 class NoSectionError(Error):
     """Raised when no section matches a requested option."""
 
@@ -657,6 +664,7 @@ class ConfigUpdater(object):
                  default_section=DEFAULTSECT,
                  interpolation=_UNSET, converters=_UNSET):
         self.structure = []
+        self._filename = None
         self._curr_block = None
 
         self._dict = dict_type
@@ -697,8 +705,8 @@ class ConfigUpdater(object):
     def converters(self):
         return self._converters
 
-    def read(self, filenames, encoding=None):
-        """Read and parse a filename or a list of filenames.
+    def read(self, filename, encoding=None):
+        """Read and parse a filename.
 
         Files that cannot be opened are silently ignored; this is
         designed so that you can specify a list of potential
@@ -709,21 +717,17 @@ class ConfigUpdater(object):
 
         Return list of successfully read files.
         """
-        # os.Pathlike objects requires Python >=3.6
-        # if isinstance(filenames, (str, os.PathLike)):
-        if isinstance(filenames, str):
-            filenames = [filenames]
-        read_ok = []
-        for filename in filenames:
-            try:
-                with open(filename, encoding=encoding) as fp:
-                    self._read(fp, filename)
-            except OSError:
-                continue
+        try:
+            with open(filename, encoding=encoding) as fp:
+                self._read(fp, filename)
+        except OSError:
+            read_ok = []
+        else:
             # os.Pathlike objects requires Python >=3.6
             # if isinstance(filename, os.PathLike):
             #    filename = os.fspath(filename)
-            read_ok.append(filename)
+            read_ok = [filename]
+            self._filename = filename
         return read_ok
 
     def read_file(self, f, source=None):
@@ -970,8 +974,16 @@ class ConfigUpdater(object):
             fp.write("{}{}\n".format(key, value))
         fp.write("\n")
 
-    def update(self):
-        pass
+    def update(self, space_around_delimiters=True):
+        """Update the read-in configuration file.
+
+        If `space_around_delimiters' is True (the default), delimiters
+        between keys and values are surrounded by spaces.
+        """
+        if self._filename is None:
+            raise NoConfigFileRead()
+        with open(self._filename, 'w') as fb:
+            self.write(fb, space_around_delimiters)
 
     def _validate_format(self):
         """Call ConfigParser to validate config"""
