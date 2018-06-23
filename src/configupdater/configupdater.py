@@ -172,6 +172,48 @@ class NoConfigFileReadError(Error):
 _UNSET = object()
 
 
+class LineKeeper(object):
+    """Keeps track of changes in the list of lines and calls hook"""
+    def __init__(self, hook):
+        self._hook = hook
+        self._list = list()
+
+    def __len__(self):
+        return len(self._list)
+
+    def __getitem__(self, lineno):
+        return self._list[lineno]
+
+    def __setitem__(self, lineno, line):
+        if line != self._list[lineno]:
+            self._list[lineno] = line
+            self._hook()
+
+    def __delitem__(self, lineno):
+        del self._list[lineno]
+        self._hook()
+
+    def append(self, line):
+        self._list.append(line)
+        self._hook()
+
+    def extend(self, lines):
+        self._list.extend(lines)
+        self._hook()
+
+    def index(self, *args, **kwargs):
+        return self._list.index(*args, **kwargs)
+
+    def clear(self):
+        if self._list:
+            self._list.clear()
+            self._hook()
+
+    def insert(self, lineno, line):
+        self._list.insert(lineno, line)
+        self._hook()
+
+
 class Block(ABC):
     def __init__(self):
         self.lines = []
@@ -294,8 +336,9 @@ class ConfigUpdater(MutableMapping):
         self._inline_comment_prefixes = tuple(inline_comment_prefixes or ())
         self._strict = strict
         self._allow_no_value = allow_no_value
-        self._empty_lines_in_values = False      # empty lines sollte immer False sein
         self.default_section = default_section
+        # Options from ConfigParser that we need to set constantly
+        self._empty_lines_in_values = False
 
     def read(self, filename, encoding=None):
         """Read and parse a filename.
