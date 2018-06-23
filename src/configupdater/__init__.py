@@ -11,4 +11,4 @@ finally:
     del get_distribution, DistributionNotFound
 
 
-from .configupdater import ConfigUpdater
+from .configupdater import *
