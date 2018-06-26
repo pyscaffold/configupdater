@@ -156,8 +156,6 @@ __all__ = ["NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "NoOptionError", "NoConfigFileReadError", "SectionProxy",
            "ParsingError", "MissingSectionHeaderError", "ConfigUpdater"]
 
-DEFAULTSECT = "DEFAULT"
-
 
 class NoConfigFileReadError(Error):
     """Raised when no configuration file was read but update requested."""
@@ -172,103 +170,111 @@ class NoConfigFileReadError(Error):
 _UNSET = object()
 
 
-class LineKeeper(object):
-    """Keeps track of changes in the list of lines and calls hook"""
-    def __init__(self, hook):
-        self._hook = hook
-        self._list = list()
-
-    def __len__(self):
-        return len(self._list)
-
-    def __getitem__(self, lineno):
-        return self._list[lineno]
-
-    def __setitem__(self, lineno, line):
-        if line != self._list[lineno]:
-            self._list[lineno] = line
-            self._hook()
-
-    def __delitem__(self, lineno):
-        del self._list[lineno]
-        self._hook()
-
-    def append(self, line):
-        self._list.append(line)
-        self._hook()
-
-    def extend(self, lines):
-        self._list.extend(lines)
-        self._hook()
-
-    def index(self, *args, **kwargs):
-        return self._list.index(*args, **kwargs)
-
-    def clear(self):
-        if self._list:
-            self._list.clear()
-            self._hook()
-
-    def insert(self, lineno, line):
-        self._list.insert(lineno, line)
-        self._hook()
-
-
 class Block(ABC):
-    def __init__(self):
+    def __init__(self, container=None):
+        self._container = container
         self.lines = []
         self._updated = False
+
+    def add_line(self, line):
+        self.lines.append(line)
+
+    def __str__(self):
+        return ''.join(self.lines)
+
+
+class Comment(Block):
+    def __init__(self, container=None):
+        super().__init__(container)
+
+
+class Space(Block):
+    def __init__(self, container=None):
+        super().__init__(container)
+
+
+class Section(Block):
+    def __init__(self, container=None):
+        self.entries = list()
+        super().__init__(container)
+
+    def add_option(self, entry):
+        self.entries.append(entry)
+
+    def add_comment(self):
+        if not isinstance(self.curr_entry, Comment):
+            comment = Comment(self)
+            self.entries.append(comment)
+
+    def add_space(self):
+        if not isinstance(self.curr_entry, Space):
+            space = Space(self)
+            self.entries.append(space)
+
+    @property
+    def curr_entry(self):
+        if self.entries:
+            return self.entries[-1]
+        else:
+            return None
+
+    def __str__(self):
+        s = super().__str__()
+        for entry in self.entries:
+            s += str(entry)
+        return s
+
+
+class Option(Block):
+    def __init__(self, key, value, delimiter, container=None,
+                 space_around_delimiters=True):
+        self._key = key
+        self._values = [value]
+        self._delimiter = delimiter
+        self._value = None  # will be filled after join_multiline_value
+        self._updated = False
+        self._multiline_value_joined = False
+        self._space_around_delimiters = space_around_delimiters
+        super().__init__(container)
+
+    def _join_multiline_value(self):
+        if not self._multiline_value_joined:
+            # do what `_join_multiline_value` in ConfigParser would do
+            self._value = '\n'.join(self._values).rstrip()
+            self._multiline_value_joined = True
 
     @property
     def updated(self):
         return self._updated
 
-    def add_line(self, line):
-        self.lines.append(line)
-
-
-class Comment(Block):
-    def __init__(self):
-        super().__init__()
-
-
-class Space(Block):
-    def __init__(self):
-        super().__init__()
-
-
-class Section(Block):
-    def __init__(self):
-        self.entries = list()
-        self._curr_entry = None
-        super().__init__()
-
-    def add_option(self, entry):
-        self.entries.append(entry)
-        self._curr_entry = entry
-
-    def add_comment(self):
-        if not isinstance(self._curr_entry, Comment):
-            comment = Comment()
-            self.entries.append(comment)
-            self._curr_entry = comment
-
-    def add_space(self):
-        if not isinstance(self._curr_entry, Space):
-            space = Space()
-            self.entries.append(space)
-            self._curr_entry = space
-
     @property
-    def curr_entry(self):
-        return self._curr_entry
+    def value(self):
+        self._join_multiline_value()
+        return self._value
 
+    def set_value(self, value):
+        self._updated = True
+        self._multiline_value_joined = True
+        self._value = value
+        self._values = [value]
 
-class Option(Block):
-    def __init__(self, key, value):
-        self.key = key
-        self.value = value  # reference to values
-        super().__init__()
+    def set_values(self, values, separator='\n', indent=4*' '):
+        self._updated = True
+        self._multiline_value_joined = True
+        self._values = values
+        if separator == os.linesep:
+            values.insert(0, '')
+            separator = indent + separator
+        self._value = separator.join(values)
+
+    def __str__(self):
+        if not self.updated:
+            return super().__str__()
+        if self._space_around_delimiters:
+            d = " {} ".format(self._delimiter)
+        else:
+            d = ""
+        return self._key + d + self._value
 
 
 class ConfigUpdater(MutableMapping):
@@ -308,16 +314,16 @@ class ConfigUpdater(MutableMapping):
     def __init__(self, defaults=None, dict_type=_default_dict,
                  allow_no_value=False, *, delimiters=('=', ':'),
                  comment_prefixes=('#', ';'), inline_comment_prefixes=None,
-                 strict=True, default_section=DEFAULTSECT):
+                 strict=True, space_around_delimiters=True):
         self.structure = []
         self._filename = None
         self._curr_block = None
+        self._space_around_delimiters = space_around_delimiters
 
         self._dict = dict_type
         self._sections = self._dict()
         self._defaults = self._dict()  #  do not use this!
         self._proxies = self._dict()
-        self._proxies[default_section] = SectionProxy(self, default_section)
         if defaults:
             for key, value in defaults.items():
                 self._defaults[self.optionxform(key)] = value
@@ -336,7 +342,6 @@ class ConfigUpdater(MutableMapping):
         self._inline_comment_prefixes = tuple(inline_comment_prefixes or ())
         self._strict = strict
         self._allow_no_value = allow_no_value
-        self.default_section = default_section
         # Options from ConfigParser that we need to set constantly
         self._empty_lines_in_values = False
 
@@ -507,8 +512,6 @@ class ConfigUpdater(MutableMapping):
                                                         lineno)
                         cursect = self._sections[sectname]
                         elements_added.add(sectname)
-                    elif sectname == self.default_section:
-                        cursect = self._defaults
                     else:
                         cursect = self._dict()
                         self._sections[sectname] = cursect
@@ -542,7 +545,9 @@ class ConfigUpdater(MutableMapping):
                             # valueless option handling
                             cursect[optname] = None
                         # HOOK
-                        entry = Option(optname, "None")
+                        entry = Option(
+                            optname, optval, vi, self._curr_block,
+                            space_around_delimiters=self._space_around_delimiters)
                         entry.add_line(line)
                         self._curr_block.add_option(entry)
                     else:
@@ -551,8 +556,6 @@ class ConfigUpdater(MutableMapping):
                         # raised at the end of the file and will contain a
                         # list of all bogus lines
                         e = self._handle_error(e, fpname, lineno, line)
-        # TODO: do something useful here
-        # self._join_multiline_values()
         # if any parsing errors occurred, raise an exception
         if e:
             raise e
@@ -563,70 +566,28 @@ class ConfigUpdater(MutableMapping):
         exc.append(lineno, repr(line))
         return exc
 
-    def _join_multiline_values(self):
-        defaults = self.default_section, self._defaults
-        all_sections = itertools.chain((defaults,),
-                                       self._sections.items())
-        for section, options in all_sections:
-            for name, val in options.items():
-                if isinstance(val, list):
-                    val = '\n'.join(val).rstrip()
-                options[name] = self._interpolation.before_read(self,
-                                                                section,
-                                                                name, val)
-
-    def write(self, fp, space_around_delimiters=True):
+    def write(self, fp):
         """Write an .ini-format representation of the configuration state.
-
-        If `space_around_delimiters' is True (the default), delimiters
-        between keys and values are surrounded by spaces.
         """
-        if space_around_delimiters:
-            d = " {} ".format(self._delimiters[0])
-        else:
-            d = self._delimiters[0]
-        for block in self.structure:
-            self._write_block(fp, block)
+        fp.write(str(self))
 
-    def _write_block(self, fp, block):
-        for line in block.lines:
-            fp.write(line)
-        if isinstance(block, Section):
-            for entry in block.entries:
-                for line in entry.lines:
-                    fp.write(line)
-
-    def _write_section(self, fp, section_name, section_items, delimiter):
-        """Write a single section to the specified `fp'."""
-        fp.write("[{}]\n".format(section_name))
-        for key, value in section_items:
-            value = self._interpolation.before_write(self, section_name, key,
-                                                     value)
-            if value is not None or not self._allow_no_value:
-                # add indentation
-                value = delimiter + str(value).replace('\n', '\n\t')
-            else:
-                value = ""
-            fp.write("{}{}\n".format(key, value))
-        fp.write("\n")
-
-    def update(self, space_around_delimiters=True):
+    def update(self):
         """Update the read-in configuration file.
-
-        If `space_around_delimiters' is True (the default), delimiters
-        between keys and values are surrounded by spaces.
         """
         if self._filename is None:
             raise NoConfigFileReadError()
         with open(self._filename, 'w') as fb:
-            self.write(fb, space_around_delimiters)
+            self.write(fb)
 
     def _validate_format(self):
         """Call ConfigParser to validate config"""
         pass
 
+    def __str__(self):
+        return ''.join(str(block) for block in self.structure)
+
     def __getitem__(self, key):
-        if key != self.default_section and not self.has_section(key):
+        if not self.has_section(key):
             raise KeyError(key)
         return self._proxies[key]
 
@@ -636,28 +597,24 @@ class ConfigUpdater(MutableMapping):
 
         # XXX this is not atomic if read_dict fails at any point. Then again,
         # no update method in configparser is atomic in this implementation.
-        if key == self.default_section:
-            self._defaults.clear()
-        elif key in self._sections:
+        if key in self._sections:
             self._sections[key].clear()
         self.read_dict({key: value})
 
     def __delitem__(self, key):
-        if key == self.default_section:
-            raise ValueError("Cannot remove the default section.")
         if not self.has_section(key):
             raise KeyError(key)
         self.remove_section(key)
 
     def __contains__(self, key):
-        return key == self.default_section or self.has_section(key)
+        return self.has_section(key)
 
     def __len__(self):
         return len(self._sections) + 1 # the default section
 
     def __iter__(self):
         # XXX does it break when underlying container state changed?
-        return itertools.chain((self.default_section,), self._sections.keys())
+        return self._sections.keys()
 
     # ToDo: Rework every method from here on!
 
@@ -675,9 +632,6 @@ class ConfigUpdater(MutableMapping):
         Raise DuplicateSectionError if a section by the specified name
         already exists. Raise ValueError if name is DEFAULT.
         """
-        if section == self.default_section:
-            raise ValueError('Invalid section name: %r' % section)
-
         if section in self._sections:
             raise DuplicateSectionError(section)
         self._sections[section] = self._dict()
@@ -753,8 +707,7 @@ class ConfigUpdater(MutableMapping):
         try:
             d.update(self._sections[section])
         except KeyError:
-            if section != self.default_section:
-                raise NoSectionError(section)
+            raise NoSectionError(section)
         # Update with the entry specific variables
         if vars:
             for key, value in vars.items():
@@ -769,10 +722,7 @@ class ConfigUpdater(MutableMapping):
         """Check for the existence of a given option in a given section.
         If the specified `section' is None or an empty string, DEFAULT is
         assumed. If the specified `section' does not exist, returns False."""
-        if not section or section == self.default_section:
-            option = self.optionxform(option)
-            return option in self._defaults
-        elif section not in self._sections:
+        if section not in self._sections:
             return False
         else:
             option = self.optionxform(option)
@@ -784,24 +734,18 @@ class ConfigUpdater(MutableMapping):
         if value:
             value = self._interpolation.before_set(self, section, option,
                                                    value)
-        if not section or section == self.default_section:
-            sectdict = self._defaults
-        else:
-            try:
-                sectdict = self._sections[section]
-            except KeyError:
-                raise NoSectionError(section) from None
+        try:
+            sectdict = self._sections[section]
+        except KeyError:
+            raise NoSectionError(section) from None
         sectdict[self.optionxform(option)] = value
 
     def remove_option(self, section, option):
         """Remove an option."""
-        if not section or section == self.default_section:
-            sectdict = self._defaults
-        else:
-            try:
-                sectdict = self._sections[section]
-            except KeyError:
-                raise NoSectionError(section) from None
+        try:
+            sectdict = self._sections[section]
+        except KeyError:
+            raise NoSectionError(section) from None
         option = self.optionxform(option)
         existed = option in sectdict
         if existed:
