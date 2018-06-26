@@ -153,8 +153,8 @@ import sys
 import warnings
 
 __all__ = ["NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
-           "NoOptionError", "NoConfigFileReadError", "SectionProxy",
-           "ParsingError", "MissingSectionHeaderError", "ConfigUpdater"]
+           "NoOptionError", "NoConfigFileReadError", "ParsingError",
+           "MissingSectionHeaderError", "ConfigUpdater"]
 
 
 class NoConfigFileReadError(Error):
@@ -194,7 +194,8 @@ class Space(Block):
 
 
 class Section(Block):
-    def __init__(self, container=None):
+    def __init__(self, name, container=None):
+        self._name = name
         self.entries = list()
         super().__init__(container)
 
@@ -224,9 +225,68 @@ class Section(Block):
             s += str(entry)
         return s
 
+    def __repr__(self):
+        return '<Section: {}>'.format(self.name)
+
+
+    # ToDo: Rework everything from here downwards
+    def __getitem__(self, key):
+        if not self._parser.has_option(self._name, key):
+            raise KeyError(key)
+        return self._parser.get(self._name, key)
+
+    def __setitem__(self, key, value):
+        self._parser._validate_value_types(option=key, value=value)
+        return self._parser.set(self._name, key, value)
+
+    def __delitem__(self, key):
+        if not (self._parser.has_option(self._name, key) and
+                self._parser.remove_option(self._name, key)):
+            raise KeyError(key)
+
+    def __contains__(self, key):
+        return self._parser.has_option(self._name, key)
+
+    def __len__(self):
+        return len(self._options())
+
+    def __iter__(self):
+        return self._options().__iter__()
+
+    def _options(self):
+        if self._name != self._parser.default_section:
+            return self._parser.options(self._name)
+        else:
+            return self._parser.defaults()
+
+    @property
+    def parser(self):
+        # The parser object of the proxy is read-only.
+        return self._parser
+
+    @property
+    def name(self):
+        # The name of the section on a proxy is read-only.
+        return self._name
+
+    def get(self, option, fallback=None, *, raw=False, vars=None,
+            _impl=None, **kwargs):
+        """Get an option value.
+
+        Unless `fallback` is provided, `None` will be returned if the option
+        is not found.
+
+        """
+        # If `_impl` is provided, it should be a getter method on the parser
+        # object that provides the desired type conversion.
+        if not _impl:
+            _impl = self._parser.get
+        return _impl(self._name, option, raw=raw, vars=vars,
+                     fallback=fallback, **kwargs)
+
 
 class Option(Block):
-    def __init__(self, key, value, delimiter, container=None,
+    def __init__(self, key, delimiter, value, container=None,
                  space_around_delimiters=True):
         self._key = key
         self._values = [value]
@@ -311,7 +371,7 @@ class ConfigUpdater(MutableMapping):
     # Compiled regular expression for matching leading whitespace in a line
     NONSPACECRE = re.compile(r"\S")
 
-    def __init__(self, defaults=None, dict_type=_default_dict,
+    def __init__(self, dict_type=_default_dict,
                  allow_no_value=False, *, delimiters=('=', ':'),
                  comment_prefixes=('#', ';'), inline_comment_prefixes=None,
                  strict=True, space_around_delimiters=True):
@@ -322,11 +382,6 @@ class ConfigUpdater(MutableMapping):
 
         self._dict = dict_type
         self._sections = self._dict()
-        self._defaults = self._dict()  #  do not use this!
-        self._proxies = self._dict()
-        if defaults:
-            for key, value in defaults.items():
-                self._defaults[self.optionxform(key)] = value
         self._delimiters = tuple(delimiters)
         if delimiters == ('=', ':'):
             self._optcre = self.OPTCRE_NV if allow_no_value else self.OPTCRE
@@ -395,7 +450,7 @@ class ConfigUpdater(MutableMapping):
 
     def _update_curr_block(self, block_type):
         if not isinstance(self._curr_block, block_type):
-            new_block = block_type()
+            new_block = block_type(container=self)
             self.structure.append(new_block)
             self._curr_block = new_block
 
@@ -407,11 +462,18 @@ class ConfigUpdater(MutableMapping):
             self._update_curr_block(Comment)
             self._curr_block.add_line(line)
 
-    def _add_section(self, line):
-        new_section = Section()
+    def _add_section(self, sectname, line):
+        new_section = Section(sectname, container=self)
         new_section.add_line(line)
         self.structure.append(new_section)
         self._curr_block = new_section
+
+    def _add_option(self, key, vi, value, line):
+        entry = Option(
+            key, vi, value, container=self._curr_block,
+            space_around_delimiters=self._space_around_delimiters)
+        entry.add_line(line)
+        self._curr_block.add_option(entry)
 
     def _add_space(self, line):
         if isinstance(self._curr_block, Section):
@@ -515,11 +577,10 @@ class ConfigUpdater(MutableMapping):
                     else:
                         cursect = self._dict()
                         self._sections[sectname] = cursect
-                        self._proxies[sectname] = SectionProxy(self, sectname)
                         elements_added.add(sectname)
                     # So sections can't start with a continuation line
                     optname = None
-                    self._add_section(line)  # HOOK
+                    self._add_section(sectname, line)  # HOOK
                 # no section header in the file?
                 elif cursect is None:
                     raise MissingSectionHeaderError(fpname, lineno, line)
@@ -544,12 +605,7 @@ class ConfigUpdater(MutableMapping):
                         else:
                             # valueless option handling
                             cursect[optname] = None
-                        # HOOK
-                        entry = Option(
-                            optname, optval, vi, self._curr_block,
-                            space_around_delimiters=self._space_around_delimiters)
-                        entry.add_line(line)
-                        self._curr_block.add_option(entry)
+                        self._add_option(optname, vi, optval, line)  # HOOK
                     else:
                         # a non-fatal parsing error occurred. set up the
                         # exception but keep going. the exception will be
@@ -571,7 +627,7 @@ class ConfigUpdater(MutableMapping):
         """
         fp.write(str(self))
 
-    def update(self):
+    def update_file(self):
         """Update the read-in configuration file.
         """
         if self._filename is None:
@@ -589,7 +645,9 @@ class ConfigUpdater(MutableMapping):
     def __getitem__(self, key):
         if not self.has_section(key):
             raise KeyError(key)
-        return self._proxies[key]
+        for block in self.structure:
+            if isinstance(block, Section) and block.name == key:
+                return block
 
     def __setitem__(self, key, value):
         # To conform with the mapping protocol, overwrites existing values in
@@ -618,9 +676,6 @@ class ConfigUpdater(MutableMapping):
 
     # ToDo: Rework every method from here on!
 
-    def defaults(self):
-        return self._defaults
-
     def sections(self):
         """Return a list of section names, excluding [DEFAULT]"""
         # self._sections will never have [DEFAULT] in it
@@ -639,8 +694,6 @@ class ConfigUpdater(MutableMapping):
 
     def has_section(self, section):
         """Indicate whether the named section is present in the configuration.
-
-        The DEFAULT section is not acknowledged.
         """
         return section in self._sections
 
@@ -650,7 +703,6 @@ class ConfigUpdater(MutableMapping):
             opts = self._sections[section].copy()
         except KeyError:
             raise NoSectionError(section) from None
-        opts.update(self._defaults)
         return list(opts.keys())
 
     def get(self, section, option, *, raw=False, vars=None, fallback=_UNSET):
@@ -726,8 +778,7 @@ class ConfigUpdater(MutableMapping):
             return False
         else:
             option = self.optionxform(option)
-            return (option in self._sections[section]
-                    or option in self._defaults)
+            return option in self._sections[section]
 
     def set(self, section, option, value=None):
         """Set an option."""
@@ -757,71 +808,4 @@ class ConfigUpdater(MutableMapping):
         existed = section in self._sections
         if existed:
             del self._sections[section]
-            del self._proxies[section]
         return existed
-
-
-class SectionProxy(MutableMapping):
-    """A proxy for a single section from a parser."""
-
-    def __init__(self, parser, name):
-        """Creates a view on a section of the specified `name` in `parser`."""
-        self._parser = parser
-        self._name = name
-
-    def __repr__(self):
-        return '<Section: {}>'.format(self._name)
-
-    def __getitem__(self, key):
-        if not self._parser.has_option(self._name, key):
-            raise KeyError(key)
-        return self._parser.get(self._name, key)
-
-    def __setitem__(self, key, value):
-        self._parser._validate_value_types(option=key, value=value)
-        return self._parser.set(self._name, key, value)
-
-    def __delitem__(self, key):
-        if not (self._parser.has_option(self._name, key) and
-                self._parser.remove_option(self._name, key)):
-            raise KeyError(key)
-
-    def __contains__(self, key):
-        return self._parser.has_option(self._name, key)
-
-    def __len__(self):
-        return len(self._options())
-
-    def __iter__(self):
-        return self._options().__iter__()
-
-    def _options(self):
-        if self._name != self._parser.default_section:
-            return self._parser.options(self._name)
-        else:
-            return self._parser.defaults()
-
-    @property
-    def parser(self):
-        # The parser object of the proxy is read-only.
-        return self._parser
-
-    @property
-    def name(self):
-        # The name of the section on a proxy is read-only.
-        return self._name
-
-    def get(self, option, fallback=None, *, raw=False, vars=None,
-            _impl=None, **kwargs):
-        """Get an option value.
-
-        Unless `fallback` is provided, `None` will be returned if the option
-        is not found.
-
-        """
-        # If `_impl` is provided, it should be a getter method on the parser
-        # object that provides the desired type conversion.
-        if not _impl:
-            _impl = self._parser.get
-        return _impl(self._name, option, raw=raw, vars=vars,
-                     fallback=fallback, **kwargs)
