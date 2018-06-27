@@ -2,14 +2,11 @@ import os.path
 
 from configupdater import ConfigUpdater
 
-from conftest import parser_to_str
-
 
 def test_reade_write_no_changes(setup_cfg_path, setup_cfg):
     parser = ConfigUpdater()
     parser.read(setup_cfg_path)
-    result = parser_to_str(parser)
-    assert result == setup_cfg
+    assert str(parser) == setup_cfg
 
 
 def test_update_no_changes(setup_cfg_path):
@@ -35,6 +32,12 @@ def test_has_section(setup_cfg_path):
     assert not parser.has_section('nonexistent_section')
 
 
+def test_contains_section(setup_cfg_path):
+    parser = ConfigUpdater()
+    parser.read(setup_cfg_path)
+    assert 'metadata' in parser
+
+
 def test_sections(setup_cfg_path):
     parser = ConfigUpdater()
     parser.read(setup_cfg_path)
@@ -42,7 +45,9 @@ def test_sections(setup_cfg_path):
                     'options.extras_require', 'test', 'tool:pytest',
                     'aliases', 'bdist_wheel', 'build_sphinx',
                     'devpi:upload', 'flake8', 'pyscaffold']
+    assert [section for section in parser] == exp_sections
     assert parser.sections() == exp_sections
+    assert len(parser) == len(exp_sections)
 
 
 def test_get_section(setup_cfg_path):
@@ -60,7 +65,19 @@ def test_has_option(setup_cfg_path):
     assert not parser.has_option('nonexistent_section', 'key')
 
 
+def test_get_option(setup_cfg_path):
+    parser = ConfigUpdater()
+    parser.read(setup_cfg_path)
+    options = parser.options('options.packages.find')
+    exp_options = ['where', 'exclude']
+    assert options == exp_options
 
+
+def test_get_method(setup_cfg_path):
+    parser = ConfigUpdater()
+    parser.read(setup_cfg_path)
+    value = parser.get('metadata', 'license').value
+    assert value == 'mit'
 
 
 test_cfg_in = """
@@ -74,8 +91,16 @@ key = 2
 """
 
 
-# def test_value_change():
-#     parser = ConfigUpdater()
-#     parser.read_string(test_cfg_in)
-#     parser
+def test_value_change():
+    parser = ConfigUpdater()
+    parser.read_string(test_cfg_in)
+    assert parser['default']['key'].value == '1'
+    parser['default']['key'].value = '2'
+    assert str(parser) == test_cfg_out
 
+
+def test_del_option():
+    parser = ConfigUpdater()
+    parser.read_string(test_cfg_in)
+    del parser['default']['key']
+    assert str(parser) == "\n[default]\n"

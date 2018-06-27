@@ -27,10 +27,3 @@ def setup_cfg_path():
 def setup_cfg(setup_cfg_path):
     with open(setup_cfg_path) as fh:
         return fh.read()
-
-
-def parser_to_str(parser):
-    fh = StringIO()
-    parser.write(fh)
-    fh.seek(0)
-    return fh.read()

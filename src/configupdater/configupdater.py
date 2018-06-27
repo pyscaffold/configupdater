@@ -182,6 +182,9 @@ class Block(ABC):
     def __str__(self):
         return ''.join(self.lines)
 
+    def __len__(self):
+        return len(self.lines)
+
 
 class Comment(Block):
     def __init__(self, container=None):
@@ -193,7 +196,7 @@ class Space(Block):
         super().__init__(container)
 
 
-class Section(Block):
+class Section(Block, MutableMapping):
     def __init__(self, name, container=None):
         self._name = name
         self.entries = list()
@@ -219,6 +222,19 @@ class Section(Block):
         else:
             return None
 
+    def _get_idx(self, *, block=None, key=None):
+        assert (block is None) ^ (key is None), 'obj or key must be set, not both'
+        if block:
+            idx = [i for i, entry in enumerate(self.entries)
+                   if entry is block]
+        else:
+            idx = [i for i, entry in enumerate(self.entries)
+                   if isinstance(entry, Option) and entry.key == key]
+        if idx:
+            return idx[0]
+        else:
+            raise ValueError
+
     def __str__(self):
         s = super().__str__()
         for entry in self.entries:
@@ -228,61 +244,57 @@ class Section(Block):
     def __repr__(self):
         return '<Section: {}>'.format(self.name)
 
-
-    # ToDo: Rework everything from here downwards
     def __getitem__(self, key):
-        if not self._parser.has_option(self._name, key):
+        if not self._container.has_option(self._name, key):
             raise KeyError(key)
-        return self._parser.get(self._name, key)
+        return self.entries[self._get_idx(key=key)]
 
     def __setitem__(self, key, value):
-        self._parser._validate_value_types(option=key, value=value)
-        return self._parser.set(self._name, key, value)
+        pass
+        # TODO: Implement me
 
     def __delitem__(self, key):
-        if not (self._parser.has_option(self._name, key) and
-                self._parser.remove_option(self._name, key)):
+        if not (self._container.has_option(self._name, key) and
+                self._container.remove_option(self._name, key)):
             raise KeyError(key)
 
-    def __contains__(self, key):
-        return self._parser.has_option(self._name, key)
-
-    def __len__(self):
-        return len(self._options())
-
+    # def __contains__(self, key):
+    #     return self._.has_option(self._name, key)
+    #
+    # def __len__(self):
+    #     return len(self._options())
+    #
     def __iter__(self):
+        # TODO: Implement me correctly
         return self._options().__iter__()
-
-    def _options(self):
-        if self._name != self._parser.default_section:
-            return self._parser.options(self._name)
-        else:
-            return self._parser.defaults()
+    #
+    # def _options(self):
+    #     return self._parser.options(self._name)
 
     @property
-    def parser(self):
+    def container(self):
         # The parser object of the proxy is read-only.
-        return self._parser
+        return self._container
 
     @property
     def name(self):
         # The name of the section on a proxy is read-only.
         return self._name
 
-    def get(self, option, fallback=None, *, raw=False, vars=None,
-            _impl=None, **kwargs):
-        """Get an option value.
-
-        Unless `fallback` is provided, `None` will be returned if the option
-        is not found.
-
-        """
-        # If `_impl` is provided, it should be a getter method on the parser
-        # object that provides the desired type conversion.
-        if not _impl:
-            _impl = self._parser.get
-        return _impl(self._name, option, raw=raw, vars=vars,
-                     fallback=fallback, **kwargs)
+    # def get(self, option, fallback=None, *, raw=False, vars=None,
+    #         _impl=None, **kwargs):
+    #     """Get an option value.
+    #
+    #     Unless `fallback` is provided, `None` will be returned if the option
+    #     is not found.
+    #
+    #     """
+    #     # If `_impl` is provided, it should be a getter method on the parser
+    #     # object that provides the desired type conversion.
+    #     if not _impl:
+    #         _impl = self._parser.get
+    #     return _impl(self._name, option, raw=raw, vars=vars,
+    #                  fallback=fallback, **kwargs)
 
 
 class Option(Block):
@@ -308,14 +320,19 @@ class Option(Block):
         return self._updated
 
     @property
+    def key(self):
+        return self._key
+
+    @property
     def value(self):
         self._join_multiline_value()
         return self._value
 
-    def set_value(self, value):
+    @value.setter
+    def value(self, value):
         self._updated = True
         self._multiline_value_joined = True
-        self._value = value
+        self._value = value + '\n'
         self._values = [value]
 
     def set_values(self, values, separator='\n', indent=4*' '):
@@ -325,7 +342,7 @@ class Option(Block):
         if separator == os.linesep:
             values.insert(0, '')
             separator = indent + separator
-        self._value = separator.join(values)
+        self._value = separator.join(values) + '\n'
 
     def __str__(self):
         if not self.updated:
@@ -375,12 +392,13 @@ class ConfigUpdater(MutableMapping):
                  allow_no_value=False, *, delimiters=('=', ':'),
                  comment_prefixes=('#', ';'), inline_comment_prefixes=None,
                  strict=True, space_around_delimiters=True):
-        self.structure = []
+        self._structure = []
         self._filename = None
         self._curr_block = None
         self._space_around_delimiters = space_around_delimiters
 
         self._dict = dict_type
+        # TODO: IMPORANT THIS MUST BE REPLACED BY STRCUTURE
         self._sections = self._dict()
         self._delimiters = tuple(delimiters)
         if delimiters == ('=', ':'):
@@ -451,7 +469,7 @@ class ConfigUpdater(MutableMapping):
     def _update_curr_block(self, block_type):
         if not isinstance(self._curr_block, block_type):
             new_block = block_type(container=self)
-            self.structure.append(new_block)
+            self._structure.append(new_block)
             self._curr_block = new_block
 
     def _add_comment(self, line):
@@ -465,7 +483,7 @@ class ConfigUpdater(MutableMapping):
     def _add_section(self, sectname, line):
         new_section = Section(sectname, container=self)
         new_section.add_line(line)
-        self.structure.append(new_section)
+        self._structure.append(new_section)
         self._curr_block = new_section
 
     def _add_option(self, key, vi, value, line):
@@ -637,18 +655,24 @@ class ConfigUpdater(MutableMapping):
 
     def _validate_format(self):
         """Call ConfigParser to validate config"""
-        pass
+        # TODO: IMPLEMENT ME
+
+    def get_sections(self):
+        return [block for block in self._structure
+                if isinstance(block, Section)]
 
     def __str__(self):
-        return ''.join(str(block) for block in self.structure)
+        return ''.join(str(block) for block in self._structure)
 
     def __getitem__(self, key):
         if not self.has_section(key):
             raise KeyError(key)
-        for block in self.structure:
+        
+        for block in self._structure:
             if isinstance(block, Section) and block.name == key:
                 return block
 
+    # ToDo: Implement me
     def __setitem__(self, key, value):
         # To conform with the mapping protocol, overwrites existing values in
         # the section.
@@ -659,6 +683,7 @@ class ConfigUpdater(MutableMapping):
             self._sections[key].clear()
         self.read_dict({key: value})
 
+    # ToDo: Implement me
     def __delitem__(self, key):
         if not self.has_section(key):
             raise KeyError(key)
@@ -668,29 +693,26 @@ class ConfigUpdater(MutableMapping):
         return self.has_section(key)
 
     def __len__(self):
-        return len(self._sections) + 1 # the default section
+        return len(self._sections)
 
     def __iter__(self):
         # XXX does it break when underlying container state changed?
-        return self._sections.keys()
-
-    # ToDo: Rework every method from here on!
+        return self._sections.keys().__iter__()
 
     def sections(self):
-        """Return a list of section names, excluding [DEFAULT]"""
-        # self._sections will never have [DEFAULT] in it
+        """Return a list of section names"""
         return list(self._sections.keys())
 
-    def add_section(self, section):
-        """Create a new section in the configuration.
-
-        Raise DuplicateSectionError if a section by the specified name
-        already exists. Raise ValueError if name is DEFAULT.
-        """
-        if section in self._sections:
-            raise DuplicateSectionError(section)
-        self._sections[section] = self._dict()
-        self._proxies[section] = SectionProxy(self, section)
+    # def add_section(self, section):
+    #     """Create a new section in the configuration.
+    #
+    #     Raise DuplicateSectionError if a section by the specified name
+    #     already exists. Raise ValueError if name is DEFAULT.
+    #     """
+    #     if section in self._sections:
+    #         raise DuplicateSectionError(section)
+    #     self._sections[section] = self._dict()
+    #     self._proxies[section] = SectionProxy(self, section)
 
     def has_section(self, section):
         """Indicate whether the named section is present in the configuration.
@@ -705,42 +727,19 @@ class ConfigUpdater(MutableMapping):
             raise NoSectionError(section) from None
         return list(opts.keys())
 
-    def get(self, section, option, *, raw=False, vars=None, fallback=_UNSET):
-        """Get an option value for a given section.
+    def get(self, section, option):
+        """Get an option value for a given section."""
+        if not self.has_section(section):
+            raise NoSectionError
 
-        If `vars' is provided, it must be a dictionary. The option is looked up
-        in `vars' (if provided), `section', and in `DEFAULTSECT' in that order.
-        If the key is not found and `fallback' is provided, it is used as
-        a fallback value. `None' can be provided as a `fallback' value.
-
-        If interpolation is enabled and the optional argument `raw' is False,
-        all interpolations are expanded in the return values.
-
-        Arguments `raw', `vars', and `fallback' are keyword only.
-
-        The section DEFAULT is special.
-        """
-        try:
-            d = self._unify_values(section, vars)
-        except NoSectionError:
-            if fallback is _UNSET:
-                raise
-            else:
-                return fallback
+        section = self.__getitem__(section)
         option = self.optionxform(option)
         try:
-            value = d[option]
+            value = section[option]
         except KeyError:
-            if fallback is _UNSET:
-                raise NoOptionError(option, section)
-            else:
-                return fallback
+            raise NoOptionError(option, section)
 
-        if raw or value is None:
-            return value
-        else:
-            return self._interpolation.before_get(self, section, option, value,
-                                                  d)
+        return value
 
     def items(self, section=_UNSET, raw=False, vars=None):
         """Return a list of (name, value) tuples for each option in a section.
@@ -780,17 +779,17 @@ class ConfigUpdater(MutableMapping):
             option = self.optionxform(option)
             return option in self._sections[section]
 
-    def set(self, section, option, value=None):
-        """Set an option."""
-        if value:
-            value = self._interpolation.before_set(self, section, option,
-                                                   value)
-        try:
-            sectdict = self._sections[section]
-        except KeyError:
-            raise NoSectionError(section) from None
-        sectdict[self.optionxform(option)] = value
-
+    # def set(self, section, option, value=None):
+    #     """Set an option."""
+    #     if value:
+    #         value = self._interpolation.before_set(self, section, option,
+    #                                                value)
+    #     try:
+    #         sectdict = self._sections[section]
+    #     except KeyError:
+    #         raise NoSectionError(section) from None
+    #     sectdict[self.optionxform(option)] = value
+    #
     def remove_option(self, section, option):
         """Remove an option."""
         try:
@@ -802,10 +801,10 @@ class ConfigUpdater(MutableMapping):
         if existed:
             del sectdict[option]
         return existed
-
-    def remove_section(self, section):
-        """Remove a file section."""
-        existed = section in self._sections
-        if existed:
-            del self._sections[section]
-        return existed
+    #
+    # def remove_section(self, section):
+    #     """Remove a file section."""
+    #     existed = section in self._sections
+    #     if existed:
+    #         del self._sections[section]
+    #     return existed
