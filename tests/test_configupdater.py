@@ -238,3 +238,13 @@ def test_handle_error():
     parser = ConfigUpdater(allow_no_value=False)
     with pytest.raises(ParsingError):
         parser.read_string(test_wrong_cfg)
+
+
+def test_validate_format(setup_cfg_path):
+    parser = ConfigUpdater(allow_no_value=False)
+    parser.read(setup_cfg_path)
+    parser.validate_format()
+    parser.set('metadata', 'author')
+    with pytest.raises(ParsingError):
+        parser.validate_format()
+

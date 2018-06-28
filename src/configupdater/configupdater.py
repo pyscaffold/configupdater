@@ -138,19 +138,16 @@ ConfigParser -- responsible for parsing a list of
         between keys and values are surrounded by spaces.
 """
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from collections.abc import MutableMapping
-from collections import OrderedDict as _default_dict, ChainMap as _ChainMap
+from collections import OrderedDict as _default_dict
 from configparser import (
     Error, NoSectionError, NoOptionError, DuplicateSectionError, DuplicateOptionError,
-    ParsingError, MissingSectionHeaderError)
-import functools
+    ParsingError, MissingSectionHeaderError, ConfigParser)
 import io
-import itertools
 import os
 import re
 import sys
-import warnings
 
 __all__ = ["NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "NoOptionError", "NoConfigFileReadError", "ParsingError",
@@ -384,13 +381,15 @@ class ConfigUpdater(MutableMapping):
                  allow_no_value=False, *, delimiters=('=', ':'),
                  comment_prefixes=('#', ';'), inline_comment_prefixes=None,
                  strict=True, space_around_delimiters=True):
-        self._structure = []  # takes role of self._sections in ConfigParser
+
         self._filename = None
         self._space_around_delimiters = space_around_delimiters
 
         self._dict = dict_type
-        # TODO: IMPORTANT! THIS MUST BE REPLACED BY STRUCTURE
+        # keeping _sections to keep code aligned with ConfigParser but
+        # _structure takes the actual role instead. Only is self._structure!
         self._sections = self._dict()
+        self._structure = []
         self._delimiters = tuple(delimiters)
         if delimiters == ('=', ':'):
             self._optcre = self.OPTCRE_NV if allow_no_value else self.OPTCRE
@@ -663,9 +662,19 @@ class ConfigUpdater(MutableMapping):
         with open(self._filename, 'w') as fb:
             self.write(fb)
 
-    def _validate_format(self):
+    def validate_format(self, **kwargs):
         """Call ConfigParser to validate config"""
-        # TODO: IMPLEMENT ME
+        args = dict(
+            dict_type=self._dict,
+            allow_no_value=self._allow_no_value,
+            inline_comment_prefixes=self._inline_comment_prefixes,
+            strict=self._strict,
+            empty_lines_in_values=self._empty_lines_in_values
+        )
+        args.update(kwargs)
+        parser = ConfigParser(**args)
+        updated_cfg = str(self)
+        parser.read_string(updated_cfg)
 
     def sections_blocks(self):
         return [block for block in self._structure if isinstance(block, Section)]
