@@ -1,7 +1,9 @@
 import os.path
 
-from configupdater import ConfigUpdater
+from configupdater import ConfigUpdater, NoConfigFileReadError, ParsingError
 from configupdater.configupdater import Section, Option
+
+import pytest
 
 
 def test_reade_write_no_changes(setup_cfg_path, setup_cfg):
@@ -17,6 +19,12 @@ def test_update_no_changes(setup_cfg_path):
     parser.update_file()
     new_mtime = os.path.getmtime(setup_cfg_path)
     assert old_mtime != new_mtime
+
+
+def test_update_no_cfg():
+    parser = ConfigUpdater()
+    with pytest.raises(NoConfigFileReadError):
+        parser.update_file()
 
 
 def test_str(setup_cfg_path, setup_cfg):
@@ -218,3 +226,15 @@ def test_remove_section():
     parser.read_string(test2_cfg_in)
     del parser['section2']
     assert str(parser) == test2_cfg_out
+
+
+test_wrong_cfg = """
+[strange section]
+a
+"""
+
+
+def test_handle_error():
+    parser = ConfigUpdater(allow_no_value=False)
+    with pytest.raises(ParsingError):
+        parser.read_string(test_wrong_cfg)

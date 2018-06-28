@@ -12,9 +12,9 @@ WORK IN PROGRESS!
 The sole purpose of `ConfigUpdater`_ is to easily update an INI config file
 with no changes to the original file except the intended ones. This means
 comments, the ordering of sections and key/value-pairs as wells as their
-case are kept as in the original file. Thus `ConfigUpdater`_ provides
+cases are kept as in the original file. Thus `ConfigUpdater`_ provides
 complementary functionality to Python's `ConfigParser`_ which is primarily
-meant for reading config files and writing new ones.
+meant for reading config files and writing *new* ones.
 
 Differences
 ===========

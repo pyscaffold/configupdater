@@ -761,11 +761,11 @@ class ConfigUpdater(MutableMapping):
         """Check for the existence of a given option in a given section.
         If the specified `section' is None or an empty string, DEFAULT is
         assumed. If the specified `section' does not exist, returns False."""
-        if section not in self._sections:
+        if section not in self.sections():
             return False
         else:
             option = self.optionxform(option)
-            return option in self._sections[section]
+            return option in self[section]
 
     def set(self, section, option, value=None):
         """Set an option."""
