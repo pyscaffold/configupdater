@@ -199,36 +199,36 @@ class Space(Block):
 class Section(Block, MutableMapping):
     def __init__(self, name, container=None):
         self._name = name
-        self.entries = list()
+        self._entries = list()
         super().__init__(container)
 
-    def add_option(self, entry):
-        self.entries.append(entry)
+    def _add_option(self, entry):
+        self._entries.append(entry)
 
-    def add_comment(self):
-        if not isinstance(self.curr_entry, Comment):
+    def _add_comment(self):
+        if not isinstance(self._curr_entry, Comment):
             comment = Comment(self)
-            self.entries.append(comment)
+            self._entries.append(comment)
 
-    def add_space(self):
-        if not isinstance(self.curr_entry, Space):
+    def _add_space(self):
+        if not isinstance(self._curr_entry, Space):
             space = Space(self)
-            self.entries.append(space)
+            self._entries.append(space)
 
     @property
-    def curr_entry(self):
-        if self.entries:
-            return self.entries[-1]
+    def _curr_entry(self):
+        if self._entries:
+            return self._entries[-1]
         else:
             return None
 
     def _get_idx(self, *, block=None, key=None):
         assert (block is None) ^ (key is None), 'obj or key must be set, not both'
         if block:
-            idx = [i for i, entry in enumerate(self.entries)
+            idx = [i for i, entry in enumerate(self._entries)
                    if entry is block]
         else:
-            idx = [i for i, entry in enumerate(self.entries)
+            idx = [i for i, entry in enumerate(self._entries)
                    if isinstance(entry, Option) and entry.key == key]
         if idx:
             return idx[0]
@@ -237,7 +237,7 @@ class Section(Block, MutableMapping):
 
     def __str__(self):
         s = super().__str__()
-        for entry in self.entries:
+        for entry in self._entries:
             s += str(entry)
         return s
 
@@ -245,31 +245,36 @@ class Section(Block, MutableMapping):
         return '<Section: {}>'.format(self.name)
 
     def __getitem__(self, key):
-        if not self._container.has_option(self._name, key):
+        if not key in self.options():
             raise KeyError(key)
-        return self.entries[self._get_idx(key=key)]
+        return self._entries[self._get_idx(key=key)]
 
     def __setitem__(self, key, value):
-        pass
-        # TODO: Implement me
+        entry = self.__getitem__(key)
+        entry.value = value
 
     def __delitem__(self, key):
-        if not (self._container.has_option(self._name, key) and
-                self._container.remove_option(self._name, key)):
+        if key not in self.options():
             raise KeyError(key)
+        idx = self._get_idx(key=key)
+        del self._entries[idx]
 
-    # def __contains__(self, key):
-    #     return self._.has_option(self._name, key)
-    #
-    # def __len__(self):
-    #     return len(self._options())
-    #
+    def __contains__(self, key):
+        return key in self.options()
+
+    def __len__(self):
+        return len(self._entries)
+
     def __iter__(self):
-        # TODO: Implement me correctly
-        return self._options().__iter__()
-    #
-    # def _options(self):
-    #     return self._parser.options(self._name)
+        """Return all entries, not just options"""
+        return self._entries.__iter__()
+
+    def option_blocks(self):
+        return [entry for entry in self._entries
+                if isinstance(entry, Option)]
+
+    def options(self):
+        return [option.key for option in self.option_blocks()]
 
     @property
     def container(self):
@@ -280,21 +285,6 @@ class Section(Block, MutableMapping):
     def name(self):
         # The name of the section on a proxy is read-only.
         return self._name
-
-    # def get(self, option, fallback=None, *, raw=False, vars=None,
-    #         _impl=None, **kwargs):
-    #     """Get an option value.
-    #
-    #     Unless `fallback` is provided, `None` will be returned if the option
-    #     is not found.
-    #
-    #     """
-    #     # If `_impl` is provided, it should be a getter method on the parser
-    #     # object that provides the desired type conversion.
-    #     if not _impl:
-    #         _impl = self._parser.get
-    #     return _impl(self._name, option, raw=raw, vars=vars,
-    #                  fallback=fallback, **kwargs)
 
 
 class Option(Block):
@@ -332,7 +322,7 @@ class Option(Block):
     def value(self, value):
         self._updated = True
         self._multiline_value_joined = True
-        self._value = value + '\n'
+        self._value = value
         self._values = [value]
 
     def set_values(self, values, separator='\n', indent=4*' '):
@@ -347,11 +337,13 @@ class Option(Block):
     def __str__(self):
         if not self.updated:
             return super().__str__()
+        if self._value is None:
+            return "{}\n".format(self._key)
         if self._space_around_delimiters:
             d = " {} ".format(self._delimiter)
         else:
             d = ""
-        return self._key + d + self._value
+        return "{}{}{}\n".format(self._key, d, self._value)
 
 
 class ConfigUpdater(MutableMapping):
@@ -392,13 +384,12 @@ class ConfigUpdater(MutableMapping):
                  allow_no_value=False, *, delimiters=('=', ':'),
                  comment_prefixes=('#', ';'), inline_comment_prefixes=None,
                  strict=True, space_around_delimiters=True):
-        self._structure = []
+        self._structure = []  # takes role of self._sections in ConfigParser
         self._filename = None
-        self._curr_block = None
         self._space_around_delimiters = space_around_delimiters
 
         self._dict = dict_type
-        # TODO: IMPORANT THIS MUST BE REPLACED BY STRCUTURE
+        # TODO: IMPORTANT! THIS MUST BE REPLACED BY STRUCTURE
         self._sections = self._dict()
         self._delimiters = tuple(delimiters)
         if delimiters == ('=', ':'):
@@ -417,6 +408,26 @@ class ConfigUpdater(MutableMapping):
         self._allow_no_value = allow_no_value
         # Options from ConfigParser that we need to set constantly
         self._empty_lines_in_values = False
+
+    @property
+    def _curr_block(self):
+        if self._structure:
+            return self._structure[-1]
+        else:
+            return None
+
+    def _get_idx(self, *, block=None, name=None):
+        assert (block is None) ^ (name is None), 'obj or name must be set, not both'
+        if block:
+            idx = [i for i, entry in enumerate(self._structure)
+                   if entry is block]
+        else:
+            idx = [i for i, entry in enumerate(self._structure)
+                   if isinstance(entry, Section) and entry.name == name]
+        if idx:
+            return idx[0]
+        else:
+            raise ValueError
 
     def read(self, filename, encoding=None):
         """Read and parse a filename.
@@ -470,12 +481,11 @@ class ConfigUpdater(MutableMapping):
         if not isinstance(self._curr_block, block_type):
             new_block = block_type(container=self)
             self._structure.append(new_block)
-            self._curr_block = new_block
 
     def _add_comment(self, line):
         if isinstance(self._curr_block, Section):
-            self._curr_block.add_comment()
-            self._curr_block.curr_entry.add_line(line)
+            self._curr_block._add_comment()
+            self._curr_block._curr_entry.add_line(line)
         else:
             self._update_curr_block(Comment)
             self._curr_block.add_line(line)
@@ -484,19 +494,18 @@ class ConfigUpdater(MutableMapping):
         new_section = Section(sectname, container=self)
         new_section.add_line(line)
         self._structure.append(new_section)
-        self._curr_block = new_section
 
     def _add_option(self, key, vi, value, line):
         entry = Option(
             key, vi, value, container=self._curr_block,
             space_around_delimiters=self._space_around_delimiters)
         entry.add_line(line)
-        self._curr_block.add_option(entry)
+        self._curr_block._add_option(entry)
 
     def _add_space(self, line):
         if isinstance(self._curr_block, Section):
-            self._curr_block.add_space()
-            self._curr_block.curr_entry.add_line(line)
+            self._curr_block._add_space()
+            self._curr_block._curr_entry.add_line(line)
         else:
             self._update_curr_block(Space)
             self._curr_block.add_line(line)
@@ -526,6 +535,7 @@ class ConfigUpdater(MutableMapping):
         mess here as close as possible to the original messod (pardon
         this german pun) for consistency reasons and later upgrades.
         """
+        self._structure = []
         elements_added = set()
         cursect = None                        # None, or a dictionary
         sectname = None
@@ -565,7 +575,7 @@ class ConfigUpdater(MutableMapping):
                         optname and
                         cursect[optname] is not None):
                         cursect[optname].append('') # newlines added at join
-                        self._curr_block.curr_entry.add_line(line)  # HOOK
+                        self._curr_block._curr_entry.add_line(line)  # HOOK
                 else:
                     # empty line marks end of value
                     indent_level = sys.maxsize
@@ -578,7 +588,7 @@ class ConfigUpdater(MutableMapping):
             if (cursect is not None and optname and
                 cur_indent_level > indent_level):
                 cursect[optname].append(value)
-                self._curr_block.curr_entry.add_line(line)  # HOOK
+                self._curr_block._curr_entry.add_line(line)  # HOOK
             # a section header or option header?
             else:
                 indent_level = cur_indent_level
@@ -657,20 +667,22 @@ class ConfigUpdater(MutableMapping):
         """Call ConfigParser to validate config"""
         # TODO: IMPLEMENT ME
 
-    def get_sections(self):
-        return [block for block in self._structure
-                if isinstance(block, Section)]
+    def sections_blocks(self):
+        return [block for block in self._structure if isinstance(block, Section)]
+
+    def sections(self):
+        """Return a list of section names"""
+        return [section.name for section in self.sections_blocks()]
 
     def __str__(self):
         return ''.join(str(block) for block in self._structure)
 
     def __getitem__(self, key):
-        if not self.has_section(key):
+        for section in self.sections_blocks():
+            if section.name == key:
+                return section
+        else:
             raise KeyError(key)
-        
-        for block in self._structure:
-            if isinstance(block, Section) and block.name == key:
-                return block
 
     # ToDo: Implement me
     def __setitem__(self, key, value):
@@ -683,25 +695,22 @@ class ConfigUpdater(MutableMapping):
             self._sections[key].clear()
         self.read_dict({key: value})
 
-    # ToDo: Implement me
-    def __delitem__(self, key):
-        if not self.has_section(key):
-            raise KeyError(key)
-        self.remove_section(key)
+    def __delitem__(self, section):
+        if not self.has_section(section):
+            raise KeyError(section)
+        self.remove_section(section)
 
     def __contains__(self, key):
         return self.has_section(key)
 
     def __len__(self):
-        return len(self._sections)
+        """Number of all blocks, not just sections"""
+        return len(self._structure)
 
     def __iter__(self):
-        # XXX does it break when underlying container state changed?
-        return self._sections.keys().__iter__()
+        """Iterate over all blocks, not just sections"""
+        return self._structure.__iter__()
 
-    def sections(self):
-        """Return a list of section names"""
-        return list(self._sections.keys())
 
     # def add_section(self, section):
     #     """Create a new section in the configuration.
@@ -717,15 +726,13 @@ class ConfigUpdater(MutableMapping):
     def has_section(self, section):
         """Indicate whether the named section is present in the configuration.
         """
-        return section in self._sections
+        return section in self.sections()
 
     def options(self, section):
         """Return a list of option names for the given section name."""
-        try:
-            opts = self._sections[section].copy()
-        except KeyError:
+        if not self.has_section(section):
             raise NoSectionError(section) from None
-        return list(opts.keys())
+        return self.__getitem__(section).options()
 
     def get(self, section, option):
         """Get an option value for a given section."""
@@ -741,33 +748,14 @@ class ConfigUpdater(MutableMapping):
 
         return value
 
-    def items(self, section=_UNSET, raw=False, vars=None):
+    def items(self, section=_UNSET):
         """Return a list of (name, value) tuples for each option in a section.
-
-        All % interpolations are expanded in the return values, based on the
-        defaults passed into the constructor, unless the optional argument
-        `raw' is true.  Additional substitutions may be provided using the
-        `vars' argument, which must be a dictionary whose contents overrides
-        any pre-existing defaults.
-
-        The section DEFAULT is special.
         """
         if section is _UNSET:
-            return super().items()
-        d = self._defaults.copy()
-        try:
-            d.update(self._sections[section])
-        except KeyError:
-            raise NoSectionError(section)
-        # Update with the entry specific variables
-        if vars:
-            for key, value in vars.items():
-                d[self.optionxform(key)] = value
-        value_getter = lambda option: self._interpolation.before_get(self,
-                                                                     section, option, d[option], d)
-        if raw:
-            value_getter = lambda option: d[option]
-        return [(option, value_getter(option)) for option in d.keys()]
+            return [(sect.name, sect) for sect in self.sections_blocks()]
+
+        section = self.__getitem__(section)
+        return [(opt.key, opt) for opt in section.option_blocks()]
 
     def has_option(self, section, option):
         """Check for the existence of a given option in a given section.
@@ -779,32 +767,32 @@ class ConfigUpdater(MutableMapping):
             option = self.optionxform(option)
             return option in self._sections[section]
 
-    # def set(self, section, option, value=None):
-    #     """Set an option."""
-    #     if value:
-    #         value = self._interpolation.before_set(self, section, option,
-    #                                                value)
-    #     try:
-    #         sectdict = self._sections[section]
-    #     except KeyError:
-    #         raise NoSectionError(section) from None
-    #     sectdict[self.optionxform(option)] = value
-    #
-    def remove_option(self, section, option):
-        """Remove an option."""
+    def set(self, section, option, value=None):
+        """Set an option."""
         try:
-            sectdict = self._sections[section]
+            section = self.__getitem__(section)
         except KeyError:
             raise NoSectionError(section) from None
         option = self.optionxform(option)
-        existed = option in sectdict
+        # TODO: Handle the case when option is not yet in
+        section[option].value = value
+
+    def remove_option(self, section, option):
+        """Remove an option."""
+        try:
+            section = self.__getitem__(section)
+        except KeyError:
+            raise NoSectionError(section) from None
+        option = self.optionxform(option)
+        existed = option in section.options()
         if existed:
-            del sectdict[option]
+            del section[option]
         return existed
-    #
-    # def remove_section(self, section):
-    #     """Remove a file section."""
-    #     existed = section in self._sections
-    #     if existed:
-    #         del self._sections[section]
-    #     return existed
+
+    def remove_section(self, section):
+        """Remove a file section."""
+        existed = self.has_section(section)
+        if existed:
+            idx = self._get_idx(name=section)
+            del self._structure[idx]
+        return existed
