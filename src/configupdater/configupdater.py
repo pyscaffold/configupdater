@@ -173,24 +173,56 @@ class Block(ABC):
         self.lines = []
         self._updated = False
 
-    def add_line(self, line):
-        self.lines.append(line)
-
     def __str__(self):
         return ''.join(self.lines)
 
     def __len__(self):
         return len(self.lines)
 
+    def _add_line(self, line):
+        self.lines.append(line)
 
+    @property
+    def add_before(self):
+        pass
+
+    @property
+    def add_after(self):
+        pass
+
+
+class BlockBuilder(object):
+    def __init__(self, idx, container):
+        self._idx = idx
+        self._container = container
+
+    def comment(self, texts):
+        pass
+
+    def section(self, section_name):
+        pass
+
+    def space(self, newlines=1):
+        pass
+
+    def option(self, key, value=None):
+        pass
+
+        
 class Comment(Block):
     def __init__(self, container=None):
         super().__init__(container)
+
+    def __repr__(self):
+        return '<Comment>'
 
 
 class Space(Block):
     def __init__(self, container=None):
         super().__init__(container)
+
+    def __repr__(self):
+        return '<Space>'
 
 
 class Section(Block, MutableMapping):
@@ -302,6 +334,20 @@ class Option(Block):
             self._value = '\n'.join(self._values).rstrip()
             self._multiline_value_joined = True
 
+    def __str__(self):
+        if not self.updated:
+            return super().__str__()
+        if self._value is None:
+            return "{}\n".format(self._key)
+        if self._space_around_delimiters:
+            d = " {} ".format(self._delimiter)
+        else:
+            d = ""
+        return "{}{}{}\n".format(self._key, d, self._value)
+
+    def __repr__(self):
+        return '<Option: {} = {}>'.format(self.key, self.value)
+
     @property
     def updated(self):
         return self._updated
@@ -330,17 +376,6 @@ class Option(Block):
             values.insert(0, '')
             separator = indent + separator
         self._value = separator.join(values) + '\n'
-
-    def __str__(self):
-        if not self.updated:
-            return super().__str__()
-        if self._value is None:
-            return "{}\n".format(self._key)
-        if self._space_around_delimiters:
-            d = " {} ".format(self._delimiter)
-        else:
-            d = ""
-        return "{}{}{}\n".format(self._key, d, self._value)
 
 
 class ConfigUpdater(MutableMapping):
@@ -387,7 +422,7 @@ class ConfigUpdater(MutableMapping):
 
         self._dict = dict_type
         # keeping _sections to keep code aligned with ConfigParser but
-        # _structure takes the actual role instead. Only is self._structure!
+        # _structure takes the actual role instead. Only use self._structure!
         self._sections = self._dict()
         self._structure = []
         self._delimiters = tuple(delimiters)
@@ -484,34 +519,34 @@ class ConfigUpdater(MutableMapping):
     def _add_comment(self, line):
         if isinstance(self._curr_block, Section):
             self._curr_block._add_comment()
-            self._curr_block._curr_entry.add_line(line)
+            self._curr_block._curr_entry._add_line(line)
         else:
             self._update_curr_block(Comment)
-            self._curr_block.add_line(line)
+            self._curr_block._add_line(line)
 
     def _add_section(self, sectname, line):
         new_section = Section(sectname, container=self)
-        new_section.add_line(line)
+        new_section._add_line(line)
         self._structure.append(new_section)
 
     def _add_option(self, key, vi, value, line):
         entry = Option(
             key, vi, value, container=self._curr_block,
             space_around_delimiters=self._space_around_delimiters)
-        entry.add_line(line)
+        entry._add_line(line)
         self._curr_block._add_option(entry)
 
     def _add_space(self, line):
         if isinstance(self._curr_block, Section):
             self._curr_block._add_space()
-            self._curr_block._curr_entry.add_line(line)
+            self._curr_block._curr_entry._add_line(line)
         else:
             self._update_curr_block(Space)
-            self._curr_block.add_line(line)
+            self._curr_block._add_line(line)
 
     def _add_entry(self, line):
         self._update_curr_block(Option)
-        self._curr_block.add_line(line)
+        self._curr_block._add_line(line)
 
     def _read(self, fp, fpname):
         """Parse a sectioned configuration file.
@@ -574,7 +609,7 @@ class ConfigUpdater(MutableMapping):
                         optname and
                         cursect[optname] is not None):
                         cursect[optname].append('') # newlines added at join
-                        self._curr_block._curr_entry.add_line(line)  # HOOK
+                        self._curr_block._curr_entry._add_line(line)  # HOOK
                 else:
                     # empty line marks end of value
                     indent_level = sys.maxsize
@@ -587,7 +622,7 @@ class ConfigUpdater(MutableMapping):
             if (cursect is not None and optname and
                 cur_indent_level > indent_level):
                 cursect[optname].append(value)
-                self._curr_block._curr_entry.add_line(line)  # HOOK
+                self._curr_block._curr_entry._add_line(line)  # HOOK
             # a section header or option header?
             else:
                 indent_level = cur_indent_level
@@ -697,12 +732,8 @@ class ConfigUpdater(MutableMapping):
     def __setitem__(self, key, value):
         # To conform with the mapping protocol, overwrites existing values in
         # the section.
-
-        # XXX this is not atomic if read_dict fails at any point. Then again,
-        # no update method in configparser is atomic in this implementation.
-        if key in self._sections:
-            self._sections[key].clear()
-        self.read_dict({key: value})
+        # section =
+        pass
 
     def __delitem__(self, section):
         if not self.has_section(section):
