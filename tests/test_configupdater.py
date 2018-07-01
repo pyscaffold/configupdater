@@ -248,3 +248,75 @@ def test_validate_format(setup_cfg_path):
     with pytest.raises(ParsingError):
         parser.validate_format()
 
+
+test3_cfg_in = """
+[section]
+key = 1
+"""
+
+test3_cfg_out = """
+# comment of section
+[section]
+key = 1
+# comment after section
+"""
+
+
+def test_add_before_after_comment():
+    parser = ConfigUpdater()
+    parser.read_string(test3_cfg_in)
+    parser['section'].add_before.comment('comment of section')
+    parser['section'].add_after.comment('# comment after section\n')
+    assert str(parser) == test3_cfg_out
+
+
+test4_cfg_in = """
+[section]
+key1 = 1
+"""
+
+test4_cfg_out = """
+[section]
+key0 = 0
+key1 = 1
+key2
+"""
+
+
+def test_add_before_after_option():
+    parser = ConfigUpdater()
+    parser.read_string(test4_cfg_in)
+    with pytest.raises(ValueError):
+        parser['section'].add_before.option('key0', 0)
+    parser['section']['key1'].add_before.option('key0', 0)
+    parser['section']['key1'].add_after.option('key2')
+    assert str(parser) == test4_cfg_out
+
+
+test5_cfg_in = """
+[section0]
+key0 = 0
+[section1]
+key1 = 1
+key2 = 2
+"""
+
+
+test5_cfg_out = """
+[section0]
+key0 = 0
+
+
+[section1]
+key1 = 1
+
+key2 = 2
+"""
+
+
+def test_add_before_after_space():
+    parser = ConfigUpdater()
+    parser.read_string(test5_cfg_in)
+    parser['section1'].add_before.space(2)
+    parser['section1']['key1'].add_after.space(1)
+    assert str(parser) == test5_cfg_out

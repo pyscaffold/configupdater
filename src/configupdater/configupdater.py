@@ -184,31 +184,51 @@ class Block(ABC):
 
     @property
     def add_before(self):
-        pass
+        idx = self._container.index(self)
+        return BlockBuilder(self._container, type(self), idx)
 
     @property
     def add_after(self):
-        pass
+        idx = self._container.index(self)
+        return BlockBuilder(self._container, type(self), idx+1)
 
 
 class BlockBuilder(object):
-    def __init__(self, idx, container):
-        self._idx = idx
+    def __init__(self, container, block_type, idx):
         self._container = container
+        self._block_type = block_type
+        self._idx = idx
 
-    def comment(self, texts):
-        pass
+    def comment(self, text):
+        comment = Comment(self._container)
+        if not text.startswith('#'):
+            text = "# {}".format(text)
+        if not text.endswith(os.linesep):
+            text = "{}{}".format(text, os.linesep)
+        comment._add_line(text)
+        self._container.insert(self._idx, comment)
+        return self
 
     def section(self, section_name):
-        pass
+        section = Section(section_name, container=self._container)
+        # ToDo: Implement me
 
     def space(self, newlines=1):
-        pass
+        space = Space()
+        for line in range(newlines):
+            space._add_line(os.linesep)
+        self._container.insert(self._idx, space)
 
-    def option(self, key, value=None):
-        pass
+    def option(self, key, value=None, **kwargs):
+        """Remaining options will be passed to the constructor of Option"""
+        if self._block_type is not Option:
+            raise ValueError("Options can only be added inside a section!")
+        option = Option(key, value, container=self._container, **kwargs)
+        option.value = value
+        self._container.insert(self._idx, option)
+        return self
 
-        
+
 class Comment(Block):
     def __init__(self, container=None):
         super().__init__(container)
@@ -226,22 +246,23 @@ class Space(Block):
 
 
 class Section(Block, MutableMapping):
-    def __init__(self, name, container=None):
+    def __init__(self, name, container):
         self._name = name
         self._entries = list()
         super().__init__(container)
 
+    # used when constructing the section
     def _add_option(self, entry):
         self._entries.append(entry)
 
     def _add_comment(self):
         if not isinstance(self._curr_entry, Comment):
-            comment = Comment(self)
+            comment = Comment(self._entries)
             self._entries.append(comment)
 
     def _add_space(self):
         if not isinstance(self._curr_entry, Space):
-            space = Space(self)
+            space = Space(self._entries)
             self._entries.append(space)
 
     @property
@@ -251,14 +272,9 @@ class Section(Block, MutableMapping):
         else:
             return None
 
-    def _get_idx(self, *, block=None, key=None):
-        assert (block is None) ^ (key is None), 'obj or key must be set, not both'
-        if block:
-            idx = [i for i, entry in enumerate(self._entries)
-                   if entry is block]
-        else:
-            idx = [i for i, entry in enumerate(self._entries)
-                   if isinstance(entry, Option) and entry.key == key]
+    def _get_option_idx(self, key):
+        idx = [i for i, entry in enumerate(self._entries)
+               if isinstance(entry, Option) and entry.key == key]
         if idx:
             return idx[0]
         else:
@@ -274,9 +290,9 @@ class Section(Block, MutableMapping):
         return '<Section: {}>'.format(self.name)
 
     def __getitem__(self, key):
-        if not key in self.options():
+        if key not in self.options():
             raise KeyError(key)
-        return self._entries[self._get_idx(key=key)]
+        return self._entries[self._get_option_idx(key=key)]
 
     def __setitem__(self, key, value):
         entry = self.__getitem__(key)
@@ -285,7 +301,7 @@ class Section(Block, MutableMapping):
     def __delitem__(self, key):
         if key not in self.options():
             raise KeyError(key)
-        idx = self._get_idx(key=key)
+        idx = self._get_option_idx(key=key)
         del self._entries[idx]
 
     def __contains__(self, key):
@@ -297,6 +313,12 @@ class Section(Block, MutableMapping):
     def __iter__(self):
         """Return all entries, not just options"""
         return self._entries.__iter__()
+
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self._entries == other._entries
+        else:
+            return False
 
     def option_blocks(self):
         return [entry for entry in self._entries
@@ -317,7 +339,7 @@ class Section(Block, MutableMapping):
 
 
 class Option(Block):
-    def __init__(self, key, delimiter, value, container=None,
+    def __init__(self, key, value, container, delimiter='=',
                  space_around_delimiters=True):
         self._key = key
         self._values = [value]
@@ -331,26 +353,28 @@ class Option(Block):
     def _join_multiline_value(self):
         if not self._multiline_value_joined:
             # do what `_join_multiline_value` in ConfigParser would do
-            self._value = '\n'.join(self._values).rstrip()
+            self._value = os.linesep.join(self._values).rstrip()
             self._multiline_value_joined = True
 
     def __str__(self):
         if not self.updated:
             return super().__str__()
         if self._value is None:
-            return "{}\n".format(self._key)
+            return "{}{}".format(self._key, os.linesep)
         if self._space_around_delimiters:
-            d = " {} ".format(self._delimiter)
+            delim = " {} ".format(self._delimiter)
         else:
-            d = ""
-        return "{}{}{}\n".format(self._key, d, self._value)
+            delim = ""
+        return "{}{}{}{}".format(self._key, delim, self._value, os.linesep)
 
     def __repr__(self):
         return '<Option: {} = {}>'.format(self.key, self.value)
 
     @property
     def updated(self):
-        return self._updated
+        """Returns if the option was changed/updaed"""
+        # if no lines were added, treat it as updated since we added it
+        return self._updated or not self.lines
 
     @property
     def key(self):
@@ -368,14 +392,14 @@ class Option(Block):
         self._value = value
         self._values = [value]
 
-    def set_values(self, values, separator='\n', indent=4*' '):
+    def set_values(self, values, separator=os.linesep, indent=4*' '):
         self._updated = True
         self._multiline_value_joined = True
         self._values = values
         if separator == os.linesep:
             values.insert(0, '')
             separator = indent + separator
-        self._value = separator.join(values) + '\n'
+        self._value = separator.join(values) + os.linesep
 
 
 class ConfigUpdater(MutableMapping):
@@ -450,14 +474,9 @@ class ConfigUpdater(MutableMapping):
         else:
             return None
 
-    def _get_idx(self, *, block=None, name=None):
-        assert (block is None) ^ (name is None), 'obj or name must be set, not both'
-        if block:
-            idx = [i for i, entry in enumerate(self._structure)
-                   if entry is block]
-        else:
-            idx = [i for i, entry in enumerate(self._structure)
-                   if isinstance(entry, Section) and entry.name == name]
+    def _get_section_idx(self, name):
+        idx = [i for i, entry in enumerate(self._structure)
+               if isinstance(entry, Section) and entry.name == name]
         if idx:
             return idx[0]
         else:
@@ -513,7 +532,7 @@ class ConfigUpdater(MutableMapping):
 
     def _update_curr_block(self, block_type):
         if not isinstance(self._curr_block, block_type):
-            new_block = block_type(container=self)
+            new_block = block_type(container=self._structure)
             self._structure.append(new_block)
 
     def _add_comment(self, line):
@@ -525,13 +544,15 @@ class ConfigUpdater(MutableMapping):
             self._curr_block._add_line(line)
 
     def _add_section(self, sectname, line):
-        new_section = Section(sectname, container=self)
+        new_section = Section(sectname, container=self._structure)
         new_section._add_line(line)
         self._structure.append(new_section)
 
     def _add_option(self, key, vi, value, line):
         entry = Option(
-            key, vi, value, container=self._curr_block,
+            key, value,
+            delimiter=vi,
+            container=self._curr_block._entries,
             space_around_delimiters=self._space_around_delimiters)
         entry._add_line(line)
         self._curr_block._add_option(entry)
@@ -751,6 +772,11 @@ class ConfigUpdater(MutableMapping):
         """Iterate over all blocks, not just sections"""
         return self._structure.__iter__()
 
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self._structure == other._structure
+        else:
+            return False
 
     # def add_section(self, section):
     #     """Create a new section in the configuration.
@@ -829,10 +855,10 @@ class ConfigUpdater(MutableMapping):
             del section[option]
         return existed
 
-    def remove_section(self, section):
+    def remove_section(self, name):
         """Remove a file section."""
-        existed = self.has_section(section)
+        existed = self.has_section(name)
         if existed:
-            idx = self._get_idx(name=section)
+            idx = self._get_section_idx(name)
             del self._structure[idx]
         return existed
