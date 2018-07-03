@@ -138,16 +138,17 @@ ConfigParser -- responsible for parsing a list of
         between keys and values are surrounded by spaces.
 """
 
-from abc import ABC
-from collections.abc import MutableMapping
-from collections import OrderedDict as _default_dict
-from configparser import (
-    Error, NoSectionError, NoOptionError, DuplicateSectionError, DuplicateOptionError,
-    ParsingError, MissingSectionHeaderError, ConfigParser)
 import io
 import os
 import re
 import sys
+from abc import ABC
+from collections import OrderedDict as _default_dict
+from collections.abc import MutableMapping
+from configparser import (ConfigParser, DuplicateOptionError,
+                          DuplicateSectionError, Error,
+                          MissingSectionHeaderError, NoOptionError,
+                          NoSectionError, ParsingError)
 
 __all__ = ["NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "NoOptionError", "NoConfigFileReadError", "ParsingError",

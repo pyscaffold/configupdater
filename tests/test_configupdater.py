@@ -1,9 +1,8 @@
 import os.path
 
-from configupdater import ConfigUpdater, NoConfigFileReadError, ParsingError
-from configupdater.configupdater import Section, Option, DuplicateSectionError
-
 import pytest
+from configupdater import ConfigUpdater, NoConfigFileReadError, ParsingError
+from configupdater.configupdater import DuplicateSectionError, Option, Section
 
 
 def test_reade_write_no_changes(setup_cfg_path, setup_cfg):
