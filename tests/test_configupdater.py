@@ -1,7 +1,7 @@
 import os.path
 
 from configupdater import ConfigUpdater, NoConfigFileReadError, ParsingError
-from configupdater.configupdater import Section, Option
+from configupdater.configupdater import Section, Option, DuplicateSectionError
 
 import pytest
 
@@ -75,7 +75,7 @@ def test_get_section(setup_cfg_path):
     parser = ConfigUpdater()
     parser.read(setup_cfg_path)
     section = parser['metadata']
-    assert section._entries
+    assert section._structure
 
 
 def test_has_option(setup_cfg_path):
@@ -153,6 +153,12 @@ test1_cfg_out = """
 key = 2
 """
 
+test1_cfg_out_added = """
+[default]
+key = 1
+other_key = 3
+"""
+
 test1_cfg_out_none = """
 [default]
 key
@@ -197,6 +203,9 @@ def test_set_option():
     parser.set('default', 'key')
     assert parser['default']['key'].value is None
     assert str(parser) == test1_cfg_out_none
+    parser.read_string(test1_cfg_in)
+    parser.set('default', 'other_key', 3)
+    assert str(parser) == test1_cfg_out_added
 
 
 def test_del_option():
@@ -320,3 +329,66 @@ def test_add_before_after_space():
     parser['section1'].add_before.space(2)
     parser['section1']['key1'].add_after.space(1)
     assert str(parser) == test5_cfg_out
+
+
+test6_cfg_in = """
+[section0]
+key0 = 0
+[section2]
+key1 = 1
+key2 = 2
+"""
+
+
+test6_cfg_out = """
+[section0]
+key0 = 0
+[section1]
+key1 = 42
+[section2]
+key1 = 1
+key2 = 2
+
+[section3]
+"""
+
+
+def test_add_before_after_section():
+    parser = ConfigUpdater()
+    parser.read_string(test6_cfg_in)
+    with pytest.raises(ValueError):
+        parser['section2']['key1'].add_before.section('section1')
+    parser['section2'].add_before.section('section1')
+    parser['section1']['key1'] = 42
+    parser['section2'].add_after.section('section3').space(1)
+    assert str(parser) == test6_cfg_out
+
+
+test7_cfg_in = """
+[section0]
+key0 = 0
+
+[section1]
+key1 = 42
+"""
+
+
+test7_cfg_out = """
+[section0]
+key0 = 0
+
+[section1]
+key1 = 42
+[section2]
+key1 = 1
+"""
+
+
+def test_add_section():
+    parser = ConfigUpdater()
+    parser.read_string(test7_cfg_in)
+    with pytest.raises(DuplicateSectionError):
+        parser.add_section('section1')
+    parser.add_section('section2')
+    parser['section2']['key1'] = 1
+    assert str(parser) == test7_cfg_out

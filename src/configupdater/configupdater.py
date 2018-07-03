@@ -210,14 +210,18 @@ class BlockBuilder(object):
         return self
 
     def section(self, section_name):
+        if self._block_type is not Section:
+            raise ValueError("Sections can only be added at the section level!")
         section = Section(section_name, container=self._container)
-        # ToDo: Implement me
+        self._container.insert(self._idx, section)
+        return self
 
     def space(self, newlines=1):
         space = Space()
         for line in range(newlines):
             space._add_line(os.linesep)
         self._container.insert(self._idx, space)
+        return self
 
     def option(self, key, value=None, **kwargs):
         """Remaining options will be passed to the constructor of Option"""
@@ -248,32 +252,33 @@ class Space(Block):
 class Section(Block, MutableMapping):
     def __init__(self, name, container):
         self._name = name
-        self._entries = list()
+        self._structure = list()
+        self._updated = False
         super().__init__(container)
 
     # used when constructing the section
     def _add_option(self, entry):
-        self._entries.append(entry)
+        self._structure.append(entry)
 
     def _add_comment(self):
         if not isinstance(self._curr_entry, Comment):
-            comment = Comment(self._entries)
-            self._entries.append(comment)
+            comment = Comment(self._structure)
+            self._structure.append(comment)
 
     def _add_space(self):
         if not isinstance(self._curr_entry, Space):
-            space = Space(self._entries)
-            self._entries.append(space)
+            space = Space(self._structure)
+            self._structure.append(space)
 
     @property
     def _curr_entry(self):
-        if self._entries:
-            return self._entries[-1]
+        if self._structure:
+            return self._structure[-1]
         else:
             return None
 
     def _get_option_idx(self, key):
-        idx = [i for i, entry in enumerate(self._entries)
+        idx = [i for i, entry in enumerate(self._structure)
                if isinstance(entry, Option) and entry.key == key]
         if idx:
             return idx[0]
@@ -281,8 +286,11 @@ class Section(Block, MutableMapping):
             raise ValueError
 
     def __str__(self):
-        s = super().__str__()
-        for entry in self._entries:
+        if not self.updated:
+            s = super().__str__()
+        else:
+            s = "[{}]\n".format(self._name)
+        for entry in self._structure:
             s += str(entry)
         return s
 
@@ -292,45 +300,51 @@ class Section(Block, MutableMapping):
     def __getitem__(self, key):
         if key not in self.options():
             raise KeyError(key)
-        return self._entries[self._get_option_idx(key=key)]
+        return self._structure[self._get_option_idx(key=key)]
 
     def __setitem__(self, key, value):
-        entry = self.__getitem__(key)
-        entry.value = value
+        if key in self:
+            option = self.__getitem__(key)
+            option.value = value
+        else:
+            option = Option(key, value, container=self._structure)
+            option.value = value
+            self._structure.append(option)
 
     def __delitem__(self, key):
         if key not in self.options():
             raise KeyError(key)
         idx = self._get_option_idx(key=key)
-        del self._entries[idx]
+        del self._structure[idx]
 
     def __contains__(self, key):
         return key in self.options()
 
     def __len__(self):
-        return len(self._entries)
+        return len(self._structure)
 
     def __iter__(self):
         """Return all entries, not just options"""
-        return self._entries.__iter__()
+        return self._structure.__iter__()
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return self._entries == other._entries
+            return self._structure == other._structure
         else:
             return False
 
     def option_blocks(self):
-        return [entry for entry in self._entries
+        return [entry for entry in self._structure
                 if isinstance(entry, Option)]
 
     def options(self):
         return [option.key for option in self.option_blocks()]
 
     @property
-    def container(self):
-        # The parser object of the proxy is read-only.
-        return self._container
+    def updated(self):
+        """Returns if the option was changed/updaed"""
+        # if no lines were added, treat it as updated since we added it
+        return self._updated or not self.lines
 
     @property
     def name(self):
@@ -552,7 +566,7 @@ class ConfigUpdater(MutableMapping):
         entry = Option(
             key, value,
             delimiter=vi,
-            container=self._curr_block._entries,
+            container=self._curr_block._structure,
             space_around_delimiters=self._space_around_delimiters)
         entry._add_line(line)
         self._curr_block._add_option(entry)
@@ -778,16 +792,16 @@ class ConfigUpdater(MutableMapping):
         else:
             return False
 
-    # def add_section(self, section):
-    #     """Create a new section in the configuration.
-    #
-    #     Raise DuplicateSectionError if a section by the specified name
-    #     already exists. Raise ValueError if name is DEFAULT.
-    #     """
-    #     if section in self._sections:
-    #         raise DuplicateSectionError(section)
-    #     self._sections[section] = self._dict()
-    #     self._proxies[section] = SectionProxy(self, section)
+    def add_section(self, section_name):
+        """Create a new section in the configuration.
+
+        Raise DuplicateSectionError if a section by the specified name
+        already exists. Raise ValueError if name is DEFAULT.
+        """
+        if section_name in self.sections():
+            raise DuplicateSectionError(section_name)
+        section = Section(section_name, container=self._structure)
+        self._structure.append(section)
 
     def has_section(self, section):
         """Indicate whether the named section is present in the configuration.
@@ -840,8 +854,10 @@ class ConfigUpdater(MutableMapping):
         except KeyError:
             raise NoSectionError(section) from None
         option = self.optionxform(option)
-        # TODO: Handle the case when option is not yet in
-        section[option].value = value
+        if option in section:
+            section[option].value = value
+        else:
+            section[option] = value
 
     def remove_option(self, section, option):
         """Remove an option."""
