@@ -1,7 +1,10 @@
 import os.path
+from io import StringIO
 
 import pytest
-from configupdater import ConfigUpdater, NoConfigFileReadError, ParsingError
+from configupdater import (ConfigUpdater, DuplicateOptionError,
+                           MissingSectionHeaderError, NoConfigFileReadError,
+                           NoOptionError, NoSectionError, ParsingError)
 from configupdater.configupdater import DuplicateSectionError, Option, Section
 
 
@@ -9,6 +12,14 @@ def test_reade_write_no_changes(setup_cfg_path, setup_cfg):
     parser = ConfigUpdater()
     parser.read(setup_cfg_path)
     assert str(parser) == setup_cfg
+
+
+def test_read_file_like(setup_cfg_path):
+    parser = ConfigUpdater()
+    with open(setup_cfg_path) as fp:
+        parser.read_file(fp)
+    fp = StringIO()
+    parser.read_file(fp)
 
 
 def test_update_no_changes(setup_cfg_path):
@@ -56,10 +67,10 @@ def test_sections(setup_cfg_path):
     assert parser.sections() == exp_sections
 
 
-def test_len_section(setup_cfg_path):
+def test_len_parser(setup_cfg_path):
     parser = ConfigUpdater()
     parser.read(setup_cfg_path)
-    # we test ne number of blocks, not sections
+    # we test the number of blocks, not sections
     assert len(parser) == 14
 
 
@@ -75,6 +86,10 @@ def test_get_section(setup_cfg_path):
     parser.read(setup_cfg_path)
     section = parser['metadata']
     assert section._structure
+    with pytest.raises(KeyError):
+        parser['non_existent_section']
+    with pytest.raises(ValueError):
+        parser._get_section_idx('non_existent_section')
 
 
 def test_has_option(setup_cfg_path):
@@ -93,12 +108,20 @@ def test_contains_options(setup_cfg_path):
     assert 'wrong_option' not in section
 
 
-def test_len_option(setup_cfg_path):
+def test_len_section(setup_cfg_path):
     parser = ConfigUpdater()
     parser.read(setup_cfg_path)
     section = parser['metadata']
     # we test ne number of entries, not options
     assert len(section) == 12
+
+
+def test_len_option(setup_cfg_path):
+    parser = ConfigUpdater()
+    parser.read(setup_cfg_path)
+    option = parser['metadata']['classifiers']
+    # we test ne number of lines
+    assert len(option) == 3
 
 
 def test_iter_option(setup_cfg_path):
@@ -109,19 +132,21 @@ def test_iter_option(setup_cfg_path):
     assert len([entry for entry in section]) == 12
 
 
-def test_get_option(setup_cfg_path):
+def test_get_options(setup_cfg_path):
     parser = ConfigUpdater()
     parser.read(setup_cfg_path)
     options = parser.options('options.packages.find')
     exp_options = ['where', 'exclude']
     assert options == exp_options
+    with pytest.raises(NoSectionError):
+        parser.options("non_existent_section")
 
 
 def test_items(setup_cfg_path):
     parser = ConfigUpdater()
     parser.read(setup_cfg_path)
     sect_names, sects = zip(*parser.items())
-    exp_sect_namess= [
+    exp_sect_namess = [
         'metadata', 'options', 'options.packages.find',
         'options.extras_require', 'test', 'tool:pytest',
         'aliases', 'bdist_wheel', 'build_sphinx',
@@ -140,6 +165,10 @@ def test_get_method(setup_cfg_path):
     parser.read(setup_cfg_path)
     value = parser.get('metadata', 'license').value
     assert value == 'mit'
+    with pytest.raises(NoSectionError):
+        parser.get('non_existent_section', 'license')
+    with pytest.raises(NoOptionError):
+        parser.get('metadata', 'wrong_key')
 
 
 test1_cfg_in = """
@@ -166,6 +195,22 @@ key
 test1_cfg_out_removed = """
 [default]
 """
+
+test1_cfg_out_values = """
+[default]
+key =
+    param1
+    param2
+"""
+
+
+def test_get_option():
+    parser = ConfigUpdater()
+    parser.read_string(test1_cfg_in)
+    option = parser['default']['key']
+    assert option.value == '1'
+    with pytest.raises(KeyError):
+        parser['default']['wrong_key']
 
 
 def test_value_change():
@@ -205,6 +250,9 @@ def test_set_option():
     parser.read_string(test1_cfg_in)
     parser.set('default', 'other_key', 3)
     assert str(parser) == test1_cfg_out_added
+    parser.read_string(test1_cfg_in)
+    parser['default']['key'].set_values(['param1', 'param2'])
+    assert str(parser) == test1_cfg_out_values
 
 
 def test_del_option():
@@ -212,6 +260,8 @@ def test_del_option():
     parser.read_string(test1_cfg_in)
     del parser['default']['key']
     assert str(parser) == "\n[default]\n"
+    with pytest.raises(KeyError):
+        del parser['default']['key']
 
 
 test2_cfg_in = """
@@ -229,11 +279,15 @@ key = 1
 """
 
 
-def test_remove_section():
+def test_del_section():
     parser = ConfigUpdater()
     parser.read_string(test2_cfg_in)
     del parser['section2']
     assert str(parser) == test2_cfg_out
+    with pytest.raises(KeyError):
+        del parser['section2']
+    with pytest.raises(ValueError):
+        parser['section1']._get_option_idx('wrong key')
 
 
 test_wrong_cfg = """
@@ -391,3 +445,94 @@ def test_add_section():
     parser.add_section('section2')
     parser['section2']['key1'] = 1
     assert str(parser) == test7_cfg_out
+
+
+def test_set_item_section():
+    parser = ConfigUpdater()
+    with pytest.raises(NotImplementedError):
+        parser['section'] = 42
+
+
+def test_no_space_around_delim():
+    parser = ConfigUpdater(space_around_delimiters=False)
+    parser.read_string(test7_cfg_in)
+    parser['section0']['key0'] = 0
+    del parser['section1']
+    str(parser) == "\n[section0]\nkey0=0\n\n"
+
+
+def test_constructor(setup_cfg_path):
+    parser = ConfigUpdater(delimiters=(':', '='))
+    parser.read(setup_cfg_path)
+    parser = ConfigUpdater(delimiters=(':', '='), allow_no_value=True)
+    parser.read(setup_cfg_path)
+
+
+test8_inline_prefixes = """
+[section] # just a section
+key = value  # just a value
+"""
+
+
+def test_inline_comments():
+    parser = ConfigUpdater(inline_comment_prefixes='#')
+    parser.read_string(test8_inline_prefixes)
+    assert parser.has_section('section')
+    assert parser['section']['key'].value == 'value'
+
+
+test9_dup_section = """
+[section]
+key = value
+
+[section]
+key = value
+"""
+
+
+def test_duplicate_section_error():
+    parser = ConfigUpdater()
+    with pytest.raises(DuplicateSectionError):
+        parser.read_string(test9_dup_section)
+
+
+def test_missing_section_error():
+    parser = ConfigUpdater()
+    with pytest.raises(MissingSectionHeaderError):
+        parser.read_string("key = value")
+
+
+test10_dup_option = """
+[section]
+key = value
+key = value
+"""
+
+
+def test_duplicate_option_error():
+    parser = ConfigUpdater()
+    with pytest.raises(DuplicateOptionError):
+        parser.read_string(test10_dup_option)
+
+
+test11_no_values = """
+[section]
+key
+"""
+
+
+def test_no_value():
+    parser = ConfigUpdater(allow_no_value=True)
+    parser.read_string(test11_no_values)
+    assert parser['section']['key'].value is None
+
+
+def test_eq(setup_cfg_path):
+    parser1 = ConfigUpdater()
+    parser1.read(setup_cfg_path)
+    parser2 = ConfigUpdater()
+    parser2.read(setup_cfg_path)
+    assert parser1 == parser2
+    parser1.remove_section('metadata')
+    assert parser1 != parser2
+    assert parser1 != parser2['metadata']

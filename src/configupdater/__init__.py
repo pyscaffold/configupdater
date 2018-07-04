@@ -10,5 +10,5 @@ except DistributionNotFound:
 finally:
     del get_distribution, DistributionNotFound
 
-
-from .configupdater import *
+# import everything and rely on __ALL__
+from .configupdater import *  # noqa

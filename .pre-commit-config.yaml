@@ -5,7 +5,8 @@ repos:
   rev: v1.3.0
   hooks:
   - id: trailing-whitespace
-  - id: check-added-large-files
+  # Somehow doesn't work on Mac for me, i.e. git lfs status --json fails
+  # - id: check-added-large-files
   - id: check-ast
   - id: check-json
   - id: check-merge-conflict

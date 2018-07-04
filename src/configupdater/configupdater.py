@@ -107,17 +107,6 @@ ConfigParser -- responsible for parsing a list of
         contents override any pre-existing defaults. If `option' is a key in
         `vars', the value from `vars' is used.
 
-    getint(section, options, raw=False, vars=None, fallback=_UNSET)
-        Like get(), but convert value to an integer.
-
-    getfloat(section, options, raw=False, vars=None, fallback=_UNSET)
-        Like get(), but convert value to a float.
-
-    getboolean(section, options, raw=False, vars=None, fallback=_UNSET)
-        Like get(), but convert value to a boolean (currently case
-        insensitively defined as 0, false, no, off for False, and 1, true,
-        yes, on for True).  Returns False or True.
-
     items(section=_UNSET, raw=False, vars=None)
         If section is given, return a list of tuples with (name, value) for
         each option in the section. Otherwise, return a list of tuples with
@@ -180,6 +169,12 @@ class Block(ABC):
     def __len__(self):
         return len(self.lines)
 
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            return self.lines == other.lines
+        else:
+            return False
+
     def _add_line(self, line):
         self.lines.append(line)
 
@@ -212,7 +207,7 @@ class BlockBuilder(object):
 
     def section(self, section_name):
         if self._block_type is not Section:
-            raise ValueError("Sections can only be added at the section level!")
+            raise ValueError("Sections can only be added at section level!")
         section = Section(section_name, container=self._container)
         self._container.insert(self._idx, section)
         return self
@@ -358,6 +353,7 @@ class Option(Block):
                  space_around_delimiters=True):
         self._key = key
         self._values = [value]
+        self._value_is_none = value is None
         self._delimiter = delimiter
         self._value = None  # will be filled after join_multiline_value
         self._updated = False
@@ -366,7 +362,7 @@ class Option(Block):
         super().__init__(container)
 
     def _join_multiline_value(self):
-        if not self._multiline_value_joined:
+        if not self._multiline_value_joined and not self._value_is_none:
             # do what `_join_multiline_value` in ConfigParser would do
             self._value = os.linesep.join(self._values).rstrip()
             self._multiline_value_joined = True
@@ -413,8 +409,8 @@ class Option(Block):
         self._values = values
         if separator == os.linesep:
             values.insert(0, '')
-            separator = indent + separator
-        self._value = separator.join(values) + os.linesep
+            separator = separator + indent
+        self._value = separator.join(values)
 
 
 class ConfigUpdater(MutableMapping):
@@ -519,6 +515,7 @@ class ConfigUpdater(MutableMapping):
             # if isinstance(filename, os.PathLike):
             #    filename = os.fspath(filename)
             read_ok = [filename]
+            # ToDo: Resolve filepath here
             self._filename = filename
         return read_ok
 
@@ -580,10 +577,6 @@ class ConfigUpdater(MutableMapping):
             self._update_curr_block(Space)
             self._curr_block._add_line(line)
 
-    def _add_entry(self, line):
-        self._update_curr_block(Option)
-        self._curr_block._add_line(line)
-
     def _read(self, fp, fpname):
         """Parse a sectioned configuration file.
 
@@ -641,10 +634,10 @@ class ConfigUpdater(MutableMapping):
                     # add empty line to the value, but only if there was no
                     # comment on the line
                     if (comment_start is None and
-                        cursect is not None and
-                        optname and
-                        cursect[optname] is not None):
-                        cursect[optname].append('') # newlines added at join
+                            cursect is not None and
+                            optname and
+                            cursect[optname] is not None):
+                        cursect[optname].append('')  # newlines added at join
                         self._curr_block._curr_entry._add_line(line)  # HOOK
                 else:
                     # empty line marks end of value
@@ -656,7 +649,7 @@ class ConfigUpdater(MutableMapping):
             first_nonspace = self.NONSPACECRE.search(line)
             cur_indent_level = first_nonspace.start() if first_nonspace else 0
             if (cursect is not None and optname and
-                cur_indent_level > indent_level):
+                    cur_indent_level > indent_level):
                 cursect[optname].append(value)
                 self._curr_block._curr_entry._add_line(line)  # HOOK
             # a section header or option header?
@@ -691,7 +684,7 @@ class ConfigUpdater(MutableMapping):
                             e = self._handle_error(e, fpname, lineno, line)
                         optname = self.optionxform(optname.rstrip())
                         if (self._strict and
-                            (sectname, optname) in elements_added):
+                                (sectname, optname) in elements_added):
                             raise DuplicateOptionError(sectname, optname,
                                                        fpname, lineno)
                         elements_added.add((sectname, optname))
@@ -748,7 +741,8 @@ class ConfigUpdater(MutableMapping):
         parser.read_string(updated_cfg)
 
     def sections_blocks(self):
-        return [block for block in self._structure if isinstance(block, Section)]
+        return [block for block in self._structure
+                if isinstance(block, Section)]
 
     def sections(self):
         """Return a list of section names"""
@@ -764,12 +758,11 @@ class ConfigUpdater(MutableMapping):
         else:
             raise KeyError(key)
 
-    # ToDo: Implement me
     def __setitem__(self, key, value):
-        # To conform with the mapping protocol, overwrites existing values in
-        # the section.
-        # section =
-        pass
+        # must be implemented due to MutableMapping type
+        # ToDo: Allow setting an Section object here
+        raise NotImplementedError(
+            'Use add_section or manipulate the section directly!')
 
     def __delitem__(self, section):
         if not self.has_section(section):
@@ -818,7 +811,7 @@ class ConfigUpdater(MutableMapping):
     def get(self, section, option):
         """Get an option value for a given section."""
         if not self.has_section(section):
-            raise NoSectionError
+            raise NoSectionError(section) from None
 
         section = self.__getitem__(section)
         option = self.optionxform(option)
