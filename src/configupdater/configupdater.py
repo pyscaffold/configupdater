@@ -373,7 +373,9 @@ class Option(Block):
         if self._value is None:
             return "{}{}".format(self._key, os.linesep)
         if self._space_around_delimiters:
-            delim = " {} ".format(self._delimiter)
+            # no space is needed if we use multi-line arguments
+            suffix = '' if str(self._value).startswith(os.linesep) else ' '
+            delim = " {}{}".format(self._delimiter, suffix)
         else:
             delim = ""
         return "{}{}{}{}".format(self._key, delim, self._value, os.linesep)
