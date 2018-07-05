@@ -12,6 +12,7 @@ matrix:
     - env: DISTRIB="conda" PYTHON_VERSION="3.6" COVERAGE="false"
 install:
   - source tests/travis_install.sh
+  - pip install flake8
 before_script:
   - git config --global user.email "you@example.com"
   - git config --global user.name "Your Name"
