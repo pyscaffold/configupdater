@@ -3,128 +3,6 @@
 A configuration file consists of sections, lead by a "[section]" header,
 and followed by "name: value" entries, with continuations and such in
 the style of RFC 822.
-
-Intrinsic defaults can be specified by passing them into the
-ConfigParser constructor as a dictionary.
-
-class:
-
-ConfigParser -- responsible for parsing a list of
-                    configuration files, and managing the parsed database.
-
-    methods:
-
-    __init__(defaults=None, dict_type=_default_dict, allow_no_value=False,
-             delimiters=('=', ':'), comment_prefixes=('#', ';'),
-             inline_comment_prefixes=None, strict=True,
-             empty_lines_in_values=True, default_section='DEFAULT',
-             interpolation=<unset>, converters=<unset>):
-        Create the parser. When `defaults' is given, it is initialized into the
-        dictionary or intrinsic defaults. The keys must be strings, the values
-        must be appropriate for %()s string interpolation.
-
-        When `dict_type' is given, it will be used to create the dictionary
-        objects for the list of sections, for the options within a section, and
-        for the default values.
-
-        When `delimiters' is given, it will be used as the set of substrings
-        that divide keys from values.
-
-        When `comment_prefixes' is given, it will be used as the set of
-        substrings that prefix comments in empty lines. Comments can be
-        indented.
-
-        When `inline_comment_prefixes' is given, it will be used as the set of
-        substrings that prefix comments in non-empty lines.
-
-        When `strict` is True, the parser won't allow for any section or option
-        duplicates while reading from a single source (file, string or
-        dictionary). Default is True.
-
-        When `empty_lines_in_values' is False (default: True), each empty line
-        marks the end of an option. Otherwise, internal empty lines of
-        a multiline option are kept as part of the value.
-
-        When `allow_no_value' is True (default: False), options without
-        values are accepted; the value presented for these is None.
-
-        When `default_section' is given, the name of the special section is
-        named accordingly. By default it is called ``"DEFAULT"`` but this can
-        be customized to point to any other valid section name. Its current
-        value can be retrieved using the ``parser_instance.default_section``
-        attribute and may be modified at runtime.
-
-        When `interpolation` is given, it should be an Interpolation subclass
-        instance. It will be used as the handler for option value
-        pre-processing when using getters. RawConfigParser object s don't do
-        any sort of interpolation, whereas ConfigParser uses an instance of
-        BasicInterpolation. The library also provides a ``zc.buildbot``
-        inspired ExtendedInterpolation implementation.
-
-        When `converters` is given, it should be a dictionary where each key
-        represents the name of a type converter and each value is a callable
-        implementing the conversion from string to the desired datatype. Every
-        converter gets its corresponding get*() method on the parser object and
-        section proxies.
-
-    sections()
-        Return all the configuration section names, sans DEFAULT.
-
-    has_section(section)
-        Return whether the given section exists.
-
-    has_option(section, option)
-        Return whether the given option exists in the given section.
-
-    options(section)
-        Return list of configuration options for the named section.
-
-    read(filenames, encoding=None)
-        Read and parse the list of named configuration files, given by
-        name.  A single filename is also allowed.  Non-existing files
-        are ignored.  Return list of successfully read files.
-
-    read_file(f, filename=None)
-        Read and parse one configuration file, given as a file object.
-        The filename defaults to f.name; it is only used in error
-        messages (if f has no `name' attribute, the string `<???>' is used).
-
-    read_string(string)
-        Read configuration from a given string.
-
-    read_dict(dictionary)
-        Read configuration from a dictionary. Keys are section names,
-        values are dictionaries with keys and values that should be present
-        in the section. If the used dictionary type preserves order, sections
-        and their keys will be added in order. Values are automatically
-        converted to strings.
-
-    get(section, option, raw=False, vars=None, fallback=_UNSET)
-        Return a string value for the named option.  All % interpolations are
-        expanded in the return values, based on the defaults passed into the
-        constructor and the DEFAULT section.  Additional substitutions may be
-        provided using the `vars' argument, which must be a dictionary whose
-        contents override any pre-existing defaults. If `option' is a key in
-        `vars', the value from `vars' is used.
-
-    items(section=_UNSET, raw=False, vars=None)
-        If section is given, return a list of tuples with (name, value) for
-        each option in the section. Otherwise, return a list of tuples with
-        (section_name, section_proxy) for each section, including DEFAULTSECT.
-
-    remove_section(section)
-        Remove the given file section and all its options.
-
-    remove_option(section, option)
-        Remove the given option from the given section.
-
-    set(section, option, value)
-        Set the given option.
-
-    write(fp, space_around_delimiters=True)
-        Write the configuration state in .ini format. If
-        `space_around_delimiters' is True (the default), delimiters
-        between keys and values are surrounded by spaces.
 """
 
 import io
@@ -158,6 +36,11 @@ _UNSET = object()
 
 
 class Block(ABC):
+    """Abstract Block type holding lines
+
+    Block objects hold original lines from the configuration file and hold
+    a reference to a container wherein the object resides.
+    """
     def __init__(self, container=None):
         self._container = container
         self.lines = []
@@ -180,22 +63,33 @@ class Block(ABC):
 
     @property
     def add_before(self):
+        """Returns a builder inserting a new block before the current block"""
         idx = self._container.index(self)
         return BlockBuilder(self._container, type(self), idx)
 
     @property
     def add_after(self):
+        """Returns a builder inserting a new block after the current block"""
         idx = self._container.index(self)
         return BlockBuilder(self._container, type(self), idx+1)
 
 
 class BlockBuilder(object):
+    """Builder that injects blocks at a given index position."""
     def __init__(self, container, block_type, idx):
         self._container = container
         self._block_type = block_type
         self._idx = idx
 
     def comment(self, text):
+        """Creates a comment block
+
+        Args:
+            text (str): content of comment without \#
+
+        Returns:
+            self for chaining
+        """
         comment = Comment(self._container)
         if not text.startswith('#'):
             text = "# {}".format(text)
@@ -206,6 +100,14 @@ class BlockBuilder(object):
         return self
 
     def section(self, section):
+        """Creates a section block
+
+        Args:
+            section (str or :class:`Section`): name of section or object
+
+        Returns:
+            self for chaining
+        """
         if self._block_type is not Section:
             raise ValueError("Sections can only be added at section level!")
         if isinstance(section, str):
@@ -220,6 +122,14 @@ class BlockBuilder(object):
         return self
 
     def space(self, newlines=1):
+        """Creates a vertical space of newlines
+
+        Args:
+            newlines (int): number of empty lines
+
+        Returns:
+            self for chaining
+        """
         space = Space()
         for line in range(newlines):
             space._add_line(os.linesep)
@@ -227,7 +137,16 @@ class BlockBuilder(object):
         return self
 
     def option(self, key, value=None, **kwargs):
-        """Remaining options will be passed to the constructor of Option"""
+        """Creates a new option inside a section
+
+        Args:
+            key (str): key of the option
+            value (str or None): value of the option
+            **kwargs: are passed to the constructor of :class:`Option`
+
+        Returns:
+            self for chaining
+        """
         if self._block_type is not Option:
             raise ValueError("Options can only be added inside a section!")
         option = Option(key, value, container=self._container, **kwargs)
@@ -237,6 +156,7 @@ class BlockBuilder(object):
 
 
 class Comment(Block):
+    """Comment block"""
     def __init__(self, container=None):
         super().__init__(container)
 
@@ -245,6 +165,7 @@ class Comment(Block):
 
 
 class Space(Block):
+    """Vertical space block of new lines"""
     def __init__(self, container=None):
         super().__init__(container)
 
@@ -253,6 +174,12 @@ class Space(Block):
 
 
 class Section(Block, MutableMapping):
+    """Section block holding options
+
+    Attributes:
+        name (str): name of the section
+        updated (bool): indicates name change or a new section
+    """
     def __init__(self, name, container):
         self._name = name
         self._structure = list()
@@ -338,15 +265,25 @@ class Section(Block, MutableMapping):
             return False
 
     def option_blocks(self):
+        """Returns option blocks
+
+        Returns:
+            list: list of :class:`Option` blocks
+        """
         return [entry for entry in self._structure
                 if isinstance(entry, Option)]
 
     def options(self):
+        """Returns option names
+
+        Returns:
+            list: list of option names as strings
+        """
         return [option.key for option in self.option_blocks()]
 
     @property
     def updated(self):
-        """Returns if the option was changed/updaed"""
+        """Returns if the option was changed/updated"""
         # if no lines were added, treat it as updated since we added it
         return self._updated or not self.lines
 
@@ -358,10 +295,16 @@ class Section(Block, MutableMapping):
     def name(self, value):
         self._name = str(value)
         self._updated = True
-        return self
 
 
 class Option(Block):
+    """Option block holding a key/value pair.
+
+    Attributes:
+        key (str): name of the key
+        value (str): stored value
+        updated (bool): indicates name change or a new section
+    """
     def __init__(self, key, value, container, delimiter='=',
                  space_around_delimiters=True):
         self._key = key
@@ -419,6 +362,13 @@ class Option(Block):
         self._values = [value]
 
     def set_values(self, values, separator=os.linesep, indent=4*' '):
+        """Sets the value to a given list of options, e.g. multi-line values
+
+        Args:
+            values (list): list of values
+            separator (str): separator for values, default: line separator
+            indent (str): indentation depth in case of line separator
+        """
         self._updated = True
         self._multiline_value_joined = True
         self._values = values
@@ -429,6 +379,23 @@ class Option(Block):
 
 
 class ConfigUpdater(MutableMapping):
+    """Parser like :class:`configparser.ConfigParser` but for updating
+
+    ConfigUpdater follows the API of ConfigParser with some differences:
+      * inline comments are treated as part of a key's value,
+      * only a single config file can be updated at a time,
+      * empty lines in values are not valid,
+      * the original case of sections and keys are kept,
+      * control over the position of a new section/key.
+
+    Following features are **deliberately not** implemented:
+
+      * interpolation of values,
+      * propagation of parameters from the default section,
+      * conversions of values,
+      * passing key/value-pairs with ``default`` argument,
+      * non-strict mode allowing duplicate sections and keys.
+    """
     # Regular expressions for parsing section headers and options
     _SECT_TMPL = r"""
         \[                                 # [
@@ -462,15 +429,26 @@ class ConfigUpdater(MutableMapping):
     # Compiled regular expression for matching leading whitespace in a line
     NONSPACECRE = re.compile(r"\S")
 
-    def __init__(self, dict_type=_default_dict,
-                 allow_no_value=False, *, delimiters=('=', ':'),
+    def __init__(self, allow_no_value=False, *, delimiters=('=', ':'),
                  comment_prefixes=('#', ';'), inline_comment_prefixes=None,
                  strict=True, space_around_delimiters=True):
+        """Constructor of ConfigUpdater
 
+        Args:
+            allow_no_value (bool): allow keys without a value, default False
+            delimiters (tuple): delimiters for key/value pairs, default =, :
+            comment_prefixes (tuple): prefix of comments, default # and ;
+            inline_comment_prefixes (tuple): prefix of inline comment,
+                default None
+            strict (bool): each section must be unique as well as every key
+                within a section, default True
+            space_around_delimiters (bool): add a space before and after the
+                delimiter, default True
+        """
         self._filename = None
         self._space_around_delimiters = space_around_delimiters
 
-        self._dict = dict_type
+        self._dict = _default_dict  # no reason to let the user change this
         # keeping _sections to keep code aligned with ConfigParser but
         # _structure takes the actual role instead. Only use self._structure!
         self._sections = self._dict()
@@ -511,27 +489,13 @@ class ConfigUpdater(MutableMapping):
     def read(self, filename, encoding=None):
         """Read and parse a filename.
 
-        Files that cannot be opened are silently ignored; this is
-        designed so that you can specify a list of potential
-        configuration file locations (e.g. current directory, user's
-        home directory, systemwide directory), and all existing
-        configuration files in the list will be read.  A single
-        filename may also be given.
-
-        Return list of successfully read files.
+        Args:
+            filename (str): path to file
+            encoding (str): encoding of file, default None
         """
-        try:
-            with open(filename, encoding=encoding) as fp:
-                self._read(fp, filename)
-        except OSError:
-            read_ok = []
-        else:
-            # os.Pathlike objects requires Python >=3.6
-            # if isinstance(filename, os.PathLike):
-            #    filename = os.fspath(filename)
-            read_ok = [filename]
-            self._filename = os.path.abspath(filename)
-        return read_ok
+        with open(filename, encoding=encoding) as fp:
+            self._read(fp, filename)
+        self._filename = os.path.abspath(filename)
 
     def read_file(self, f, source=None):
         """Like read() but the argument must be a file-like object.
@@ -540,6 +504,10 @@ class ConfigUpdater(MutableMapping):
         Optional second argument is the `source' specifying the name of the
         file being read. If not given, it is taken from f.name. If `f' has no
         `name' attribute, `<???>' is used.
+
+        Args:
+            f: file like object
+            source (str): reference name for file object, default None
         """
         if source is None:
             try:
@@ -549,11 +517,24 @@ class ConfigUpdater(MutableMapping):
         self._read(f, source)
 
     def read_string(self, string, source='<string>'):
-        """Read configuration from a given string."""
+        """Read configuration from a given string.
+
+        Args:
+            string (str): string containing a configuration
+            source (str): reference name for file object, default '<string>'
+        """
         sfile = io.StringIO(string)
         self.read_file(sfile, source)
 
     def optionxform(self, optionstr):
+        """Converts an option key to lower case for unification
+
+        Args:
+            optionstr (str): key name
+
+        Returns:
+            str: key name
+        """
         return optionstr.lower()
 
     def _update_curr_block(self, block_type):
@@ -729,6 +710,9 @@ class ConfigUpdater(MutableMapping):
 
     def write(self, fp):
         """Write an .ini-format representation of the configuration state.
+
+        Args:
+            fp (file-like object): open file handle
         """
         fp.write(str(self))
 
@@ -741,7 +725,11 @@ class ConfigUpdater(MutableMapping):
             self.write(fb)
 
     def validate_format(self, **kwargs):
-        """Call ConfigParser to validate config"""
+        """Call ConfigParser to validate config
+
+        Args:
+            kwargs: are passed to :class:`configparser.ConfigParser`
+        """
         args = dict(
             dict_type=self._dict,
             allow_no_value=self._allow_no_value,
@@ -755,11 +743,20 @@ class ConfigUpdater(MutableMapping):
         parser.read_string(updated_cfg)
 
     def sections_blocks(self):
+        """Returns all section blocks
+
+        Returns:
+            list: list of :class:`Section` blocks
+        """
         return [block for block in self._structure
                 if isinstance(block, Section)]
 
     def sections(self):
-        """Return a list of section names"""
+        """Return a list of section names
+
+        Returns:
+            list: list of section names
+        """
         return [section.name for section in self.sections_blocks()]
 
     def __str__(self):
@@ -811,6 +808,9 @@ class ConfigUpdater(MutableMapping):
 
         Raise DuplicateSectionError if a section by the specified name
         already exists. Raise ValueError if name is DEFAULT.
+
+        Args:
+            section (str or :class:`Section`): name or Section type
         """
         if section in self.sections():
             raise DuplicateSectionError(section)
@@ -822,18 +822,39 @@ class ConfigUpdater(MutableMapping):
         self._structure.append(section)
 
     def has_section(self, section):
-        """Indicate whether the named section is present in the configuration.
+        """Returns whether the given section exists.
+
+        Args:
+            section (str): name of section
+
+        Returns:
+            bool: wether the section exists
         """
         return section in self.sections()
 
     def options(self, section):
-        """Return a list of option names for the given section name."""
+        """Returns list of configuration options for the named section.
+
+        Args:
+            section (str): name of section
+
+        Returns:
+            list: list of option names
+        """
         if not self.has_section(section):
             raise NoSectionError(section) from None
         return self.__getitem__(section).options()
 
     def get(self, section, option):
-        """Get an option value for a given section."""
+        """Gets an option value for a given section.
+
+        Args:
+            section (str): section name
+            option (str): option name
+
+        Returns:
+            :class:`Option`: Option object holding key/value pair
+        """
         if not self.has_section(section):
             raise NoSectionError(section) from None
 
@@ -847,7 +868,17 @@ class ConfigUpdater(MutableMapping):
         return value
 
     def items(self, section=_UNSET):
-        """Return a list of (name, value) tuples for each option in a section.
+        """Return a list of (name, value) tuples for options or sections.
+
+        If section is given, return a list of tuples with (name, value) for
+        each option in the section. Otherwise, return a list of tuples with
+        (section_name, section_type) for each section.
+
+        Args:
+            section (str): optional section name, default UNSET
+
+        Returns:
+            list: list of :class:`Section` or :class:`Option` objects
         """
         if section is _UNSET:
             return [(sect.name, sect) for sect in self.sections_blocks()]
@@ -856,9 +887,15 @@ class ConfigUpdater(MutableMapping):
         return [(opt.key, opt) for opt in section.option_blocks()]
 
     def has_option(self, section, option):
-        """Check for the existence of a given option in a given section.
-        If the specified `section' is None or an empty string, DEFAULT is
-        assumed. If the specified `section' does not exist, returns False."""
+        """Checks for the existence of a given option in a given section.
+
+        Args:
+            section (str): name of section
+            option (str): name of option
+
+        Returns:
+            bool: whether the option exists in the given section
+        """
         if section not in self.sections():
             return False
         else:
@@ -866,7 +903,13 @@ class ConfigUpdater(MutableMapping):
             return option in self[section]
 
     def set(self, section, option, value=None):
-        """Set an option."""
+        """Set an option.
+
+        Args:
+            section (str): section name
+            option (str): option name
+            value (str): value, default None
+        """
         try:
             section = self.__getitem__(section)
         except KeyError:
@@ -878,7 +921,15 @@ class ConfigUpdater(MutableMapping):
             section[option] = value
 
     def remove_option(self, section, option):
-        """Remove an option."""
+        """Remove an option.
+
+        Args:
+            section (str): section name
+            option (str): option name
+
+        Returns:
+            bool: whether the option was actually removed
+        """
         try:
             section = self.__getitem__(section)
         except KeyError:
@@ -890,7 +941,14 @@ class ConfigUpdater(MutableMapping):
         return existed
 
     def remove_section(self, name):
-        """Remove a file section."""
+        """Remove a file section.
+
+        Args:
+            name: name of the section
+
+        Returns:
+            bool: whether the section was actually removed
+        """
         existed = self.has_section(name)
         if existed:
             idx = self._get_section_idx(name)
