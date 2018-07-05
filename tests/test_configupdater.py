@@ -234,6 +234,8 @@ def test_remove_option():
     parser.read_string(test1_cfg_in)
     del parser['default']['key']
     assert str(parser) == test1_cfg_out_removed
+    with pytest.raises(NoSectionError):
+        parser.remove_option('wrong_section', 'key')
 
 
 def test_set_option():
@@ -253,6 +255,8 @@ def test_set_option():
     parser.read_string(test1_cfg_in)
     parser['default']['key'].set_values(['param1', 'param2'])
     assert str(parser) == test1_cfg_out_values
+    with pytest.raises(NoSectionError):
+        parser.set('wrong_section', 'key', '1')
 
 
 def test_del_option():
@@ -406,6 +410,17 @@ key2 = 2
 """
 
 
+test6_cfg_out_new_sect = """
+[section0]
+key0 = 0
+[section2]
+key1 = 1
+key2 = 2
+[new_section]
+key0 = 0
+"""
+
+
 def test_add_before_after_section():
     parser = ConfigUpdater()
     parser.read_string(test6_cfg_in)
@@ -415,6 +430,17 @@ def test_add_before_after_section():
     parser['section1']['key1'] = 42
     parser['section2'].add_after.section('section3').space(1)
     assert str(parser) == test6_cfg_out
+    with pytest.raises(ValueError):
+        parser['section2'].add_before.section(parser['section2']['key1'])
+    parser.read_string(test6_cfg_in)
+    sect_parser = ConfigUpdater()
+    sect_parser.read_string(test6_cfg_in)
+    section = sect_parser['section0']
+    section.name = 'new_section'
+    parser['section2'].add_after.section(section)
+    assert str(parser) == test6_cfg_out_new_sect
+    with pytest.raises(DuplicateSectionError):
+        parser['section2'].add_after.section(section)
 
 
 test7_cfg_in = """
@@ -445,12 +471,36 @@ def test_add_section():
     parser.add_section('section2')
     parser['section2']['key1'] = 1
     assert str(parser) == test7_cfg_out
+    with pytest.raises(ValueError):
+        parser.add_section(parser['section2']['key1'])
+
+
+test6_cfg_out_overwritten = """
+[section0]
+key0 = 42
+[section2]
+key1 = 1
+key2 = 2
+"""
 
 
 def test_set_item_section():
     parser = ConfigUpdater()
-    with pytest.raises(NotImplementedError):
-        parser['section'] = 42
+    sect_parser = ConfigUpdater()
+    parser.read_string(test6_cfg_in)
+    with pytest.raises(ValueError):
+        parser['section'] = 'newsection'
+    sect_parser.read_string(test6_cfg_in)
+    section = sect_parser['section0']
+    parser['new_section'] = section
+    assert str(parser) == test6_cfg_out_new_sect
+    # test overwriting an existing section
+    parser.read_string(test6_cfg_in)
+    sect_parser.read_string(test6_cfg_in)
+    exist_section = sect_parser['section0']
+    exist_section['key0'] = 42
+    parser['section0'] = exist_section
+    assert str(parser) == test6_cfg_out_overwritten
 
 
 def test_no_space_around_delim():
@@ -458,7 +508,7 @@ def test_no_space_around_delim():
     parser.read_string(test7_cfg_in)
     parser['section0']['key0'] = 0
     del parser['section1']
-    str(parser) == "\n[section0]\nkey0=0\n\n"
+    assert str(parser) == "\n[section0]\nkey0=0\n\n"
 
 
 def test_constructor(setup_cfg_path):
@@ -536,3 +586,4 @@ def test_eq(setup_cfg_path):
     parser1.remove_section('metadata')
     assert parser1 != parser2
     assert parser1 != parser2['metadata']
+    assert parser2['metadata'] != parser2['metadata']['author']

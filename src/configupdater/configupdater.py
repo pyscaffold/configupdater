@@ -205,10 +205,17 @@ class BlockBuilder(object):
         self._container.insert(self._idx, comment)
         return self
 
-    def section(self, section_name):
+    def section(self, section):
         if self._block_type is not Section:
             raise ValueError("Sections can only be added at section level!")
-        section = Section(section_name, container=self._container)
+        if isinstance(section, str):
+            # create a new section
+            section = Section(section, container=self._container)
+        elif not isinstance(section, Section):
+            raise ValueError("Parameter must be a string or Section type!")
+        if section.name in [block.name for block in self._container
+                            if isinstance(block, Section)]:
+            raise DuplicateSectionError(section.name)
         self._container.insert(self._idx, section)
         return self
 
@@ -325,7 +332,8 @@ class Section(Block, MutableMapping):
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return self._structure == other._structure
+            return (self.name == other.name and
+                    self._structure == other._structure)
         else:
             return False
 
@@ -344,8 +352,13 @@ class Section(Block, MutableMapping):
 
     @property
     def name(self):
-        # The name of the section on a proxy is read-only.
         return self._name
+
+    @name.setter
+    def name(self, value):
+        self._name = str(value)
+        self._updated = True
+        return self
 
 
 class Option(Block):
@@ -377,7 +390,7 @@ class Option(Block):
             suffix = '' if str(self._value).startswith(os.linesep) else ' '
             delim = " {}{}".format(self._delimiter, suffix)
         else:
-            delim = ""
+            delim = self._delimiter
         return "{}{}{}{}".format(self._key, delim, self._value, os.linesep)
 
     def __repr__(self):
@@ -385,7 +398,7 @@ class Option(Block):
 
     @property
     def updated(self):
-        """Returns if the option was changed/updaed"""
+        """Returns if the option was changed/updated"""
         # if no lines were added, treat it as updated since we added it
         return self._updated or not self.lines
 
@@ -517,8 +530,7 @@ class ConfigUpdater(MutableMapping):
             # if isinstance(filename, os.PathLike):
             #    filename = os.fspath(filename)
             read_ok = [filename]
-            # ToDo: Resolve filepath here
-            self._filename = filename
+            self._filename = os.path.abspath(filename)
         return read_ok
 
     def read_file(self, f, source=None):
@@ -761,10 +773,16 @@ class ConfigUpdater(MutableMapping):
             raise KeyError(key)
 
     def __setitem__(self, key, value):
-        # must be implemented due to MutableMapping type
-        # ToDo: Allow setting an Section object here
-        raise NotImplementedError(
-            'Use add_section or manipulate the section directly!')
+        if not isinstance(value, Section):
+            raise ValueError("Value must be of type Section!")
+        if isinstance(key, str) and key in self:
+            idx = self._get_section_idx(key)
+            del self._structure[idx]
+            self._structure.insert(idx, value)
+        else:
+            # name the section by the key
+            value.name = key
+            self.add_section(value)
 
     def __delitem__(self, section):
         if not self.has_section(section):
@@ -788,15 +806,19 @@ class ConfigUpdater(MutableMapping):
         else:
             return False
 
-    def add_section(self, section_name):
+    def add_section(self, section):
         """Create a new section in the configuration.
 
         Raise DuplicateSectionError if a section by the specified name
         already exists. Raise ValueError if name is DEFAULT.
         """
-        if section_name in self.sections():
-            raise DuplicateSectionError(section_name)
-        section = Section(section_name, container=self._structure)
+        if section in self.sections():
+            raise DuplicateSectionError(section)
+        if isinstance(section, str):
+            # create a new section
+            section = Section(section, container=self._structure)
+        elif not isinstance(section, Section):
+            raise ValueError("Parameter must be a string or Section type!")
         self._structure.append(section)
 
     def has_section(self, section):
