@@ -18,7 +18,7 @@ before_script:
   - git config --global user.name "Your Name"
 script:
   - python setup.py test
-  - flake8
+  - flake8 src tests
 after_success:
   - if [[ "$COVERAGE" == "true" ]]; then coveralls || echo "failed"; fi
 after_script:
