@@ -428,7 +428,7 @@ def test_add_before_after_section():
         parser['section2']['key1'].add_before.section('section1')
     parser['section2'].add_before.section('section1')
     parser['section1']['key1'] = 42
-    parser['section2'].add_after.section('section3').space(1)
+    parser['section2'].add_after.space(1).section('section3')
     assert str(parser) == test6_cfg_out
     with pytest.raises(ValueError):
         parser['section2'].add_before.section(parser['section2']['key1'])
@@ -587,3 +587,21 @@ def test_eq(setup_cfg_path):
     assert parser1 != parser2
     assert parser1 != parser2['metadata']
     assert parser2['metadata'] != parser2['metadata']['author']
+
+
+test12_cfg_in = """
+[section]
+opiton = 42
+"""
+
+
+test12_cfg_out = """
+[section]
+option = 42
+"""
+
+
+def test_rename_option_key():
+    parser = ConfigUpdater()
+    parser.read_string(test12_cfg_in)
+    parser['section']['opiton'].key = 'option'

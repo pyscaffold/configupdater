@@ -3,6 +3,26 @@
 A configuration file consists of sections, lead by a "[section]" header,
 and followed by "name: value" entries, with continuations and such in
 the style of RFC 822.
+
+The basic idea of ConfigUpdater is that a configuration file consists of
+three kinds of building blocks: sections, comments and spaces for separation.
+A section itself consists of three kinds of blocks: options, comments and
+spaces. This gives us the corresponding data structures to describe a
+configuration file.
+
+A general block object contains the lines which were parsed and make up
+the block. If a block object was not changed then during writing the same
+lines that were parsed will be used to express the block. In case a block,
+e.g. an option, was changed, it is marked as `updated` and its values will
+be transformed into a corresponding string during an update of a
+configuration file.
+
+
+.. note::
+
+   ConfigUpdater was created by starting from Python's ConfigParser source
+   code and changing it according to my needs. Thus this source code
+   is subject to the PSF License in a way but I am not a lawyer.
 """
 
 import io
@@ -30,7 +50,7 @@ class NoConfigFileReadError(Error):
 
 
 # Used in parser getters to indicate the default behaviour when a specific
-# option is not found it to raise an exception. Created to enable `None' as
+# option is not found it to raise an exception. Created to enable 'None' as
 # a valid fallback value.
 _UNSET = object()
 
@@ -97,6 +117,7 @@ class BlockBuilder(object):
             text = "{}{}".format(text, os.linesep)
         comment._add_line(text)
         self._container.insert(self._idx, comment)
+        self._idx += 1
         return self
 
     def section(self, section):
@@ -119,6 +140,7 @@ class BlockBuilder(object):
                             if isinstance(block, Section)]:
             raise DuplicateSectionError(section.name)
         self._container.insert(self._idx, section)
+        self._idx += 1
         return self
 
     def space(self, newlines=1):
@@ -134,6 +156,7 @@ class BlockBuilder(object):
         for line in range(newlines):
             space._add_line(os.linesep)
         self._container.insert(self._idx, space)
+        self._idx += 1
         return self
 
     def option(self, key, value=None, **kwargs):
@@ -152,6 +175,7 @@ class BlockBuilder(object):
         option = Option(key, value, container=self._container, **kwargs)
         option.value = value
         self._container.insert(self._idx, option)
+        self._idx += 1
         return self
 
 
@@ -349,6 +373,12 @@ class Option(Block):
     def key(self):
         return self._key
 
+    @key.setter
+    def key(self, value):
+        self._join_multiline_value()
+        self._key = value
+        self._updated = True
+
     @property
     def value(self):
         self._join_multiline_value()
@@ -379,7 +409,7 @@ class Option(Block):
 
 
 class ConfigUpdater(MutableMapping):
-    """Parser like :class:`configparser.ConfigParser` but for updating
+    """Parser for updating configuration files.
 
     ConfigUpdater follows the API of ConfigParser with some differences:
       * inline comments are treated as part of a key's value,
@@ -500,10 +530,10 @@ class ConfigUpdater(MutableMapping):
     def read_file(self, f, source=None):
         """Like read() but the argument must be a file-like object.
 
-        The `f' argument must be iterable, returning one line at a time.
-        Optional second argument is the `source' specifying the name of the
-        file being read. If not given, it is taken from f.name. If `f' has no
-        `name' attribute, `<???>' is used.
+        The `f` argument must be iterable, returning one line at a time.
+        Optional second argument is the `source` specifying the name of the
+        file being read. If not given, it is taken from f.name. If `f` has no
+        `name` attribute, `<???>` is used.
 
         Args:
             f: file like object
@@ -576,8 +606,8 @@ class ConfigUpdater(MutableMapping):
         """Parse a sectioned configuration file.
 
         Each section in a configuration file contains a header, indicated by
-        a name in square brackets (`[]'), plus key/value options, indicated by
-        `name' and `value' delimited with a specific substring (`=' or `:' by
+        a name in square brackets (`[]`), plus key/value options, indicated by
+        `name` and `value` delimited with a specific substring (`=` or `:` by
         default).
 
         Values can span multiple lines, as long as they are indented deeper
@@ -585,7 +615,7 @@ class ConfigUpdater(MutableMapping):
         lines may be treated as parts of multiline values or ignored.
 
         Configuration files may include comments, prefixed by specific
-        characters (`#' and `;' by default). Comments may appear on their own
+        characters (`#` and `;` by default). Comments may appear on their own
         in an otherwise empty line or may be entered in lines holding values or
         section names.
 
