@@ -101,18 +101,19 @@ class BlockBuilder(object):
         self._block_type = block_type
         self._idx = idx
 
-    def comment(self, text):
+    def comment(self, text, comment_prefix='#'):
         """Creates a comment block
 
         Args:
             text (str): content of comment without \#
+            comment_prefix (str): character indicating start of comment
 
         Returns:
             self for chaining
         """
         comment = Comment(self._container)
-        if not text.startswith('#'):
-            text = "# {}".format(text)
+        if not text.startswith(comment_prefix):
+            text = "{} {}".format(comment_prefix, text)
         if not text.endswith(os.linesep):
             text = "{}{}".format(text, os.linesep)
         comment._add_line(text)
