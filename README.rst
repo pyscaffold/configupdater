@@ -1,7 +1,14 @@
 .. image:: https://travis-ci.org/pyscaffold/configupdater.svg?branch=master
     :target: https://travis-ci.org/pyscaffold/configupdater
-.. image:: https://coveralls.io/repos/pyscaffold/configupdater/badge.png
+.. image:: https://readthedocs.org/projects/pyscaffold/badge/?version=latest
+    :alt: ReadTheDocs
+    :target: https://configupdater.readthedocs.io/
+.. image:: https://img.shields.io/coveralls/github/pyscaffold/configupdater/master.svg
+    :alt: Coveralls
     :target: https://coveralls.io/r/pyscaffold/configupdater
+.. image:: https://img.shields.io/pypi/v/configupdater.svg
+    :alt: PyPI-Server
+    :target: https://pypi.org/project/configupdater/
 
 =============
 ConfigUpdater
