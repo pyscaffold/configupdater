@@ -279,6 +279,28 @@ def test_set_option():
         updater.set('wrong_section', 'key', '1')
 
 
+def test_section_set_option():
+    updater = ConfigUpdater()
+    updater.read_string(test1_cfg_in)
+    default_sec = updater['default']
+    default_sec.set('key', '1')
+    assert default_sec['key'].value == '1'
+    default_sec.set('key', 2)
+    assert default_sec['key'].value == 2
+    assert str(default_sec) == test1_cfg_out[1:]
+    default_sec.set('key')
+    assert default_sec['key'].value is None
+    assert str(default_sec) == test1_cfg_out_none[1:]
+    updater.read_string(test1_cfg_in)
+    default_sec = updater['default']
+    default_sec.set('other_key', 3)
+    assert str(default_sec) == test1_cfg_out_added[1:]
+    updater.read_string(test1_cfg_in)
+    default_sec = updater['default']
+    default_sec['key'].set_values(['param1', 'param2'])
+    assert str(default_sec) == test1_cfg_out_values[1:]
+
+
 def test_del_option():
     updater = ConfigUpdater()
     updater.read_string(test1_cfg_in)
@@ -607,6 +629,7 @@ def test_eq(setup_cfg_path):
     assert updater1 != updater2
     assert updater1 != updater2['metadata']
     assert updater2['metadata'] != updater2['metadata']['author']
+    assert not updater1.remove_section('metadata')
 
 
 test12_cfg_in = """
@@ -625,3 +648,19 @@ def test_rename_option_key():
     updater = ConfigUpdater()
     updater.read_string(test12_cfg_in)
     updater['section']['opiton'].key = 'option'
+
+
+test13_cfg_in = """
+[section]
+CAPITAL = 1
+"""
+
+
+def test_set_optionxform():
+    updater = ConfigUpdater()
+    updater.read_string(test13_cfg_in)
+    assert updater['section']['capital'].value == '1'
+    assert callable(updater.optionxform)
+    updater.optionxform = lambda x: x
+    updater.read_string(test13_cfg_in)
+    assert updater['section']['CAPITAL'].value == '1'
