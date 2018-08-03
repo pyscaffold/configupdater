@@ -30,7 +30,7 @@ to write the changed configuration file to another destination. Before actually 
 ConfigUpdater will automatically check that the updated configuration file is still valid by
 parsing it with the help of ConfigParser.
 
-Many of ConfigParser's methods still exists and it's best to look them up in the `module reference`_.
+Many of ConfigParser's methods still exists and it's best to look them up in the :doc:`module reference <api/configupdater>`.
 Let's look at some examples.
 
 Adding and removing options
@@ -153,3 +153,6 @@ This results in::
 
 For more examples on how the API of ConfigUpdater works it's best to take a look into the
 `unit tests`_ and read the references.
+
+
+.. _`unit tests`: https://github.com/pyscaffold/configupdater/blob/master/tests/test_configupdater.py
