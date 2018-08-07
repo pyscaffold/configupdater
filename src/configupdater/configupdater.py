@@ -55,16 +55,36 @@ class NoConfigFileReadError(Error):
 _UNSET = object()
 
 
+class Container(ABC):
+    """Abstract Mixture Class
+    """
+    def __init__(self, **kwargs):
+        self._structure = list()
+        super().__init__(**kwargs)
+
+    @property
+    def structure(self):
+        return self._structure
+
+    @property
+    def last_item(self):
+        if self._structure:
+            return self._structure[-1]
+        else:
+            return None
+
+
 class Block(ABC):
     """Abstract Block type holding lines
 
     Block objects hold original lines from the configuration file and hold
     a reference to a container wherein the object resides.
     """
-    def __init__(self, container=None):
+    def __init__(self, container=None, **kwargs):
         self._container = container
         self.lines = []
         self._updated = False
+        super().__init__(**kwargs)
 
     def __str__(self):
         return ''.join(self.lines)
@@ -78,8 +98,18 @@ class Block(ABC):
         else:
             return False
 
-    def _add_line(self, line):
+    def add_line(self, line):
+        """Add a line to the current block
+
+        Args:
+            line (str): one line to add
+        """
         self.lines.append(line)
+        return self
+
+    @property
+    def container(self):
+        return self._container
 
     @property
     def add_before(self):
@@ -116,7 +146,7 @@ class BlockBuilder(object):
             text = "{} {}".format(comment_prefix, text)
         if not text.endswith(os.linesep):
             text = "{}{}".format(text, os.linesep)
-        comment._add_line(text)
+        comment.add_line(text)
         self._container.insert(self._idx, comment)
         self._idx += 1
         return self
@@ -157,7 +187,7 @@ class BlockBuilder(object):
         """
         space = Space()
         for line in range(newlines):
-            space._add_line(os.linesep)
+            space.add_line(os.linesep)
         self._container.insert(self._idx, space)
         self._idx += 1
         return self
@@ -200,40 +230,58 @@ class Space(Block):
         return '<Space>'
 
 
-class Section(Block, MutableMapping):
+class Section(Block, Container, MutableMapping):
     """Section block holding options
 
     Attributes:
         name (str): name of the section
         updated (bool): indicates name change or a new section
     """
-    def __init__(self, name, container, optionxform):
+    def __init__(self, name, container, optionxform, **kwargs):
         self._name = name
         self._structure = list()
         self._updated = False
         self._optionxform = optionxform
-        super().__init__(container)
+        super().__init__(container=container, **kwargs)
 
-    # used when constructing the section
-    def _add_option(self, entry):
+    def add_option(self, entry):
+        """Add an Option object to the section
+
+        Used during initial parsing mainly
+
+        Args:
+            entry (Option): key value pair as Option object
+        """
         self._structure.append(entry)
+        return self
 
-    def _add_comment(self):
-        if not isinstance(self._curr_entry, Comment):
+    def add_comment(self, line):
+        """Add a Comment object to the section
+
+        Used during initial parsing mainly
+
+        Args:
+            line (str): one line in the comment
+        """
+        if not isinstance(self.last_item, Comment):
             comment = Comment(self._structure)
             self._structure.append(comment)
+        self.last_item.add_line(line)
+        return self
 
-    def _add_space(self):
-        if not isinstance(self._curr_entry, Space):
+    def add_space(self, line):
+        """Add a Space object to the section
+
+        Used during initial parsing mainly
+
+        Args:
+            line (str): one line that defines the space, maybe whitespaces
+        """
+        if not isinstance(self.last_item, Space):
             space = Space(self._structure)
             self._structure.append(space)
-
-    @property
-    def _curr_entry(self):
-        if self._structure:
-            return self._structure[-1]
-        else:
-            return None
+        self.last_item.add_line(line)
+        return self
 
     @property
     def optionxform(self):
@@ -375,8 +423,8 @@ class Option(Block):
         if line:
             self.lines.append(line)
 
-    def _add_line(self, line):
-        super()._add_line(line)
+    def add_line(self, line):
+        super().add_line(line)
         self._values.append(line.strip())
 
     def _join_multiline_value(self):
@@ -446,7 +494,7 @@ class Option(Block):
         self._value = separator.join(values)
 
 
-class ConfigUpdater(MutableMapping):
+class ConfigUpdater(Container, MutableMapping):
     """Parser for updating configuration files.
 
     ConfigUpdater follows the API of ConfigParser with some differences:
@@ -539,13 +587,7 @@ class ConfigUpdater(MutableMapping):
         # Options from ConfigParser that we need to set constantly
         self._empty_lines_in_values = False
         self._optionxform = lambda optionstr: optionstr.lower()
-
-    @property
-    def _curr_block(self):
-        if self._structure:
-            return self._structure[-1]
-        else:
-            return None
+        super().__init__()
 
     def _get_section_idx(self, name):
         idx = [i for i, entry in enumerate(self._structure)
@@ -616,41 +658,39 @@ class ConfigUpdater(MutableMapping):
         self._optionxform = func
 
     def _update_curr_block(self, block_type):
-        if not isinstance(self._curr_block, block_type):
+        if not isinstance(self.last_item, block_type):
             new_block = block_type(container=self._structure)
             self._structure.append(new_block)
 
     def _add_comment(self, line):
-        if isinstance(self._curr_block, Section):
-            self._curr_block._add_comment()
-            self._curr_block._curr_entry._add_line(line)
+        if isinstance(self.last_item, Section):
+            self.last_item.add_comment(line)
         else:
             self._update_curr_block(Comment)
-            self._curr_block._add_line(line)
+            self.last_item.add_line(line)
 
     def _add_section(self, sectname, line):
         new_section = Section(sectname,
                               container=self._structure,
                               optionxform=self.optionxform)
-        new_section._add_line(line)
+        new_section.add_line(line)
         self._structure.append(new_section)
 
     def _add_option(self, key, vi, value, line):
         entry = Option(
             key, value,
             delimiter=vi,
-            container=self._curr_block._structure,
+            container=self.last_item._structure,
             space_around_delimiters=self._space_around_delimiters,
             line=line)
-        self._curr_block._add_option(entry)
+        self.last_item.add_option(entry)
 
     def _add_space(self, line):
-        if isinstance(self._curr_block, Section):
-            self._curr_block._add_space()
-            self._curr_block._curr_entry._add_line(line)
+        if isinstance(self.last_item, Section):
+            self.last_item.add_space(line)
         else:
             self._update_curr_block(Space)
-            self._curr_block._add_line(line)
+            self.last_item.add_line(line)
 
     def _read(self, fp, fpname):
         """Parse a sectioned configuration file.
@@ -713,7 +753,7 @@ class ConfigUpdater(MutableMapping):
                             optname and
                             cursect[optname] is not None):
                         cursect[optname].append('')  # newlines added at join
-                        self._curr_block._curr_entry._add_line(line)  # HOOK
+                        self.last_item.last_item.add_line(line)  # HOOK
                 else:
                     # empty line marks end of value
                     indent_level = sys.maxsize
@@ -726,7 +766,7 @@ class ConfigUpdater(MutableMapping):
             if (cursect is not None and optname and
                     cur_indent_level > indent_level):
                 cursect[optname].append(value)
-                self._curr_block._curr_entry._add_line(line)  # HOOK
+                self.last_item.last_item.add_line(line)  # HOOK
             # a section header or option header?
             else:
                 indent_level = cur_indent_level
