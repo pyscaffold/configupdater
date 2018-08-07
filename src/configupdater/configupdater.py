@@ -115,20 +115,19 @@ class Block(ABC):
     def add_before(self):
         """Returns a builder inserting a new block before the current block"""
         idx = self._container.structure.index(self)
-        return BlockBuilder(self._container, self, idx)
+        return BlockBuilder(self._container, idx)
 
     @property
     def add_after(self):
         """Returns a builder inserting a new block after the current block"""
         idx = self._container.structure.index(self)
-        return BlockBuilder(self._container, self, idx+1)
+        return BlockBuilder(self._container, idx+1)
 
 
 class BlockBuilder(object):
     """Builder that injects blocks at a given index position."""
-    def __init__(self, container, ref_block, idx):
+    def __init__(self, container, idx):
         self._container = container
-        self._ref_block = ref_block
         self._idx = idx
 
     def comment(self, text, comment_prefix='#'):
@@ -160,7 +159,7 @@ class BlockBuilder(object):
         Returns:
             self for chaining
         """
-        if not isinstance(self._ref_block, Section):
+        if not isinstance(self._container, ConfigUpdater):
             raise ValueError("Sections can only be added at section level!")
         if isinstance(section, str):
             # create a new section
@@ -201,7 +200,7 @@ class BlockBuilder(object):
         Returns:
             self for chaining
         """
-        if not isinstance(self._ref_block, Option):
+        if not isinstance(self._container, Section):
             raise ValueError("Options can only be added inside a section!")
         option = Option(key, value, container=self._container, **kwargs)
         option.value = value
