@@ -2,6 +2,12 @@
 Changelog
 =========
 
+Version 0.3
+===========
+
+- Added a `insert_at` function at section level
+- Some internal code simplifications
+
 Version 0.2
 ===========
 
