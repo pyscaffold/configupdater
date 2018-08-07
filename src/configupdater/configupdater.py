@@ -164,9 +164,7 @@ class BlockBuilder(object):
             raise ValueError("Sections can only be added at section level!")
         if isinstance(section, str):
             # create a new section
-            section = Section(section,
-                              container=self._container,
-                              optionxform=self._ref_block.optionxform)
+            section = Section(section, container=self._container)
         elif not isinstance(section, Section):
             raise ValueError("Parameter must be a string or Section type!")
         if section.name in [block.name for block in self._container
@@ -237,11 +235,10 @@ class Section(Block, Container, MutableMapping):
         name (str): name of the section
         updated (bool): indicates name change or a new section
     """
-    def __init__(self, name, container, optionxform, **kwargs):
+    def __init__(self, name, container, **kwargs):
         self._name = name
         self._structure = list()
         self._updated = False
-        self._optionxform = optionxform
         super().__init__(container=container, **kwargs)
 
     def add_option(self, entry):
@@ -282,12 +279,6 @@ class Section(Block, Container, MutableMapping):
             self._structure.append(space)
         self.last_item.add_line(line)
         return self
-
-    @property
-    def optionxform(self):
-        """Reference to `optionxform` from ConfigUpdater
-        """
-        return self._optionxform
 
     def _get_option_idx(self, key):
         idx = [i for i, entry in enumerate(self._structure)
@@ -393,7 +384,7 @@ class Section(Block, Container, MutableMapping):
             option (str): option name
             value (str): value, default None
         """
-        option = self._optionxform(option)
+        option = self._container.optionxform(option)
         if option in self.options():
             self.__getitem__(option).value = value
         else:
@@ -586,7 +577,6 @@ class ConfigUpdater(Container, MutableMapping):
         self._allow_no_value = allow_no_value
         # Options from ConfigParser that we need to set constantly
         self._empty_lines_in_values = False
-        self._optionxform = lambda optionstr: optionstr.lower()
         super().__init__()
 
     def _get_section_idx(self, name):
@@ -637,25 +627,16 @@ class ConfigUpdater(Container, MutableMapping):
         sfile = io.StringIO(string)
         self.read_file(sfile, source)
 
-    @property
-    def optionxform(self):
-        """Returns Function to be applied on each option key for unification
-
-        Returned function has signature `optionstr: str -> str`
-
-        Returns:
-            callable: function with argument
-        """
-        return self._optionxform
-
-    @optionxform.setter
-    def optionxform(self, func):
-        """Sets a new unification function for option keys
+    def optionxform(self, optionstr):
+        """Converts an option key to lower case for unification
 
         Args:
-            func (callable): function has signature `optionstr: str -> str`
+             optionstr (str): key name
+
+        Returns:
+            str: unified option name
         """
-        self._optionxform = func
+        return optionstr.lower()
 
     def _update_curr_block(self, block_type):
         if not isinstance(self.last_item, block_type):
@@ -670,7 +651,7 @@ class ConfigUpdater(Container, MutableMapping):
             self.last_item.add_line(line)
 
     def _add_section(self, sectname, line):
-        new_section = Section(sectname, container=self, optionxform=self.optionxform)
+        new_section = Section(sectname, container=self)
         new_section.add_line(line)
         self._structure.append(new_section)
 
@@ -934,7 +915,7 @@ class ConfigUpdater(Container, MutableMapping):
             raise DuplicateSectionError(section)
         if isinstance(section, str):
             # create a new section
-            section = Section(section, container=self, optionxform=self.optionxform)
+            section = Section(section, container=self)
         elif not isinstance(section, Section):
             raise ValueError("Parameter must be a string or Section type!")
         self._structure.append(section)
