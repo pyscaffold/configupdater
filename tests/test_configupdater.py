@@ -664,3 +664,27 @@ def test_set_optionxform():
     updater.optionxform = lambda x: x
     updater.read_string(test13_cfg_in)
     assert updater['section']['CAPITAL'].value == '1'
+
+
+test14_cfg_in = """
+[section]
+option2 = 2
+option4 = 4
+"""
+
+test14_cfg_out = """
+[section]
+option0 = 0
+option1 = 1
+option2 = 2
+option3 = 3
+option4 = 4
+"""
+
+
+def test_insert_at():
+    updater = ConfigUpdater()
+    updater.read_string(test14_cfg_in)
+    updater['section'].insert_at(0).option("option0", 0).option("option1", 1)
+    updater['section'].insert_at(3).option("option3", 3)
+    assert str(updater) == test14_cfg_out

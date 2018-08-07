@@ -56,7 +56,7 @@ _UNSET = object()
 
 
 class Container(ABC):
-    """Abstract Mixture Class
+    """Abstract Mixin Class
     """
     def __init__(self, **kwargs):
         self._structure = list()
@@ -389,6 +389,14 @@ class Section(Block, Container, MutableMapping):
         else:
             self.__setitem__(option, value)
         return self
+
+    def insert_at(self, idx):
+        """Returns a builder inserting a new block at the given index
+
+        Args:
+            idx (int): index where to insert
+        """
+        return BlockBuilder(self, idx)
 
 
 class Option(Block):
