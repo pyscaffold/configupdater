@@ -114,13 +114,13 @@ class Block(ABC):
     @property
     def add_before(self):
         """Returns a builder inserting a new block before the current block"""
-        idx = self._container.index(self)
+        idx = self._container.structure.index(self)
         return BlockBuilder(self._container, self, idx)
 
     @property
     def add_after(self):
         """Returns a builder inserting a new block after the current block"""
-        idx = self._container.index(self)
+        idx = self._container.structure.index(self)
         return BlockBuilder(self._container, self, idx+1)
 
 
@@ -147,7 +147,7 @@ class BlockBuilder(object):
         if not text.endswith(os.linesep):
             text = "{}{}".format(text, os.linesep)
         comment.add_line(text)
-        self._container.insert(self._idx, comment)
+        self._container.structure.insert(self._idx, comment)
         self._idx += 1
         return self
 
@@ -172,7 +172,7 @@ class BlockBuilder(object):
         if section.name in [block.name for block in self._container
                             if isinstance(block, Section)]:
             raise DuplicateSectionError(section.name)
-        self._container.insert(self._idx, section)
+        self._container.structure.insert(self._idx, section)
         self._idx += 1
         return self
 
@@ -188,7 +188,7 @@ class BlockBuilder(object):
         space = Space()
         for line in range(newlines):
             space.add_line(os.linesep)
-        self._container.insert(self._idx, space)
+        self._container.structure.insert(self._idx, space)
         self._idx += 1
         return self
 
@@ -207,7 +207,7 @@ class BlockBuilder(object):
             raise ValueError("Options can only be added inside a section!")
         option = Option(key, value, container=self._container, **kwargs)
         option.value = value
-        self._container.insert(self._idx, option)
+        self._container.structure.insert(self._idx, option)
         self._idx += 1
         return self
 
@@ -215,7 +215,7 @@ class BlockBuilder(object):
 class Comment(Block):
     """Comment block"""
     def __init__(self, container=None):
-        super().__init__(container)
+        super().__init__(container=container)
 
     def __repr__(self):
         return '<Comment>'
@@ -224,7 +224,7 @@ class Comment(Block):
 class Space(Block):
     """Vertical space block of new lines"""
     def __init__(self, container=None):
-        super().__init__(container)
+        super().__init__(container=container)
 
     def __repr__(self):
         return '<Space>'
@@ -319,7 +319,7 @@ class Section(Block, Container, MutableMapping):
             option = self.__getitem__(key)
             option.value = value
         else:
-            option = Option(key, value, container=self._structure)
+            option = Option(key, value, container=self)
             option.value = value
             self._structure.append(option)
 
@@ -411,7 +411,7 @@ class Option(Block):
     """
     def __init__(self, key, value, container, delimiter='=',
                  space_around_delimiters=True, line=None):
-        super().__init__(container)
+        super().__init__(container=container)
         self._key = key
         self._values = [value]
         self._value_is_none = value is None
@@ -659,7 +659,7 @@ class ConfigUpdater(Container, MutableMapping):
 
     def _update_curr_block(self, block_type):
         if not isinstance(self.last_item, block_type):
-            new_block = block_type(container=self._structure)
+            new_block = block_type(container=self)
             self._structure.append(new_block)
 
     def _add_comment(self, line):
@@ -670,9 +670,7 @@ class ConfigUpdater(Container, MutableMapping):
             self.last_item.add_line(line)
 
     def _add_section(self, sectname, line):
-        new_section = Section(sectname,
-                              container=self._structure,
-                              optionxform=self.optionxform)
+        new_section = Section(sectname, container=self, optionxform=self.optionxform)
         new_section.add_line(line)
         self._structure.append(new_section)
 
@@ -680,7 +678,7 @@ class ConfigUpdater(Container, MutableMapping):
         entry = Option(
             key, value,
             delimiter=vi,
-            container=self.last_item._structure,
+            container=self.last_item,
             space_around_delimiters=self._space_around_delimiters,
             line=line)
         self.last_item.add_option(entry)
@@ -936,9 +934,7 @@ class ConfigUpdater(Container, MutableMapping):
             raise DuplicateSectionError(section)
         if isinstance(section, str):
             # create a new section
-            section = Section(section,
-                              container=self._structure,
-                              optionxform=self.optionxform)
+            section = Section(section, container=self, optionxform=self.optionxform)
         elif not isinstance(section, Section):
             raise ValueError("Parameter must be a string or Section type!")
         self._structure.append(section)
