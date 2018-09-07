@@ -44,6 +44,9 @@ if [[ "$COVERAGE" == "true" ]]; then
     pip install -U pytest-cov pytest-virtualenv coverage coveralls flake8 pre-commit
 fi
 
+# for all
+pip install tox
+pip install -U pip setuptools
 
 travis-cleanup() {
     printf "Cleaning up environments ... "  # printf avoids new lines

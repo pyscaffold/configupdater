@@ -1,12 +1,11 @@
-exclude: '^docs/conf.py'
+exclude: '^(src/pyscaffold/contrib|docs/conf.py|docs/gfx)'
 
 repos:
 - repo: git://github.com/pre-commit/pre-commit-hooks
   rev: v1.3.0
   hooks:
   - id: trailing-whitespace
-  # Somehow doesn't work on Mac for me, i.e. git lfs status --json fails
-  # - id: check-added-large-files
+  - id: check-added-large-files
   - id: check-ast
   - id: check-json
   - id: check-merge-conflict
