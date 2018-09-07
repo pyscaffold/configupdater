@@ -41,7 +41,7 @@ if [[ "$DISTRIB" == "conda" ]]; then
 fi
 
 if [[ "$COVERAGE" == "true" ]]; then
-    pip install coverage coveralls
+    pip install -U pytest-cov pytest-virtualenv coverage coveralls flake8 pre-commit
 fi
 
 
