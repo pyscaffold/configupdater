@@ -10,7 +10,33 @@
 
 set -e
 
-if [[ "$DISTRIB" == "conda" ]]; then
+if [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
+    brew outdated || brew update
+    brew install gnu-tar
+
+    if which pyenv > /dev/null; then
+        eval "$(pyenv init -)"
+    fi
+
+    case "${PYTHON_VERSION}" in
+        2.7)
+            curl -O https://bootstrap.pypa.io/get-pip.py
+            python get-pip.py --user
+            ;;
+        3.6)
+            brew outdated pyenv || brew upgrade pyenv
+            pyenv install 3.6.1
+            pyenv global 3.6.1
+            ;;
+    esac
+
+    pyenv rehash
+    python -m pip install --user virtualenv
+    virtualenv testenv
+    source testenv/bin/activate
+fi
+
+if [[ "${DISTRIB}" == "conda" ]]; then
     # Deactivate the travis-provided virtual environment and setup a
     # conda-based environment instead
     deactivate
@@ -36,7 +62,7 @@ if [[ "$DISTRIB" == "conda" ]]; then
     # Configure the conda environment and put it in the path using the
     # provided versions
     # (prefer local venv, since the miniconda folder is cached)
-    conda create -p ./.venv --yes python=${PYTHON_VERSION} pip
+    conda create -p ./.venv --yes python=${PYTHON_VERSION} pip virtualenv
     source activate ./.venv
 fi
 
