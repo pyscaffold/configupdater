@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 0.3.2
+=============
+
+- Added Github and documentation link into the project's metadata
+
 Version 0.3.1
 =============
 
