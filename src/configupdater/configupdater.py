@@ -134,7 +134,7 @@ class BlockBuilder(object):
         """Creates a comment block
 
         Args:
-            text (str): content of comment without \#
+            text (str): content of comment without #
             comment_prefix (str): character indicating start of comment
 
         Returns:

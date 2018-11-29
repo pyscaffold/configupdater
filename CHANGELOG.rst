@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 1.0
+===========
+
+- Fix: Use \n instead of os.linesep where appropriate
+
 Version 0.3.2
 =============
 
