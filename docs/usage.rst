@@ -13,7 +13,7 @@ Now we can simply do::
     from configupdater import ConfigUpdater
 
     updater = ConfigUpdater()
-    updater.read_file('setup.cfg')
+    updater.read('setup.cfg')
 
 which would read the file ``setup.cfg`` that is found in many projects.
 
