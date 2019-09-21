@@ -19,14 +19,15 @@ regular_task_template: &REGULAR_TASK_TEMPLATE
     # Luckily, pipx install tox inside its own unique virtualenv, which
     # resembles a very standard installation directory.
     # So here we install tox using pipx to avoid such problems
-    - python -m pip install --upgrade pip
+    - python -m pip install --upgrade pip setuptools
     - python -m pip install --user pipx
+    - python -m pip install --user certifi # needed for windows 10
     - pipx install tox
   prepare_script:
     - rm -rf .coverage junit-*.xml
     # ^  avoid information carried from one run to the other
   test_script:
-    - tox -e all -- -n 5 -rfEx --durations 10 --color yes
+    - tox -e all -- --color yes
 
 
 # Task definitions:
