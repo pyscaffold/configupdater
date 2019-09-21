@@ -130,8 +130,9 @@ windows_task:
     # resembles a very standard installation directory.
     # So here we install tox using pipx to avoid such problems
     - python -m pip install --upgrade pip setuptools
-    - python -m pip install --user pipx certifi
+    - python -m pip install --user pipx
     - python -m pip install pyscaffold
+    - pip install -U certifi
     - pipx install tox
   << : *REGULAR_TASK_TEMPLATE
   windows_clean_script:
