@@ -119,6 +119,7 @@ windows_task:
     folder: '%PIP_CACHE%'
   install_script:
     - choco config set cacheLocation %CHOCOLATEY_CACHE%
+    - choco install --no-progress -y python
   << : *REGULAR_TASK_TEMPLATE
   windows_clean_script:
     # CMD is not capable of globbing, so we have to use PowerShell
