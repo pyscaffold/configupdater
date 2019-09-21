@@ -10,6 +10,18 @@ env:
 
 # This template is used in all tasks
 regular_task_template: &REGULAR_TASK_TEMPLATE
+  tox_install_script: &tox-install
+    # Tox is a bit exigent about the name of the python executable,
+    # (for example, tox requires a `python3.7` to be available)
+    # and the shape of the directory python is installed to.
+    # Because of that, some errors might appear in some kinds of installation
+    # (e.g. OSX with homebrew).
+    # Luckily, pipx install tox inside its own unique virtualenv, which
+    # resembles a very standard installation directory.
+    # So here we install tox using pipx to avoid such problems
+    - python -m pip install --upgrade pip setuptools
+    - python -m pip install --user pipx
+    - pipx install tox
   prepare_script:
     - rm -rf .coverage junit-*.xml
     # ^  avoid information carried from one run to the other
@@ -63,18 +75,6 @@ linux_mac_task:
       install_script:
         - brew install python gnu-tar
         - brew cleanup
-  tox_install_script: &tox-install
-    # Tox is a bit exigent about the name of the python executable,
-    # (for example, tox requires a `python3.7` to be available)
-    # and the shape of the directory python is installed to.
-    # Because of that, some errors might appear in some kinds of installation
-    # (e.g. OSX with homebrew).
-    # Luckily, pipx install tox inside its own unique virtualenv, which
-    # resembles a very standard installation directory.
-    # So here we install tox using pipx to avoid such problems
-    - python -m pip install --upgrade pip setuptools
-    - python -m pip install --user pipx
-    - pipx install tox
   << : *REGULAR_TASK_TEMPLATE
 
 
@@ -119,21 +119,6 @@ windows_task:
     folder: '%PIP_CACHE%'
   install_script:
     - choco config set cacheLocation %CHOCOLATEY_CACHE%
-    - choco install --no-progress -y python
-  tox_install_script:
-    # Tox is a bit exigent about the name of the python executable,
-    # (for example, tox requires a `python3.7` to be available)
-    # and the shape of the directory python is installed to.
-    # Because of that, some errors might appear in some kinds of installation
-    # (e.g. OSX with homebrew).
-    # Luckily, pipx install tox inside its own unique virtualenv, which
-    # resembles a very standard installation directory.
-    # So here we install tox using pipx to avoid such problems
-    - python -m pip install --upgrade pip setuptools
-    - python -m pip install --user pipx
-    - python -m pip install pyscaffold
-    - pip install -U certifi
-    - pipx install tox
   << : *REGULAR_TASK_TEMPLATE
   windows_clean_script:
     # CMD is not capable of globbing, so we have to use PowerShell
