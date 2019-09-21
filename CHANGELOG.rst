@@ -2,6 +2,12 @@
 Changelog
 =========
 
+Version 1.0.1
+=============
+
+- More sane error message if ``read_file`` is misused
+- Also run unittests with Windows
+
 Version 1.0
 ===========
 

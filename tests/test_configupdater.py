@@ -688,3 +688,9 @@ def test_insert_at():
     updater['section'].insert_at(0).option("option0", 0).option("option1", 1)
     updater['section'].insert_at(3).option("option3", 3)
     assert str(updater) == test14_cfg_out
+
+
+def test_read_file_with_string():
+    updater = ConfigUpdater()
+    with pytest.raises(RuntimeError):
+        updater.read_file('path/to/file.cfg')

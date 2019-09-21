@@ -1,5 +1,6 @@
-.. image:: https://travis-ci.org/pyscaffold/configupdater.svg?branch=master
-    :target: https://travis-ci.org/pyscaffold/configupdater
+.. image:: https://api.cirrus-ci.com/github/pyscaffold/configupdater.svg?branch=master
+    :alt: Cirrus CI
+    :target: https://cirrus-ci.com/github/pyscaffold/configupdater
 .. image:: https://readthedocs.org/projects/pyscaffold/badge/?version=latest
     :alt: ReadTheDocs
     :target: https://configupdater.readthedocs.io/
