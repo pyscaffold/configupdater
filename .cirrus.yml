@@ -120,6 +120,8 @@ windows_task:
   install_script:
     - choco config set cacheLocation %CHOCOLATEY_CACHE%
     - choco install --no-progress -y python
+    - python -m pip install certifi pyscaffold
+    - python -m pip install --user certifi pyscaffold
   << : *REGULAR_TASK_TEMPLATE
   windows_clean_script:
     # CMD is not capable of globbing, so we have to use PowerShell
@@ -137,14 +139,15 @@ coverage_task:
     - test (OS X)
     - test (Windows)
   install_script: *debian-install
-  tox_install_script: *tox-install
   pip_install_script:
     pip install --user --upgrade
         pytest pytest-cov pytest-virtualenv
         coverage coveralls
         flake8 pre-commit
-  test_script:
+  precommit_script:
     - pre-commit install
     - pre-commit run --all-files
+  << : *REGULAR_TASK_TEMPLATE
+  coverage_script:
     - coverage combine .coverage
     - coveralls
