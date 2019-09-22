@@ -122,8 +122,8 @@ windows_task:
     - choco config set cacheLocation %CHOCOLATEY_CACHE%
     - choco install --no-progress -y python
   tox_install_script:
-    - python -m pip install --upgrade pip setuptools
-    - python -m pip install certifi tox
+    - python -m pip install --upgrade --user pip setuptools
+    - python -m pip install --user certifi tox
   prepare_script:
     - rm -rf .coverage junit-*.xml
     # ^  avoid information carried from one run to the other
