@@ -1,5 +1,5 @@
 .. image:: https://api.cirrus-ci.com/github/pyscaffold/configupdater.svg?branch=master
-    :alt: Cirrus CI
+    :alt: Built Status
     :target: https://cirrus-ci.com/github/pyscaffold/configupdater
 .. image:: https://readthedocs.org/projects/pyscaffold/badge/?version=latest
     :alt: ReadTheDocs
