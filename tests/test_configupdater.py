@@ -694,3 +694,37 @@ def test_read_file_with_string():
     updater = ConfigUpdater()
     with pytest.raises(RuntimeError):
         updater.read_file('path/to/file.cfg')
+
+
+test15_cfg_in = """
+[section]
+OptionA = 2
+"""
+
+
+def test_read_mixed_case_options():
+    updater = ConfigUpdater()
+    updater.read_string(test15_cfg_in)
+    assert updater.has_option('section', 'OptionA')
+    assert updater.has_option('section', 'optiona')
+    assert updater['section']['OptionA'].value == '2'
+    assert updater['section']['optiona'].value == '2'
+
+
+test16_cfg_in = """
+[section]
+OptionA = 2
+"""
+
+
+test16_cfg_out = """
+[section]
+OptionA = 4
+"""
+
+
+def test_update_mixed_case_options():
+    updater = ConfigUpdater()
+    updater.read_string(test16_cfg_in)
+    updater['section']['optiona'].value = '4'
+    assert str(updater) == test16_cfg_out

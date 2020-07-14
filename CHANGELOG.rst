@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 1.0.2
+=============
+
+- Fixed issue #7 with mixed-case options
+
 Version 1.0.1
 =============
 

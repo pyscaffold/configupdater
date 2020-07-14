@@ -300,6 +300,7 @@ class Section(Block, Container, MutableMapping):
         return '<Section: {}>'.format(self.name)
 
     def __getitem__(self, key):
+        key = self._container.optionxform(key)
         if key not in self.options():
             raise KeyError(key)
         return self._structure[self._get_option_idx(key=key)]
@@ -455,7 +456,7 @@ class Option(Block):
 
     @property
     def key(self):
-        return self._key
+        return self._container._container.optionxform(self._key)
 
     @key.setter
     def key(self, value):
@@ -785,7 +786,9 @@ class ConfigUpdater(Container, MutableMapping):
                         optname, vi, optval = mo.group('option', 'vi', 'value')
                         if not optname:
                             e = self._handle_error(e, fpname, lineno, line)
-                        optname = self.optionxform(optname.rstrip())
+                        # optname = self.optionxform(optname.rstrip())
+                        # keep original case of key
+                        optname = optname.rstrip()
                         if (self._strict and
                                 (sectname, optname) in elements_added):
                             raise DuplicateOptionError(sectname, optname,
