@@ -94,7 +94,7 @@ class Block(ABC):
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return self.lines == other.lines
+            return str(self) == str(other)
         else:
             return False
 

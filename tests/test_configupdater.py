@@ -720,6 +720,7 @@ OptionA = 2
 test16_cfg_out = """
 [section]
 OptionA = 4
+OptionB = 6
 """
 
 
@@ -727,4 +728,29 @@ def test_update_mixed_case_options():
     updater = ConfigUpdater()
     updater.read_string(test16_cfg_in)
     updater['section']['optiona'].value = '4'
+    updater['section']['OptionB'] = '6'
     assert str(updater) == test16_cfg_out
+
+
+test17_cfg_in = """
+[section]
+key1 = 1
+"""
+
+
+test17_cfg_out = """
+[section]
+key0 = 0
+key1 = 1
+key2 = 2
+key3 = 3
+"""
+
+
+def test_add_before_then_add_after_option():
+    updater = ConfigUpdater()
+    updater.read_string(test17_cfg_in)
+    updater['section']['key1'].add_before.option('key0', '0')
+    updater['section']['key1'].add_after.option('key2', '2')
+    updater['section']['key2'].add_after.option('key3', '3')
+    assert str(updater) == test17_cfg_out
