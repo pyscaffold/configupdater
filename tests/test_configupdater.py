@@ -754,3 +754,18 @@ def test_add_before_then_add_after_option():
     updater['section']['key1'].add_after.option('key2', '2')
     updater['section']['key2'].add_after.option('key3', '3')
     assert str(updater) == test17_cfg_out
+
+
+test18_cfg_in = """
+[section]
+Key0 = 0
+"""
+
+
+# def test_assure_no_duplicate_options():
+#     updater = ConfigUpdater()
+#     updater.read_string(test18_cfg_in)
+#     updater['section']['KEY0'].value = '1'
+#     updater['section']['key0'].value = '2'
+#     updater['section']['keY0'] = '2'
+#     assert str(updater) == test18_cfg_in
