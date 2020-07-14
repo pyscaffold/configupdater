@@ -7,6 +7,7 @@ Version 1.0.2
 
 - Fixed issue #7 with mixed-case options
 - Fixed issue #7 with add_before/add_after problem
+- Fixed issue #7 with wrong duplicate mixed-case entries
 
 Version 1.0.1
 =============

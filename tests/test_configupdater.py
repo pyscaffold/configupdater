@@ -761,11 +761,15 @@ test18_cfg_in = """
 Key0 = 0
 """
 
+test18_cfg_out = """
+[section]
+Key0 = 2
+"""
 
-# def test_assure_no_duplicate_options():
-#     updater = ConfigUpdater()
-#     updater.read_string(test18_cfg_in)
-#     updater['section']['KEY0'].value = '1'
-#     updater['section']['key0'].value = '2'
-#     updater['section']['keY0'] = '2'
-#     assert str(updater) == test18_cfg_in
+
+def test_assure_no_duplicate_options():
+    updater = ConfigUpdater()
+    updater.read_string(test18_cfg_in)
+    updater['section']['KEY0'].value = '1'
+    updater['section']['keY0'] = '2'
+    assert str(updater) == test18_cfg_out

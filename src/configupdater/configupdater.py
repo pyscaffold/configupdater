@@ -306,7 +306,7 @@ class Section(Block, Container, MutableMapping):
         return self._structure[self._get_option_idx(key=key)]
 
     def __setitem__(self, key, value):
-        if key in self:
+        if self._container.optionxform(key) in self:
             option = self.__getitem__(key)
             option.value = value
         else:
