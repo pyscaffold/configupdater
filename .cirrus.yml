@@ -9,6 +9,19 @@ env:
   LC_ALL: C.UTF-8
   LANG: C.UTF-8
 
+
+# use custom cloning since otherwise git tags are missing
+clone_script: &clone_script |
+  if [ -z "$CIRRUS_PR" ]; then
+    git clone --recursive --branch=$CIRRUS_BRANCH https://x-access-token:${CIRRUS_REPO_CLONE_TOKEN}@github.com/${CIRRUS_REPO_FULL_NAME}.git $CIRRUS_WORKING_DIR
+    git reset --hard $CIRRUS_CHANGE_IN_REPO
+  else
+    git clone --recursive https://x-access-token:${CIRRUS_REPO_CLONE_TOKEN}@github.com/${CIRRUS_REPO_FULL_NAME}.git $CIRRUS_WORKING_DIR
+    git fetch origin pull/$CIRRUS_PR/head:pull/$CIRRUS_PR
+    git reset --hard $CIRRUS_CHANGE_IN_REPO
+  fi
+
+
 # This template is used in all tasks
 regular_task_template: &REGULAR_TASK_TEMPLATE
   tox_install_script:
@@ -27,21 +40,12 @@ regular_task_template: &REGULAR_TASK_TEMPLATE
     - rm -rf .coverage junit-*.xml
     # ^  avoid information carried from one run to the other
   test_script:
-    - tox -e all -- --color yes
+    - tox -e all -- -rfEx --color yes
 
 
 # Task definitions:
 linux_mac_task:
-  # use custom cloning since otherwise git tags are missing
-  clone_script: |
-    if [ -z "$CIRRUS_PR" ]; then
-      git clone --recursive --branch=$CIRRUS_BRANCH https://x-access-token:${CIRRUS_REPO_CLONE_TOKEN}@github.com/${CIRRUS_REPO_FULL_NAME}.git $CIRRUS_WORKING_DIR
-      git reset --hard $CIRRUS_CHANGE_IN_REPO
-    else
-      git clone --recursive https://x-access-token:${CIRRUS_REPO_CLONE_TOKEN}@github.com/${CIRRUS_REPO_FULL_NAME}.git $CIRRUS_WORKING_DIR
-      git fetch origin pull/$CIRRUS_PR/head:pull/$CIRRUS_PR
-      git reset --hard $CIRRUS_CHANGE_IN_REPO
-    fi
+  clone_script: *clone_script
   matrix:
     - name: test (Linux - 3.6)
       container: {image: "python:3.6-buster"}
@@ -144,7 +148,10 @@ windows_task:
 
 coverage_task:
   name: coverage (Linux)
+  clone_script: *clone_script
   container: {image: "python:3.6-buster"}
+  env:
+    COVERAGE: yes
   depends_on:
     - test (Linux - 3.6)
     - test (Linux - 3.7)
@@ -161,7 +168,7 @@ coverage_task:
   precommit_script:
     - pre-commit install
     - pre-commit run --all-files
-  << : *REGULAR_TASK_TEMPLATE
+  <<: *REGULAR_TASK_TEMPLATE
   coverage_script:
-    - coverage combine .coverage
+    # - coverage combine .coverage
     - coveralls
