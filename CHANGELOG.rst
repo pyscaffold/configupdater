@@ -2,12 +2,14 @@
 Changelog
 =========
 
-Version 1.0.2
-=============
+Version 1.1
+===========
 
+- Validate format on write by default (can be deactivated)
 - Fixed issue #7 with mixed-case options
 - Fixed issue #7 with add_before/add_after problem
 - Fixed issue #7 with wrong duplicate mixed-case entries
+- Fixed issue #7 with duplicate options after add_after/before
 
 Version 1.0.1
 =============

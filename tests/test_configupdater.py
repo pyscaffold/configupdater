@@ -773,3 +773,19 @@ def test_assure_no_duplicate_options():
     updater['section']['KEY0'].value = '1'
     updater['section']['keY0'] = '2'
     assert str(updater) == test18_cfg_out
+
+
+test19_cfg_in = """
+[section]
+Key0 = 0
+"""
+
+
+def test_no_duplicate_blocks_with_blockbuilder():
+    updater = ConfigUpdater()
+    updater.read_string(test19_cfg_in)
+    with pytest.raises(DuplicateOptionError):
+        updater['section']['Key0'].add_after.option('key0', '1')
+    with pytest.raises(DuplicateSectionError):
+        updater['section'].add_after.section('section')
+    assert str(updater) == test19_cfg_in

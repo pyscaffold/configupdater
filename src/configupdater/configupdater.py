@@ -203,6 +203,8 @@ class BlockBuilder(object):
         if not isinstance(self._container, Section):
             raise ValueError("Options can only be added inside a section!")
         option = Option(key, value, container=self._container, **kwargs)
+        if option.key in self._container.options():
+            raise DuplicateOptionError(self._container.name, option.key)
         option.value = value
         self._container.structure.insert(self._idx, option)
         self._idx += 1
@@ -819,21 +821,29 @@ class ConfigUpdater(Container, MutableMapping):
         exc.append(lineno, repr(line))
         return exc
 
-    def write(self, fp):
+    def write(self, fp, validate=True):
         """Write an .ini-format representation of the configuration state.
 
         Args:
             fp (file-like object): open file handle
+            validate (Boolean): validate format before writing
         """
+        if validate:
+            self.validate_format()
         fp.write(str(self))
 
-    def update_file(self):
+    def update_file(self, validate=True):
         """Update the read-in configuration file.
+
+        Args:
+            validate (Boolean): validate format before writing
         """
         if self._filename is None:
             raise NoConfigFileReadError()
+        if validate:  # validate BEFORE opening the file!
+            self.validate_format()
         with open(self._filename, 'w') as fb:
-            self.write(fb)
+            self.write(fb, validate=False)
 
     def validate_format(self, **kwargs):
         """Call ConfigParser to validate config
