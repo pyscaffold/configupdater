@@ -394,11 +394,11 @@ class Section(Block, Container, MutableMapping):
         return self
 
     def items(self):
-        """Return a list of (name, value) tuples for each option in
+        """Return a list of (name, option) tuples for each option in
         this section.
 
         Returns:
-            list: list of :class:`Section` or :class:`Option` objects
+            list: list of (name, :class:`Option`) tuples
         """
         return [(opt.key, opt) for opt in self.option_blocks()]
 
