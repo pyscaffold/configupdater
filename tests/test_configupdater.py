@@ -91,6 +91,23 @@ def test_iter_section(setup_cfg_path):
     assert len([block for block in updater]) == 14
 
 
+def test_iter_items_section(setup_cfg_path):
+    updater = ConfigUpdater()
+    updater.read(setup_cfg_path)
+
+    result = list(k for k, v in updater['metadata'].items())
+    assert result == [
+        'name',
+        'description',
+        'author',
+        'author-email',
+        'license',
+        'url',
+        'long-description',
+        'platforms',
+        'classifiers']
+
+
 def test_get_section(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)

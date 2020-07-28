@@ -393,6 +393,15 @@ class Section(Block, Container, MutableMapping):
             self.__setitem__(option, value)
         return self
 
+    def items(self):
+        """Return a list of (name, value) tuples for each option in
+        this section.
+
+        Returns:
+            list: list of :class:`Section` or :class:`Option` objects
+        """
+        return [(opt.key, opt) for opt in self.option_blocks()]
+
     def insert_at(self, idx):
         """Returns a builder inserting a new block at the given index
 
