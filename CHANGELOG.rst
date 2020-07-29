@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 1.1.1
+=============
+
+- Fix iterating over the items() view of a section breaks #8
+
 Version 1.1
 ===========
 
