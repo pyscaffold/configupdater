@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 1.1.2
+=============
+
+- Fix wrongly modifying input in Option.set_value #11
+
 Version 1.1.1
 =============
 
