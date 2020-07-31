@@ -491,15 +491,16 @@ class Option(Block):
         """Sets the value to a given list of options, e.g. multi-line values
 
         Args:
-            values (list): list of values
+            values (iterable): sequence of values
             separator (str): separator for values, default: line separator
             indent (str): indentation depth in case of line separator
         """
+        values = list(values).copy()
         self._updated = True
         self._multiline_value_joined = True
         self._values = values
         if separator == '\n':
-            values.insert(0, '')
+            values = [''] + values
             separator = separator + indent
         self._value = separator.join(values)
 

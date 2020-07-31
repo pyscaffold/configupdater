@@ -290,8 +290,10 @@ def test_set_option():
     updater.set('default', 'other_key', 3)
     assert str(updater) == test1_cfg_out_added
     updater.read_string(test1_cfg_in)
-    updater['default']['key'].set_values(['param1', 'param2'])
+    values = ['param1', 'param2']
+    updater['default']['key'].set_values(values)
     assert str(updater) == test1_cfg_out_values
+    assert values == ['param1', 'param2']  # non destructive operation
     with pytest.raises(NoSectionError):
         updater.set('wrong_section', 'key', '1')
 
@@ -314,8 +316,10 @@ def test_section_set_option():
     assert str(default_sec) == test1_cfg_out_added[1:]
     updater.read_string(test1_cfg_in)
     default_sec = updater['default']
-    default_sec['key'].set_values(['param1', 'param2'])
+    values = ['param1', 'param2']
+    default_sec['key'].set_values(values)
     assert str(default_sec) == test1_cfg_out_values[1:]
+    assert values == ['param1', 'param2']  # non destructive operation
 
 
 def test_del_option():
