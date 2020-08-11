@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 1.1.3
+=============
+
+- Added fallback option to ConfigUpdater.get reflecting ConfigParser
+
 Version 1.1.2
 =============
 
