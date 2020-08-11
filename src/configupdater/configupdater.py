@@ -975,12 +975,14 @@ class ConfigUpdater(Container, MutableMapping):
             raise NoSectionError(section) from None
         return self.__getitem__(section).options()
 
-    def get(self, section, option):
+    def get(self, section, option, fallback=_UNSET):
         """Gets an option value for a given section.
 
         Args:
             section (str): section name
             option (str): option name
+            fallback: if the key is not found and fallback is provided, it will
+                be returned. ``None`` is a valid fallback value.
 
         Returns:
             :class:`Option`: Option object holding key/value pair
@@ -991,11 +993,11 @@ class ConfigUpdater(Container, MutableMapping):
         section = self.__getitem__(section)
         option = self.optionxform(option)
         try:
-            value = section[option]
+            return section[option]
         except KeyError:
-            raise NoOptionError(option, section)
-
-        return value
+            if fallback is _UNSET:
+                raise NoOptionError(option, section)
+            return fallback
 
     def items(self, section=_UNSET):
         """Return a list of (name, value) tuples for options or sections.

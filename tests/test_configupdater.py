@@ -206,6 +206,7 @@ def test_get_method(setup_cfg_path):
         updater.get('non_existent_section', 'license')
     with pytest.raises(NoOptionError):
         updater.get('metadata', 'wrong_key')
+    assert updater.get('metadata', 'wrong_key', fallback=None) is None
 
 
 test1_cfg_in = """
