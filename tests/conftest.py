@@ -19,7 +19,7 @@ import pytest
 def setup_cfg_path():
     filepath = inspect.getfile(inspect.currentframe())
     filedir = os.path.dirname(os.path.abspath(filepath))
-    return os.path.join(filedir, 'test_setup.cfg')
+    return os.path.join(filedir, "test_setup.cfg")
 
 
 @pytest.fixture

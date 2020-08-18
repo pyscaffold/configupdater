@@ -3,9 +3,16 @@ from configparser import ConfigParser
 from io import StringIO
 
 import pytest
-from configupdater import (ConfigUpdater, DuplicateOptionError,
-                           MissingSectionHeaderError, NoConfigFileReadError,
-                           NoOptionError, NoSectionError, ParsingError)
+
+from configupdater import (
+    ConfigUpdater,
+    DuplicateOptionError,
+    MissingSectionHeaderError,
+    NoConfigFileReadError,
+    NoOptionError,
+    NoSectionError,
+    ParsingError,
+)
 from configupdater.configupdater import DuplicateSectionError, Option, Section
 
 
@@ -57,23 +64,33 @@ def test_str(setup_cfg_path, setup_cfg):
 def test_has_section(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
-    assert updater.has_section('metadata')
-    assert not updater.has_section('nonexistent_section')
+    assert updater.has_section("metadata")
+    assert not updater.has_section("nonexistent_section")
 
 
 def test_contains_section(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
-    assert 'metadata' in updater
+    assert "metadata" in updater
 
 
 def test_sections(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
-    exp_sections = ['metadata', 'options', 'options.packages.find',
-                    'options.extras_require', 'test', 'tool:pytest',
-                    'aliases', 'bdist_wheel', 'build_sphinx',
-                    'devpi:upload', 'flake8', 'pyscaffold']
+    exp_sections = [
+        "metadata",
+        "options",
+        "options.packages.find",
+        "options.extras_require",
+        "test",
+        "tool:pytest",
+        "aliases",
+        "bdist_wheel",
+        "build_sphinx",
+        "devpi:upload",
+        "flake8",
+        "pyscaffold",
+    ]
     assert updater.sections() == exp_sections
 
 
@@ -95,28 +112,29 @@ def test_iter_items_section(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
 
-    result = list(k for k, v in updater['metadata'].items())
+    result = list(k for k, v in updater["metadata"].items())
     assert result == [
-        'name',
-        'description',
-        'author',
-        'author-email',
-        'license',
-        'url',
-        'long-description',
-        'platforms',
-        'classifiers']
+        "name",
+        "description",
+        "author",
+        "author-email",
+        "license",
+        "url",
+        "long-description",
+        "platforms",
+        "classifiers",
+    ]
 
 
 def test_get_section(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
-    section = updater['metadata']
+    section = updater["metadata"]
     assert section._structure
     with pytest.raises(KeyError):
-        updater['non_existent_section']
+        updater["non_existent_section"]
     with pytest.raises(ValueError):
-        updater._get_section_idx('non_existent_section')
+        updater._get_section_idx("non_existent_section")
 
 
 def test_section_to_dict(setup_cfg_path):
@@ -124,31 +142,31 @@ def test_section_to_dict(setup_cfg_path):
     updater.read(setup_cfg_path)
     parser = ConfigParser()
     parser.read(setup_cfg_path)
-    updater_dict = updater['metadata'].to_dict()
-    parser_dict = dict(parser['metadata'])
+    updater_dict = updater["metadata"].to_dict()
+    parser_dict = dict(parser["metadata"])
     assert updater_dict == parser_dict
 
 
 def test_has_option(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
-    assert updater.has_option('metadata', 'author')
-    assert not updater.has_option('metadata', 'coauthor')
-    assert not updater.has_option('nonexistent_section', 'key')
+    assert updater.has_option("metadata", "author")
+    assert not updater.has_option("metadata", "coauthor")
+    assert not updater.has_option("nonexistent_section", "key")
 
 
 def test_contains_options(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
-    section = updater['metadata']
-    assert 'author' in section
-    assert 'wrong_option' not in section
+    section = updater["metadata"]
+    assert "author" in section
+    assert "wrong_option" not in section
 
 
 def test_len_section(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
-    section = updater['metadata']
+    section = updater["metadata"]
     # we test ne number of entries, not options
     assert len(section) == 12
 
@@ -156,7 +174,7 @@ def test_len_section(setup_cfg_path):
 def test_len_option(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
-    option = updater['metadata']['classifiers']
+    option = updater["metadata"]["classifiers"]
     # we test ne number of lines
     assert len(option) == 3
 
@@ -164,7 +182,7 @@ def test_len_option(setup_cfg_path):
 def test_iter_option(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
-    section = updater['metadata']
+    section = updater["metadata"]
     # we test ne number of entries, not options
     assert len([entry for entry in section]) == 12
 
@@ -172,8 +190,8 @@ def test_iter_option(setup_cfg_path):
 def test_get_options(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
-    options = updater.options('options.packages.find')
-    exp_options = ['where', 'exclude']
+    options = updater.options("options.packages.find")
+    exp_options = ["where", "exclude"]
     assert options == exp_options
     with pytest.raises(NoSectionError):
         updater.options("non_existent_section")
@@ -184,15 +202,24 @@ def test_items(setup_cfg_path):
     updater.read(setup_cfg_path)
     sect_names, sects = zip(*updater.items())
     exp_sect_namess = [
-        'metadata', 'options', 'options.packages.find',
-        'options.extras_require', 'test', 'tool:pytest',
-        'aliases', 'bdist_wheel', 'build_sphinx',
-        'devpi:upload', 'flake8', 'pyscaffold']
+        "metadata",
+        "options",
+        "options.packages.find",
+        "options.extras_require",
+        "test",
+        "tool:pytest",
+        "aliases",
+        "bdist_wheel",
+        "build_sphinx",
+        "devpi:upload",
+        "flake8",
+        "pyscaffold",
+    ]
     assert list(sect_names) == exp_sect_namess
     assert all([isinstance(s, Section) for s in sects])
 
-    opt_names, opts = zip(*updater.items('devpi:upload'))
-    exp_opt_names = ['no-vcs', 'formats']
+    opt_names, opts = zip(*updater.items("devpi:upload"))
+    exp_opt_names = ["no-vcs", "formats"]
     assert list(opt_names) == exp_opt_names
     assert all([isinstance(o, Option) for o in opts])
 
@@ -200,13 +227,13 @@ def test_items(setup_cfg_path):
 def test_get_method(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
-    value = updater.get('metadata', 'license').value
-    assert value == 'mit'
+    value = updater.get("metadata", "license").value
+    assert value == "mit"
     with pytest.raises(NoSectionError):
-        updater.get('non_existent_section', 'license')
+        updater.get("non_existent_section", "license")
     with pytest.raises(NoOptionError):
-        updater.get('metadata', 'wrong_key')
-    assert updater.get('metadata', 'wrong_key', fallback=None) is None
+        updater.get("metadata", "wrong_key")
+    assert updater.get("metadata", "wrong_key", fallback=None) is None
 
 
 test1_cfg_in = """
@@ -245,91 +272,91 @@ key =
 def test_get_option():
     updater = ConfigUpdater()
     updater.read_string(test1_cfg_in)
-    option = updater['default']['key']
-    assert option.value == '1'
+    option = updater["default"]["key"]
+    assert option.value == "1"
     with pytest.raises(KeyError):
-        updater['default']['wrong_key']
+        updater["default"]["wrong_key"]
 
 
 def test_value_change():
     updater = ConfigUpdater()
     updater.read_string(test1_cfg_in)
-    assert updater['default']['key'].value == '1'
-    updater['default']['key'].value = '2'
+    assert updater["default"]["key"].value == "1"
+    updater["default"]["key"].value = "2"
     assert str(updater) == test1_cfg_out
     # try another way
-    section = updater['default']
-    section['key'] = '1'
+    section = updater["default"]
+    section["key"] = "1"
     assert str(updater) == test1_cfg_in
 
 
 def test_remove_option():
     updater = ConfigUpdater()
     updater.read_string(test1_cfg_in)
-    updater.remove_option('default', 'key')
+    updater.remove_option("default", "key")
     assert str(updater) == test1_cfg_out_removed
-    updater.remove_option('default', 'non_existent_key')
+    updater.remove_option("default", "non_existent_key")
     updater.read_string(test1_cfg_in)
-    del updater['default']['key']
+    del updater["default"]["key"]
     assert str(updater) == test1_cfg_out_removed
     with pytest.raises(NoSectionError):
-        updater.remove_option('wrong_section', 'key')
+        updater.remove_option("wrong_section", "key")
 
 
 def test_set_option():
     updater = ConfigUpdater()
     updater.read_string(test1_cfg_in)
-    updater.set('default', 'key', '1')
-    assert updater['default']['key'].value == '1'
-    updater.set('default', 'key', 2)
-    assert updater['default']['key'].value == 2
+    updater.set("default", "key", "1")
+    assert updater["default"]["key"].value == "1"
+    updater.set("default", "key", 2)
+    assert updater["default"]["key"].value == 2
     assert str(updater) == test1_cfg_out
-    updater.set('default', 'key')
-    assert updater['default']['key'].value is None
+    updater.set("default", "key")
+    assert updater["default"]["key"].value is None
     assert str(updater) == test1_cfg_out_none
     updater.read_string(test1_cfg_in)
-    updater.set('default', 'other_key', 3)
+    updater.set("default", "other_key", 3)
     assert str(updater) == test1_cfg_out_added
     updater.read_string(test1_cfg_in)
-    values = ['param1', 'param2']
-    updater['default']['key'].set_values(values)
+    values = ["param1", "param2"]
+    updater["default"]["key"].set_values(values)
     assert str(updater) == test1_cfg_out_values
-    assert values == ['param1', 'param2']  # non destructive operation
+    assert values == ["param1", "param2"]  # non destructive operation
     with pytest.raises(NoSectionError):
-        updater.set('wrong_section', 'key', '1')
+        updater.set("wrong_section", "key", "1")
 
 
 def test_section_set_option():
     updater = ConfigUpdater()
     updater.read_string(test1_cfg_in)
-    default_sec = updater['default']
-    default_sec.set('key', '1')
-    assert default_sec['key'].value == '1'
-    default_sec.set('key', 2)
-    assert default_sec['key'].value == 2
+    default_sec = updater["default"]
+    default_sec.set("key", "1")
+    assert default_sec["key"].value == "1"
+    default_sec.set("key", 2)
+    assert default_sec["key"].value == 2
     assert str(default_sec) == test1_cfg_out[1:]
-    default_sec.set('key')
-    assert default_sec['key'].value is None
+    default_sec.set("key")
+    assert default_sec["key"].value is None
     assert str(default_sec) == test1_cfg_out_none[1:]
     updater.read_string(test1_cfg_in)
-    default_sec = updater['default']
-    default_sec.set('other_key', 3)
+    default_sec = updater["default"]
+    default_sec.set("other_key", 3)
     assert str(default_sec) == test1_cfg_out_added[1:]
     updater.read_string(test1_cfg_in)
-    default_sec = updater['default']
-    values = ['param1', 'param2']
-    default_sec['key'].set_values(values)
+    default_sec = updater["default"]
+    values = ["param1", "param2"]
+    default_sec["key"].set_values(values)
     assert str(default_sec) == test1_cfg_out_values[1:]
-    assert values == ['param1', 'param2']  # non destructive operation
+    assert values == ["param1", "param2"]  # non destructive operation
 
 
 def test_del_option():
     updater = ConfigUpdater()
     updater.read_string(test1_cfg_in)
-    del updater['default']['key']
+    del updater["default"]["key"]
     assert str(updater) == "\n[default]\n"
     with pytest.raises(KeyError):
-        del updater['default']['key']
+        del updater["default"]["key"]
 
 
 test2_cfg_in = """
@@ -350,12 +377,12 @@ key = 1
 def test_del_section():
     updater = ConfigUpdater()
     updater.read_string(test2_cfg_in)
-    del updater['section2']
+    del updater["section2"]
     assert str(updater) == test2_cfg_out
     with pytest.raises(KeyError):
-        del updater['section2']
+        del updater["section2"]
     with pytest.raises(ValueError):
-        updater['section1']._get_option_idx('wrong key')
+        updater["section1"]._get_option_idx("wrong key")
 
 
 test_wrong_cfg = """
@@ -374,7 +401,7 @@ def test_validate_format(setup_cfg_path):
     updater = ConfigUpdater(allow_no_value=False)
     updater.read(setup_cfg_path)
     updater.validate_format()
-    updater.set('metadata', 'author')
+    updater.set("metadata", "author")
     with pytest.raises(ParsingError):
         updater.validate_format()
 
@@ -395,8 +422,8 @@ key = 1
 def test_add_before_after_comment():
     updater = ConfigUpdater()
     updater.read_string(test3_cfg_in)
-    updater['section'].add_before.comment('comment of section')
-    updater['section'].add_after.comment('# comment after section\n')
+    updater["section"].add_before.comment("comment of section")
+    updater["section"].add_after.comment("# comment after section\n")
     assert str(updater) == test3_cfg_out
 
 
@@ -417,9 +444,9 @@ def test_add_before_after_option():
     updater = ConfigUpdater()
     updater.read_string(test4_cfg_in)
     with pytest.raises(ValueError):
-        updater['section'].add_before.option('key0', 0)
-    updater['section']['key1'].add_before.option('key0', 0)
-    updater['section']['key1'].add_after.option('key2')
+        updater["section"].add_before.option("key0", 0)
+    updater["section"]["key1"].add_before.option("key0", 0)
+    updater["section"]["key1"].add_after.option("key2")
     assert str(updater) == test4_cfg_out
 
 
@@ -447,8 +474,8 @@ key2 = 2
 def test_add_before_after_space():
     updater = ConfigUpdater()
     updater.read_string(test5_cfg_in)
-    updater['section1'].add_before.space(2)
-    updater['section1']['key1'].add_after.space(1)
+    updater["section1"].add_before.space(2)
+    updater["section1"]["key1"].add_after.space(1)
     assert str(updater) == test5_cfg_out
 
 
@@ -489,22 +516,22 @@ def test_add_before_after_section():
     updater = ConfigUpdater()
     updater.read_string(test6_cfg_in)
     with pytest.raises(ValueError):
-        updater['section2']['key1'].add_before.section('section1')
-    updater['section2'].add_before.section('section1')
-    updater['section1']['key1'] = 42
-    updater['section2'].add_after.space(1).section('section3')
+        updater["section2"]["key1"].add_before.section("section1")
+    updater["section2"].add_before.section("section1")
+    updater["section1"]["key1"] = 42
+    updater["section2"].add_after.space(1).section("section3")
     assert str(updater) == test6_cfg_out
     with pytest.raises(ValueError):
-        updater['section2'].add_before.section(updater['section2']['key1'])
+        updater["section2"].add_before.section(updater["section2"]["key1"])
     updater.read_string(test6_cfg_in)
     sect_updater = ConfigUpdater()
     sect_updater.read_string(test6_cfg_in)
-    section = sect_updater['section0']
-    section.name = 'new_section'
-    updater['section2'].add_after.section(section)
+    section = sect_updater["section0"]
+    section.name = "new_section"
+    updater["section2"].add_after.section(section)
     assert str(updater) == test6_cfg_out_new_sect
     with pytest.raises(DuplicateSectionError):
-        updater['section2'].add_after.section(section)
+        updater["section2"].add_after.section(section)
 
 
 test7_cfg_in = """
@@ -531,12 +558,12 @@ def test_add_section():
     updater = ConfigUpdater()
     updater.read_string(test7_cfg_in)
     with pytest.raises(DuplicateSectionError):
-        updater.add_section('section1')
-    updater.add_section('section2')
-    updater['section2']['key1'] = 1
+        updater.add_section("section1")
+    updater.add_section("section2")
+    updater["section2"]["key1"] = 1
     assert str(updater) == test7_cfg_out
     with pytest.raises(ValueError):
-        updater.add_section(updater['section2']['key1'])
+        updater.add_section(updater["section2"]["key1"])
 
 
 test6_cfg_out_overwritten = """
@@ -553,32 +580,32 @@ def test_set_item_section():
     sect_updater = ConfigUpdater()
     updater.read_string(test6_cfg_in)
     with pytest.raises(ValueError):
-        updater['section'] = 'newsection'
+        updater["section"] = "newsection"
     sect_updater.read_string(test6_cfg_in)
-    section = sect_updater['section0']
-    updater['new_section'] = section
+    section = sect_updater["section0"]
+    updater["new_section"] = section
     assert str(updater) == test6_cfg_out_new_sect
     # test overwriting an existing section
     updater.read_string(test6_cfg_in)
     sect_updater.read_string(test6_cfg_in)
-    exist_section = sect_updater['section0']
-    exist_section['key0'] = 42
-    updater['section0'] = exist_section
+    exist_section = sect_updater["section0"]
+    exist_section["key0"] = 42
+    updater["section0"] = exist_section
     assert str(updater) == test6_cfg_out_overwritten
 
 
 def test_no_space_around_delim():
     updater = ConfigUpdater(space_around_delimiters=False)
     updater.read_string(test7_cfg_in)
-    updater['section0']['key0'] = 0
-    del updater['section1']
+    updater["section0"]["key0"] = 0
+    del updater["section1"]
     assert str(updater) == "\n[section0]\nkey0=0\n\n"
 
 
 def test_constructor(setup_cfg_path):
-    updater = ConfigUpdater(delimiters=(':', '='))
+    updater = ConfigUpdater(delimiters=(":", "="))
     updater.read(setup_cfg_path)
-    updater = ConfigUpdater(delimiters=(':', '='), allow_no_value=True)
+    updater = ConfigUpdater(delimiters=(":", "="), allow_no_value=True)
     updater.read(setup_cfg_path)
 
 
@@ -589,10 +616,10 @@ key = value  # just a value
 
 
 def test_inline_comments():
-    updater = ConfigUpdater(inline_comment_prefixes='#')
+    updater = ConfigUpdater(inline_comment_prefixes="#")
     updater.read_string(test8_inline_prefixes)
-    assert updater.has_section('section')
-    assert updater['section']['key'].value == 'value'
+    assert updater.has_section("section")
+    assert updater["section"]["key"].value == "value"
 
 
 test9_dup_section = """
@@ -638,7 +665,7 @@ key
 def test_no_value():
     updater = ConfigUpdater(allow_no_value=True)
     updater.read_string(test11_no_values)
-    assert updater['section']['key'].value is None
+    assert updater["section"]["key"].value is None
 
 
 def test_eq(setup_cfg_path):
@@ -647,11 +674,11 @@ def test_eq(setup_cfg_path):
     updater2 = ConfigUpdater()
     updater2.read(setup_cfg_path)
     assert updater1 == updater2
-    updater1.remove_section('metadata')
+    updater1.remove_section("metadata")
     assert updater1 != updater2
-    assert updater1 != updater2['metadata']
-    assert updater2['metadata'] != updater2['metadata']['author']
-    assert not updater1.remove_section('metadata')
+    assert updater1 != updater2["metadata"]
+    assert updater2["metadata"] != updater2["metadata"]["author"]
+    assert not updater1.remove_section("metadata")
 
 
 test12_cfg_in = """
@@ -669,7 +696,7 @@ option = 42
 def test_rename_option_key():
     updater = ConfigUpdater()
     updater.read_string(test12_cfg_in)
-    updater['section']['opiton'].key = 'option'
+    updater["section"]["opiton"].key = "option"
 
 
 test13_cfg_in = """
@@ -681,11 +708,11 @@ CAPITAL = 1
 def test_set_optionxform():
     updater = ConfigUpdater()
     updater.read_string(test13_cfg_in)
-    assert updater['section']['capital'].value == '1'
+    assert updater["section"]["capital"].value == "1"
     assert callable(updater.optionxform)
     updater.optionxform = lambda x: x
     updater.read_string(test13_cfg_in)
-    assert updater['section']['CAPITAL'].value == '1'
+    assert updater["section"]["CAPITAL"].value == "1"
 
 
 test14_cfg_in = """
@@ -707,15 +734,15 @@ option4 = 4
 def test_insert_at():
     updater = ConfigUpdater()
     updater.read_string(test14_cfg_in)
-    updater['section'].insert_at(0).option("option0", 0).option("option1", 1)
-    updater['section'].insert_at(3).option("option3", 3)
+    updater["section"].insert_at(0).option("option0", 0).option("option1", 1)
+    updater["section"].insert_at(3).option("option3", 3)
     assert str(updater) == test14_cfg_out
 
 
 def test_read_file_with_string():
     updater = ConfigUpdater()
     with pytest.raises(RuntimeError):
-        updater.read_file('path/to/file.cfg')
+        updater.read_file("path/to/file.cfg")
 
 
 test15_cfg_in = """
@@ -727,10 +754,10 @@ OptionA = 2
 def test_read_mixed_case_options():
     updater = ConfigUpdater()
     updater.read_string(test15_cfg_in)
-    assert updater.has_option('section', 'OptionA')
-    assert updater.has_option('section', 'optiona')
-    assert updater['section']['OptionA'].value == '2'
-    assert updater['section']['optiona'].value == '2'
+    assert updater.has_option("section", "OptionA")
+    assert updater.has_option("section", "optiona")
+    assert updater["section"]["OptionA"].value == "2"
+    assert updater["section"]["optiona"].value == "2"
 
 
 test16_cfg_in = """
@@ -749,8 +776,8 @@ OptionB = 6
 def test_update_mixed_case_options():
     updater = ConfigUpdater()
     updater.read_string(test16_cfg_in)
-    updater['section']['optiona'].value = '4'
-    updater['section']['OptionB'] = '6'
+    updater["section"]["optiona"].value = "4"
+    updater["section"]["OptionB"] = "6"
     assert str(updater) == test16_cfg_out
 
 
@@ -772,9 +799,9 @@ key3 = 3
 def test_add_before_then_add_after_option():
     updater = ConfigUpdater()
     updater.read_string(test17_cfg_in)
-    updater['section']['key1'].add_before.option('key0', '0')
-    updater['section']['key1'].add_after.option('key2', '2')
-    updater['section']['key2'].add_after.option('key3', '3')
+    updater["section"]["key1"].add_before.option("key0", "0")
+    updater["section"]["key1"].add_after.option("key2", "2")
+    updater["section"]["key2"].add_after.option("key3", "3")
     assert str(updater) == test17_cfg_out
 
 
@@ -792,8 +819,8 @@ Key0 = 2
 def test_assure_no_duplicate_options():
     updater = ConfigUpdater()
     updater.read_string(test18_cfg_in)
-    updater['section']['KEY0'].value = '1'
-    updater['section']['keY0'] = '2'
+    updater["section"]["KEY0"].value = "1"
+    updater["section"]["keY0"] = "2"
     assert str(updater) == test18_cfg_out
 
 
@@ -807,7 +834,7 @@ def test_no_duplicate_blocks_with_blockbuilder():
     updater = ConfigUpdater()
     updater.read_string(test19_cfg_in)
     with pytest.raises(DuplicateOptionError):
-        updater['section']['Key0'].add_after.option('key0', '1')
+        updater["section"]["Key0"].add_after.option("key0", "1")
     with pytest.raises(DuplicateSectionError):
-        updater['section'].add_after.section('section')
+        updater["section"].add_after.section("section")
     assert str(updater) == test19_cfg_in
