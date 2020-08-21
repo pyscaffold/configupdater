@@ -32,21 +32,34 @@ import sys
 from abc import ABC
 from collections import OrderedDict as _default_dict
 from collections.abc import MutableMapping
-from configparser import (ConfigParser, DuplicateOptionError,
-                          DuplicateSectionError, Error,
-                          MissingSectionHeaderError, NoOptionError,
-                          NoSectionError, ParsingError)
+from configparser import (
+    ConfigParser,
+    DuplicateOptionError,
+    DuplicateSectionError,
+    Error,
+    MissingSectionHeaderError,
+    NoOptionError,
+    NoSectionError,
+    ParsingError,
+)
 
-__all__ = ["NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
-           "NoOptionError", "NoConfigFileReadError", "ParsingError",
-           "MissingSectionHeaderError", "ConfigUpdater"]
+__all__ = [
+    "NoSectionError",
+    "DuplicateOptionError",
+    "DuplicateSectionError",
+    "NoOptionError",
+    "NoConfigFileReadError",
+    "ParsingError",
+    "MissingSectionHeaderError",
+    "ConfigUpdater",
+]
 
 
 class NoConfigFileReadError(Error):
     """Raised when no configuration file was read but update requested."""
+
     def __init__(self):
-        super().__init__(
-            "No configuration file was yet read! Use .read(...) first.")
+        super().__init__("No configuration file was yet read! Use .read(...) first.")
 
 
 # Used in parser getters to indicate the default behaviour when a specific
@@ -58,6 +71,7 @@ _UNSET = object()
 class Container(ABC):
     """Abstract Mixin Class
     """
+
     def __init__(self, **kwargs):
         self._structure = list()
         super().__init__(**kwargs)
@@ -80,6 +94,7 @@ class Block(ABC):
     Block objects hold original lines from the configuration file and hold
     a reference to a container wherein the object resides.
     """
+
     def __init__(self, container=None, **kwargs):
         self._container = container
         self.lines = []
@@ -87,7 +102,7 @@ class Block(ABC):
         super().__init__(**kwargs)
 
     def __str__(self):
-        return ''.join(self.lines)
+        return "".join(self.lines)
 
     def __len__(self):
         return len(self.lines)
@@ -121,16 +136,17 @@ class Block(ABC):
     def add_after(self):
         """Returns a builder inserting a new block after the current block"""
         idx = self._container.structure.index(self)
-        return BlockBuilder(self._container, idx+1)
+        return BlockBuilder(self._container, idx + 1)
 
 
 class BlockBuilder(object):
     """Builder that injects blocks at a given index position."""
+
     def __init__(self, container, idx):
         self._container = container
         self._idx = idx
 
-    def comment(self, text, comment_prefix='#'):
+    def comment(self, text, comment_prefix="#"):
         """Creates a comment block
 
         Args:
@@ -143,8 +159,8 @@ class BlockBuilder(object):
         comment = Comment(self._container)
         if not text.startswith(comment_prefix):
             text = "{} {}".format(comment_prefix, text)
-        if not text.endswith('\n'):
-            text = "{}{}".format(text, '\n')
+        if not text.endswith("\n"):
+            text = "{}{}".format(text, "\n")
         comment.add_line(text)
         self._container.structure.insert(self._idx, comment)
         self._idx += 1
@@ -166,8 +182,9 @@ class BlockBuilder(object):
             section = Section(section, container=self._container)
         elif not isinstance(section, Section):
             raise ValueError("Parameter must be a string or Section type!")
-        if section.name in [block.name for block in self._container
-                            if isinstance(block, Section)]:
+        if section.name in [
+            block.name for block in self._container if isinstance(block, Section)
+        ]:
             raise DuplicateSectionError(section.name)
         self._container.structure.insert(self._idx, section)
         self._idx += 1
@@ -184,7 +201,7 @@ class BlockBuilder(object):
         """
         space = Space()
         for line in range(newlines):
-            space.add_line('\n')
+            space.add_line("\n")
         self._container.structure.insert(self._idx, space)
         self._idx += 1
         return self
@@ -213,20 +230,22 @@ class BlockBuilder(object):
 
 class Comment(Block):
     """Comment block"""
+
     def __init__(self, container=None):
         super().__init__(container=container)
 
     def __repr__(self):
-        return '<Comment>'
+        return "<Comment>"
 
 
 class Space(Block):
     """Vertical space block of new lines"""
+
     def __init__(self, container=None):
         super().__init__(container=container)
 
     def __repr__(self):
-        return '<Space>'
+        return "<Space>"
 
 
 class Section(Block, Container, MutableMapping):
@@ -236,6 +255,7 @@ class Section(Block, Container, MutableMapping):
         name (str): name of the section
         updated (bool): indicates name change or a new section
     """
+
     def __init__(self, name, container, **kwargs):
         self._name = name
         self._structure = list()
@@ -282,8 +302,11 @@ class Section(Block, Container, MutableMapping):
         return self
 
     def _get_option_idx(self, key):
-        idx = [i for i, entry in enumerate(self._structure)
-               if isinstance(entry, Option) and entry.key == key]
+        idx = [
+            i
+            for i, entry in enumerate(self._structure)
+            if isinstance(entry, Option) and entry.key == key
+        ]
         if idx:
             return idx[0]
         else:
@@ -299,7 +322,7 @@ class Section(Block, Container, MutableMapping):
         return s
 
     def __repr__(self):
-        return '<Section: {}>'.format(self.name)
+        return "<Section: {}>".format(self.name)
 
     def __getitem__(self, key):
         key = self._container.optionxform(key)
@@ -334,8 +357,7 @@ class Section(Block, Container, MutableMapping):
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return (self.name == other.name and
-                    self._structure == other._structure)
+            return self.name == other.name and self._structure == other._structure
         else:
             return False
 
@@ -345,8 +367,7 @@ class Section(Block, Container, MutableMapping):
         Returns:
             list: list of :class:`Option` blocks
         """
-        return [entry for entry in self._structure
-                if isinstance(entry, Option)]
+        return [entry for entry in self._structure if isinstance(entry, Option)]
 
     def options(self):
         """Returns option names
@@ -419,8 +440,16 @@ class Option(Block):
         value (str): stored value
         updated (bool): indicates name change or a new section
     """
-    def __init__(self, key, value, container, delimiter='=',
-                 space_around_delimiters=True, line=None):
+
+    def __init__(
+        self,
+        key,
+        value,
+        container,
+        delimiter="=",
+        space_around_delimiters=True,
+        line=None,
+    ):
         super().__init__(container=container)
         self._key = key
         self._values = [value]
@@ -440,24 +469,24 @@ class Option(Block):
     def _join_multiline_value(self):
         if not self._multiline_value_joined and not self._value_is_none:
             # do what `_join_multiline_value` in ConfigParser would do
-            self._value = '\n'.join(self._values).rstrip()
+            self._value = "\n".join(self._values).rstrip()
             self._multiline_value_joined = True
 
     def __str__(self):
         if not self.updated:
             return super().__str__()
         if self._value is None:
-            return "{}{}".format(self._key, '\n')
+            return "{}{}".format(self._key, "\n")
         if self._space_around_delimiters:
             # no space is needed if we use multi-line arguments
-            suffix = '' if str(self._value).startswith('\n') else ' '
+            suffix = "" if str(self._value).startswith("\n") else " "
             delim = " {}{}".format(self._delimiter, suffix)
         else:
             delim = self._delimiter
-        return "{}{}{}{}".format(self._key, delim, self._value, '\n')
+        return "{}{}{}{}".format(self._key, delim, self._value, "\n")
 
     def __repr__(self):
-        return '<Option: {} = {}>'.format(self.key, self.value)
+        return "<Option: {} = {}>".format(self.key, self.value)
 
     @property
     def updated(self):
@@ -487,7 +516,7 @@ class Option(Block):
         self._value = value
         self._values = [value]
 
-    def set_values(self, values, separator='\n', indent=4*' '):
+    def set_values(self, values, separator="\n", indent=4 * " "):
         """Sets the value to a given list of options, e.g. multi-line values
 
         Args:
@@ -499,8 +528,8 @@ class Option(Block):
         self._updated = True
         self._multiline_value_joined = True
         self._values = values
-        if separator == '\n':
-            values = [''] + values
+        if separator == "\n":
+            values = [""] + values
             separator = separator + indent
         self._value = separator.join(values)
 
@@ -523,6 +552,7 @@ class ConfigUpdater(Container, MutableMapping):
       * passing key/value-pairs with ``default`` argument,
       * non-strict mode allowing duplicate sections and keys.
     """
+
     # Regular expressions for parsing section headers and options
     _SECT_TMPL = r"""
         \[                                 # [
@@ -556,9 +586,16 @@ class ConfigUpdater(Container, MutableMapping):
     # Compiled regular expression for matching leading whitespace in a line
     NONSPACECRE = re.compile(r"\S")
 
-    def __init__(self, allow_no_value=False, *, delimiters=('=', ':'),
-                 comment_prefixes=('#', ';'), inline_comment_prefixes=None,
-                 strict=True, space_around_delimiters=True):
+    def __init__(
+        self,
+        allow_no_value=False,
+        *,
+        delimiters=("=", ":"),
+        comment_prefixes=("#", ";"),
+        inline_comment_prefixes=None,
+        strict=True,
+        space_around_delimiters=True
+    ):
         """Constructor of ConfigUpdater
 
         Args:
@@ -581,16 +618,14 @@ class ConfigUpdater(Container, MutableMapping):
         self._sections = self._dict()
         self._structure = []
         self._delimiters = tuple(delimiters)
-        if delimiters == ('=', ':'):
+        if delimiters == ("=", ":"):
             self._optcre = self.OPTCRE_NV if allow_no_value else self.OPTCRE
         else:
             d = "|".join(re.escape(d) for d in delimiters)
             if allow_no_value:
-                self._optcre = re.compile(self._OPT_NV_TMPL.format(delim=d),
-                                          re.VERBOSE)
+                self._optcre = re.compile(self._OPT_NV_TMPL.format(delim=d), re.VERBOSE)
             else:
-                self._optcre = re.compile(self._OPT_TMPL.format(delim=d),
-                                          re.VERBOSE)
+                self._optcre = re.compile(self._OPT_TMPL.format(delim=d), re.VERBOSE)
         self._comment_prefixes = tuple(comment_prefixes or ())
         self._inline_comment_prefixes = tuple(inline_comment_prefixes or ())
         self._strict = strict
@@ -600,8 +635,11 @@ class ConfigUpdater(Container, MutableMapping):
         super().__init__()
 
     def _get_section_idx(self, name):
-        idx = [i for i, entry in enumerate(self._structure)
-               if isinstance(entry, Section) and entry.name == name]
+        idx = [
+            i
+            for i, entry in enumerate(self._structure)
+            if isinstance(entry, Section) and entry.name == name
+        ]
         if idx:
             return idx[0]
         else:
@@ -636,10 +674,10 @@ class ConfigUpdater(Container, MutableMapping):
             try:
                 source = f.name
             except AttributeError:
-                source = '<???>'
+                source = "<???>"
         self._read(f, source)
 
-    def read_string(self, string, source='<string>'):
+    def read_string(self, string, source="<string>"):
         """Read configuration from a given string.
 
         Args:
@@ -679,11 +717,13 @@ class ConfigUpdater(Container, MutableMapping):
 
     def _add_option(self, key, vi, value, line):
         entry = Option(
-            key, value,
+            key,
+            value,
             delimiter=vi,
             container=self.last_item,
             space_around_delimiters=self._space_around_delimiters,
-            line=line)
+            line=line,
+        )
         self.last_item.add_option(entry)
 
     def _add_space(self, line):
@@ -716,12 +756,12 @@ class ConfigUpdater(Container, MutableMapping):
         """
         self._structure = []
         elements_added = set()
-        cursect = None                        # None, or a dictionary
+        cursect = None  # None, or a dictionary
         sectname = None
         optname = None
         lineno = 0
         indent_level = 0
-        e = None                              # None, or an exception
+        e = None  # None, or an exception
         for lineno, line in enumerate(fp, start=1):
             comment_start = sys.maxsize
             # strip inline comments
@@ -729,11 +769,11 @@ class ConfigUpdater(Container, MutableMapping):
             while comment_start == sys.maxsize and inline_prefixes:
                 next_prefixes = {}
                 for prefix, index in inline_prefixes.items():
-                    index = line.find(prefix, index+1)
+                    index = line.find(prefix, index + 1)
                     if index == -1:
                         continue
                     next_prefixes[prefix] = index
-                    if index == 0 or (index > 0 and line[index-1].isspace()):
+                    if index == 0 or (index > 0 and line[index - 1].isspace()):
                         comment_start = min(comment_start, index)
                 inline_prefixes = next_prefixes
             # strip full line comments
@@ -749,11 +789,13 @@ class ConfigUpdater(Container, MutableMapping):
                 if self._empty_lines_in_values:
                     # add empty line to the value, but only if there was no
                     # comment on the line
-                    if (comment_start is None and
-                            cursect is not None and
-                            optname and
-                            cursect[optname] is not None):
-                        cursect[optname].append('')  # newlines added at join
+                    if (
+                        comment_start is None
+                        and cursect is not None
+                        and optname
+                        and cursect[optname] is not None
+                    ):
+                        cursect[optname].append("")  # newlines added at join
                         self.last_item.last_item.add_line(line)  # HOOK
                 else:
                     # empty line marks end of value
@@ -764,8 +806,7 @@ class ConfigUpdater(Container, MutableMapping):
             # continuation line?
             first_nonspace = self.NONSPACECRE.search(line)
             cur_indent_level = first_nonspace.start() if first_nonspace else 0
-            if (cursect is not None and optname and
-                    cur_indent_level > indent_level):
+            if cursect is not None and optname and cur_indent_level > indent_level:
                 cursect[optname].append(value)
                 self.last_item.last_item.add_line(line)  # HOOK
             # a section header or option header?
@@ -774,11 +815,10 @@ class ConfigUpdater(Container, MutableMapping):
                 # is it a section header?
                 mo = self.SECTCRE.match(value)
                 if mo:
-                    sectname = mo.group('header')
+                    sectname = mo.group("header")
                     if sectname in self._sections:
                         if self._strict and sectname in elements_added:
-                            raise DuplicateSectionError(sectname, fpname,
-                                                        lineno)
+                            raise DuplicateSectionError(sectname, fpname, lineno)
                         cursect = self._sections[sectname]
                         elements_added.add(sectname)
                     else:
@@ -795,16 +835,16 @@ class ConfigUpdater(Container, MutableMapping):
                 else:
                     mo = self._optcre.match(value)
                     if mo:
-                        optname, vi, optval = mo.group('option', 'vi', 'value')
+                        optname, vi, optval = mo.group("option", "vi", "value")
                         if not optname:
                             e = self._handle_error(e, fpname, lineno, line)
                         # optname = self.optionxform(optname.rstrip())
                         # keep original case of key
                         optname = optname.rstrip()
-                        if (self._strict and
-                                (sectname, optname) in elements_added):
-                            raise DuplicateOptionError(sectname, optname,
-                                                       fpname, lineno)
+                        if self._strict and (sectname, optname) in elements_added:
+                            raise DuplicateOptionError(
+                                sectname, optname, fpname, lineno
+                            )
                         elements_added.add((sectname, optname))
                         # This check is fine because the OPTCRE cannot
                         # match if it would set optval to None
@@ -852,7 +892,7 @@ class ConfigUpdater(Container, MutableMapping):
             raise NoConfigFileReadError()
         if validate:  # validate BEFORE opening the file!
             self.validate_format()
-        with open(self._filename, 'w') as fb:
+        with open(self._filename, "w") as fb:
             self.write(fb, validate=False)
 
     def validate_format(self, **kwargs):
@@ -866,7 +906,7 @@ class ConfigUpdater(Container, MutableMapping):
             allow_no_value=self._allow_no_value,
             inline_comment_prefixes=self._inline_comment_prefixes,
             strict=self._strict,
-            empty_lines_in_values=self._empty_lines_in_values
+            empty_lines_in_values=self._empty_lines_in_values,
         )
         args.update(kwargs)
         parser = ConfigParser(**args)
@@ -879,8 +919,7 @@ class ConfigUpdater(Container, MutableMapping):
         Returns:
             list: list of :class:`Section` blocks
         """
-        return [block for block in self._structure
-                if isinstance(block, Section)]
+        return [block for block in self._structure if isinstance(block, Section)]
 
     def sections(self):
         """Return a list of section names
@@ -891,7 +930,7 @@ class ConfigUpdater(Container, MutableMapping):
         return [section.name for section in self.sections_blocks()]
 
     def __str__(self):
-        return ''.join(str(block) for block in self._structure)
+        return "".join(str(block) for block in self._structure)
 
     def __getitem__(self, key):
         for section in self.sections_blocks():
@@ -1095,5 +1134,4 @@ class ConfigUpdater(Container, MutableMapping):
         Returns:
             dict: dictionary with same content
         """
-        return {sect: self.__getitem__(sect).to_dict()
-                for sect in self.sections()}
+        return {sect: self.__getitem__(sect).to_dict() for sect in self.sections()}
