@@ -69,8 +69,7 @@ _UNSET = object()
 
 
 class Container(ABC):
-    """Abstract Mixin Class
-    """
+    """Abstract Mixin Class"""
 
     def __init__(self, **kwargs):
         self._structure = list()
