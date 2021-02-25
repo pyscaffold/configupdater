@@ -840,6 +840,7 @@ def test_no_duplicate_blocks_with_blockbuilder():
     assert str(updater) == test19_cfg_in
 
 
+# Taken from issue #14
 test20_cfg_in = """
 [flake8]
 
@@ -865,7 +866,7 @@ per-file-ignores =
 """
 
 
-def test_multiline_comments():
+def test_comments_in_multiline_options():
     updater = ConfigUpdater()
     updater.read_string(test20_cfg_in)
     per_file_ignores = updater["flake8"]["per-file-ignores"].value
