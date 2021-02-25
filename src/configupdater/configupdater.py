@@ -101,6 +101,7 @@ class Block(ABC):
         super().__init__(**kwargs)
 
     def __str__(self):
+        # ToDo: Check if this should be rather "\n", see issue #14
         return "".join(self.lines)
 
     def __len__(self):

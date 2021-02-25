@@ -838,3 +838,40 @@ def test_no_duplicate_blocks_with_blockbuilder():
     with pytest.raises(DuplicateSectionError):
         updater["section"].add_after.section("section")
     assert str(updater) == test19_cfg_in
+
+
+test20_cfg_in = """
+[flake8]
+
+exclude =
+  # Trash and cache:
+  .git
+  __pycache__
+  .venv
+  .eggs
+  *.egg
+  temp
+  # Bad code that I write to test things:
+  ex.py
+
+per-file-ignores =
+  # Disable imports in `__init__.py`:
+  lambdas/__init__.py: WPS226, WPS413
+  lambdas/contrib/mypy/lambdas_plugin.py: WPS437
+  # There are multiple assert's in tests:
+  tests/*.py: S101, WPS226, WPS432, WPS436, WPS450
+  # We need to write tests to our private class:
+  tests/test_math_expression/*.py: S101, WPS432, WPS450
+"""
+
+
+def test_multiline_comments():
+    updater = ConfigUpdater()
+    updater.read_string(test20_cfg_in)
+    per_file_ignores = updater["flake8"]["per-file-ignores"]
+    exp_val = (
+        "\nlambdas/__init__.py: WPS226, WPS413\nlambdas/contrib/mypy/"
+        "lambdas_plugin.py: WPS437\ntests/*.py: S101, WPS226, WPS432, "
+        "WPS436, WPS450\ntests/test_math_expression/*.py: S101, WPS432, WPS450"
+    )
+    assert per_file_ignores == exp_val
