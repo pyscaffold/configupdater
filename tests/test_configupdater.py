@@ -868,10 +868,12 @@ per-file-ignores =
 def test_multiline_comments():
     updater = ConfigUpdater()
     updater.read_string(test20_cfg_in)
-    per_file_ignores = updater["flake8"]["per-file-ignores"]
+    per_file_ignores = updater["flake8"]["per-file-ignores"].value
     exp_val = (
-        "\nlambdas/__init__.py: WPS226, WPS413\nlambdas/contrib/mypy/"
-        "lambdas_plugin.py: WPS437\ntests/*.py: S101, WPS226, WPS432, "
-        "WPS436, WPS450\ntests/test_math_expression/*.py: S101, WPS432, WPS450"
+        "\n# Disable imports in `__init__.py`:\nlambdas/__init__.py: WPS226, WPS413\n"
+        "lambdas/contrib/mypy/lambdas_plugin.py: WPS437\n# There are multiple assert's"
+        " in tests:\ntests/*.py: S101, WPS226, WPS432, WPS436, WPS450\n# We need to"
+        " write tests to our private class:\ntests/test_math_expression/*.py: S101,"
+        " WPS432, WPS450"
     )
     assert per_file_ignores == exp_val

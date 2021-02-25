@@ -778,7 +778,8 @@ class ConfigUpdater(Container, MutableMapping):
                 inline_prefixes = next_prefixes
             # strip full line comments
             for prefix in self._comment_prefixes:
-                if line.strip().startswith(prefix):
+                # configparser would do line.strip() here
+                if line.rstrip().startswith(prefix):
                     comment_start = 0
                     self._add_comment(line)  # HOOK
                     break
