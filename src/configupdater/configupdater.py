@@ -459,7 +459,7 @@ class Option(Block):
         self._multiline_value_joined = False
         self._space_around_delimiters = space_around_delimiters
         if line:
-            self.lines.append(line.rstrip("\n"))
+            super().add_line(line)
 
     def add_line(self, line):
         super().add_line(line)
