@@ -101,8 +101,7 @@ class Block(ABC):
         super().__init__(**kwargs)
 
     def __str__(self):
-        # ToDo: Check if this should be rather "\n", see issue #14
-        return "".join(self.lines)
+        return "\n".join(self.lines) + "\n"
 
     def __len__(self):
         return len(self.lines)
@@ -119,7 +118,7 @@ class Block(ABC):
         Args:
             line (str): one line to add
         """
-        self.lines.append(line)
+        self.lines.append(line.rstrip("\n"))
         return self
 
     @property
@@ -460,7 +459,7 @@ class Option(Block):
         self._multiline_value_joined = False
         self._space_around_delimiters = space_around_delimiters
         if line:
-            self.lines.append(line)
+            self.lines.append(line.rstrip("\n"))
 
     def add_line(self, line):
         super().add_line(line)

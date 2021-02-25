@@ -2,6 +2,13 @@
 Changelog
 =========
 
+Version 2.0
+===========
+
+- Changes in parser, comments in multi-line option values are kept
+- Issue #14 is fixed
+- API change: `lines` attribute of blocks strips trailing newline for convenience
+
 Version 1.1.3
 =============
 
