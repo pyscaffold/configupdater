@@ -877,3 +877,4 @@ def test_multiline_comments():
         " WPS432, WPS450"
     )
     assert per_file_ignores == exp_val
+    assert test20_cfg_in == str(updater)
