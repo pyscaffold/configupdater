@@ -122,10 +122,6 @@ class Block(ABC):
         return self
 
     @property
-    def lines(self):
-        return [line.rstrip("\n") for line in self._lines]
-
-    @property
     def container(self):
         return self._container
 

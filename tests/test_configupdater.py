@@ -878,9 +878,3 @@ def test_comments_in_multiline_options():
     )
     assert per_file_ignores == exp_val
     assert test20_cfg_in == str(updater)
-
-
-def test_lines_attribute():
-    updater = ConfigUpdater()
-    updater.read_string(test20_cfg_in)
-    assert updater["flake8"]["exclude"].lines[1] == test20_cfg_in.split("\n")[4]
