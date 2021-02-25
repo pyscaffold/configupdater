@@ -96,15 +96,15 @@ class Block(ABC):
 
     def __init__(self, container=None, **kwargs):
         self._container = container
-        self.lines = []
+        self._lines = []
         self._updated = False
         super().__init__(**kwargs)
 
     def __str__(self):
-        return "\n".join(self.lines) + "\n"
+        return "".join(self._lines)
 
     def __len__(self):
-        return len(self.lines)
+        return len(self._lines)
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -118,12 +118,22 @@ class Block(ABC):
         Args:
             line (str): one line to add
         """
-        self.lines.append(line.rstrip("\n"))
+        self._lines.append(line)
         return self
+
+    @property
+    def lines(self):
+        return [line.rstrip("\n") for line in self._lines]
 
     @property
     def container(self):
         return self._container
+
+    @property
+    def updated(self):
+        """Returns if the option was changed/updated"""
+        # if no lines were added, treat it as updated since we added it
+        return self._updated or not self._lines
 
     @property
     def add_before(self):
@@ -385,12 +395,6 @@ class Section(Block, Container, MutableMapping):
         return {key: self.__getitem__(key).value for key in self.options()}
 
     @property
-    def updated(self):
-        """Returns if the option was changed/updated"""
-        # if no lines were added, treat it as updated since we added it
-        return self._updated or not self.lines
-
-    @property
     def name(self):
         return self._name
 
@@ -486,12 +490,6 @@ class Option(Block):
 
     def __repr__(self):
         return "<Option: {} = {}>".format(self.key, self.value)
-
-    @property
-    def updated(self):
-        """Returns if the option was changed/updated"""
-        # if no lines were added, treat it as updated since we added it
-        return self._updated or not self.lines
 
     @property
     def key(self):

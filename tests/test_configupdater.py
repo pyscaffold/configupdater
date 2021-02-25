@@ -862,8 +862,7 @@ per-file-ignores =
   # There are multiple assert's in tests:
   tests/*.py: S101, WPS226, WPS432, WPS436, WPS450
   # We need to write tests to our private class:
-  tests/test_math_expression/*.py: S101, WPS432, WPS450
-"""
+  tests/test_math_expression/*.py: S101, WPS432, WPS450"""
 
 
 def test_comments_in_multiline_options():
@@ -879,3 +878,9 @@ def test_comments_in_multiline_options():
     )
     assert per_file_ignores == exp_val
     assert test20_cfg_in == str(updater)
+
+
+def test_lines_attribute():
+    updater = ConfigUpdater()
+    updater.read_string(test20_cfg_in)
+    assert updater["flake8"]["exclude"].lines[1] == test20_cfg_in.split("\n")[4]
