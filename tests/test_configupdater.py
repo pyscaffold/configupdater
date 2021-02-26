@@ -843,7 +843,6 @@ def test_no_duplicate_blocks_with_blockbuilder():
 # Taken from issue #14
 test20_cfg_in = """
 [flake8]
-
 exclude =
   # Trash and cache:
   .git
@@ -854,6 +853,7 @@ exclude =
   temp
   # Bad code that I write to test things:
   ex.py
+new = value
 
 per-file-ignores =
   # Disable imports in `__init__.py`:
@@ -876,5 +876,6 @@ def test_comments_in_multiline_options():
         " write tests to our private class:\ntests/test_math_expression/*.py: S101,"
         " WPS432, WPS450"
     )
+    updater.validate_format()
     assert per_file_ignores == exp_val
     assert test20_cfg_in == str(updater)

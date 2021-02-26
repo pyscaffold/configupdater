@@ -447,6 +447,7 @@ class Option(Block):
         container,
         delimiter="=",
         space_around_delimiters=True,
+        empty_lines_in_values=None,
         line=None,
     ):
         super().__init__(container=container)
@@ -458,6 +459,7 @@ class Option(Block):
         self._updated = False
         self._multiline_value_joined = False
         self._space_around_delimiters = space_around_delimiters
+        self._empty_lines_in_values = empty_lines_in_values
         if line:
             super().add_line(line)
 
@@ -471,9 +473,19 @@ class Option(Block):
             self._value = "\n".join(self._values).rstrip()
             self._multiline_value_joined = True
 
+    def __len__(self):
+        len = super().__len__()
+        if self._empty_lines_in_values:
+            return len - 1
+        else:
+            return len
+
     def __str__(self):
         if not self.updated:
-            return super().__str__()
+            if self._empty_lines_in_values:
+                return re.sub(r'\n\n$', '\n', super().__str__())
+            else:
+                return super().__str__()
         if self._value is None:
             return "{}{}".format(self._key, "\n")
         if self._space_around_delimiters:
@@ -587,6 +599,7 @@ class ConfigUpdater(Container, MutableMapping):
         comment_prefixes=("#", ";"),
         inline_comment_prefixes=None,
         strict=True,
+        empty_lines_in_values=True,
         space_around_delimiters=True
     ):
         """Constructor of ConfigUpdater
@@ -599,6 +612,9 @@ class ConfigUpdater(Container, MutableMapping):
                 default None
             strict (bool): each section must be unique as well as every key
                 within a section, default True
+            empty_lines_in_values (bool): each empty line marks the end of an option.
+                Otherwise, internal empty lines of a multiline option are kept as part
+                of the value, default: True.
             space_around_delimiters (bool): add a space before and after the
                 delimiter, default True
         """
@@ -623,8 +639,7 @@ class ConfigUpdater(Container, MutableMapping):
         self._inline_comment_prefixes = tuple(inline_comment_prefixes or ())
         self._strict = strict
         self._allow_no_value = allow_no_value
-        # Options from ConfigParser that we need to set constantly
-        self._empty_lines_in_values = False
+        self._empty_lines_in_values = empty_lines_in_values
         super().__init__()
 
     def _get_section_idx(self, name):
@@ -715,6 +730,7 @@ class ConfigUpdater(Container, MutableMapping):
             delimiter=vi,
             container=self.last_item,
             space_around_delimiters=self._space_around_delimiters,
+            empty_lines_in_values=self._empty_lines_in_values,
             line=line,
         )
         self.last_item.add_option(entry)

@@ -33,7 +33,6 @@ The key differences to `ConfigParser`_ are:
 * minimal invasive changes in the update configuration file,
 * proper handling of comments,
 * only a single config file can be updated at a time,
-* empty lines in values are not valid,
 * the original case of sections and keys are kept,
 * control over the position of a new section/key
 
