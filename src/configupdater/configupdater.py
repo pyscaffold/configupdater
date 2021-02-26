@@ -826,7 +826,8 @@ class ConfigUpdater(Container, MutableMapping):
                         and cursect[optname] is not None
                     ):
                         cursect[optname].append("")  # newlines added at join
-                        self.last_item.last_item.add_line(line)  # HOOK
+                        if line.strip():
+                            self.last_item.last_item.add_line(line)  # HOOK
                 else:
                     # empty line marks end of value
                     indent_level = sys.maxsize
@@ -897,7 +898,6 @@ class ConfigUpdater(Container, MutableMapping):
         # if empty_lines_in_values is true, we have to eliminate spurious newlines
         if self._empty_lines_in_values:
             self._check_values_with_blank_lines()
-            self._eliminate_trailing_newlines()
 
     def _handle_error(self, exc, fpname, lineno, line):
         if not exc:
@@ -915,22 +915,13 @@ class ConfigUpdater(Container, MutableMapping):
                         self._merge_option_with_space(option, next_block)
 
     def _merge_option_with_space(self, option, space):
-        # remove leading whitespaces and completely empty lines ...
-        space_lines = [line for line in space._lines if line.strip()]
-        value = "".join(line.lstrip(" ") for line in space_lines)
-        # ... and append what's left to the current option
-        option._values.append(value)
-        option._multiline_value_joined = False
-        option._lines.extend(space_lines)
-        # remove everything that we merged from the space block
         last_val_idx = max(i for i, line in enumerate(space._lines) if line.strip())
-        # +2 since we have double registration due to empty_lines_in_values
-        del space._lines[: last_val_idx + 2]
-
-    def _eliminate_trailing_newlines(self):
-        for section in self.section_blocks():
-            for option in section.option_blocks():
-                option.rm_trailing_newline()
+        value_lines = space._lines[: last_val_idx + 1]
+        merge_vals = "".join(line.lstrip(" ") for line in value_lines)
+        option._values.append(merge_vals)
+        option._multiline_value_joined = False
+        option._lines.extend(space._lines[: last_val_idx + 1])
+        del space._lines[: last_val_idx + 1]
 
     def write(self, fp, validate=True):
         """Write an .ini-format representation of the configuration state.
