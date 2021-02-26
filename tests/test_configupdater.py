@@ -908,8 +908,11 @@ key1 =
     c
     d
 key2 =
+    # comment
     a
     b
+    # comment
+
 
     c
     d
@@ -932,6 +935,8 @@ def test_empty_lines_in_values_support():
     parser = ConfigParser()
     parser.read_string(test21_cfg_in)
     assert updater["main1"]["key1"].value == parser["main1"]["key1"]
+    assert updater["main2"]["key1"].value == parser["main2"]["key1"]
+    assert updater["main4"]["key1"].value == parser["main4"]["key2"]
     assert test21_cfg_in == str(updater)
     with pytest.raises(ParsingError):
         updater = ConfigUpdater(empty_lines_in_values=False)
