@@ -8,7 +8,8 @@ Version 2.0
 - Changes in parser, comments in multi-line option values are kept
 - Issue #14 is fixed
 - API change: ``lines`` attribute of blocks is now private
-- Parameter `empty_lines_in_values`` is now activated by default and can be changed
+- Parameter ``empty_lines_in_values`` is now activated by default and can be changed
+- Renamed ``sections_blocks`` to ``section_blocks`` for consistency
 
 Version 1.1.3
 =============

@@ -104,7 +104,7 @@ def test_len_updater(setup_cfg_path):
 def test_iter_section(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
-    # we test ne number of blocks, not sections
+    # we test the number of blocks, not sections
     assert len([block for block in updater]) == 14
 
 
@@ -167,7 +167,7 @@ def test_len_section(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
     section = updater["metadata"]
-    # we test ne number of entries, not options
+    # we test the number of entries, not options
     assert len(section) == 12
 
 
@@ -175,7 +175,7 @@ def test_len_option(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
     option = updater["metadata"]["classifiers"]
-    # we test ne number of lines
+    # we test the number of lines
     assert len(option) == 3
 
 
@@ -183,7 +183,7 @@ def test_iter_option(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
     section = updater["metadata"]
-    # we test ne number of entries, not options
+    # we test the number of entries, not options
     assert len([entry for entry in section]) == 12
 
 
@@ -879,3 +879,36 @@ def test_comments_in_multiline_options():
     updater.validate_format()
     assert per_file_ignores == exp_val
     assert test20_cfg_in == str(updater)
+
+
+test21_cfg_in = """
+[main1]
+key1 =
+    a
+    b
+
+    c
+    d
+[main2]
+key2 =
+    a
+    b
+
+    c
+    d
+
+[main3]
+
+"""
+
+
+def test_empty_lines_in_values_support():
+    updater = ConfigUpdater()
+    updater.read_string(test21_cfg_in)
+    parser = ConfigParser()
+    parser.read_string(test21_cfg_in)
+    assert updater["main1"]["key1"].value == parser["main1"]["key1"]
+    assert test21_cfg_in == str(updater)
+    with pytest.raises(ParsingError):
+        updater = ConfigUpdater(empty_lines_in_values=False)
+        updater.read_string(test21_cfg_in)

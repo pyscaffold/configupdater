@@ -86,6 +86,14 @@ class Container(ABC):
         else:
             return None
 
+    def remove_block(self, idx):
+        """Remove block at index idx within container
+
+        Use `.container_idx` of a block to get the index.
+        """
+        del self._structure[idx]
+        return self
+
 
 class Block(ABC):
     """Abstract Block type holding lines
@@ -123,7 +131,13 @@ class Block(ABC):
 
     @property
     def container(self):
+        """"Returns current container holding the block"""
         return self._container
+
+    @property
+    def container_idx(self):
+        """"Returns index of the block within its container"""
+        return self._container.structure.index(self)
 
     @property
     def updated(self):
@@ -134,14 +148,28 @@ class Block(ABC):
     @property
     def add_before(self):
         """Returns a builder inserting a new block before the current block"""
-        idx = self._container.structure.index(self)
-        return BlockBuilder(self._container, idx)
+        return BlockBuilder(self._container, self.container_idx)
 
     @property
     def add_after(self):
         """Returns a builder inserting a new block after the current block"""
-        idx = self._container.structure.index(self)
-        return BlockBuilder(self._container, idx + 1)
+        return BlockBuilder(self._container, self.container_idx + 1)
+
+    @property
+    def next_block(self):
+        """Returns the next block in the current container"""
+        try:
+            return self._container.structure[self.container_idx + 1]
+        except IndexError:
+            return None
+
+    @property
+    def previous_block(self):
+        """Returns the previous block in the current container"""
+        try:
+            return self._container.structure[self.container_idx - 1]
+        except IndexError:
+            return None
 
 
 class BlockBuilder(object):
@@ -204,8 +232,8 @@ class BlockBuilder(object):
         Returns:
             self for chaining
         """
-        space = Space()
-        for line in range(newlines):
+        space = Space(container=self._container)
+        for _ in range(newlines):
             space.add_line("\n")
         self._container.structure.insert(self._idx, space)
         self._idx += 1
@@ -287,7 +315,7 @@ class Section(Block, Container, MutableMapping):
             line (str): one line in the comment
         """
         if not isinstance(self.last_item, Comment):
-            comment = Comment(self._structure)
+            comment = Comment(container=self)
             self._structure.append(comment)
         self.last_item.add_line(line)
         return self
@@ -301,7 +329,7 @@ class Section(Block, Container, MutableMapping):
             line (str): one line that defines the space, maybe whitespaces
         """
         if not isinstance(self.last_item, Space):
-            space = Space(self._structure)
+            space = Space(container=self)
             self._structure.append(space)
         self.last_item.add_line(line)
         return self
@@ -447,7 +475,6 @@ class Option(Block):
         container,
         delimiter="=",
         space_around_delimiters=True,
-        empty_lines_in_values=None,
         line=None,
     ):
         super().__init__(container=container)
@@ -459,7 +486,6 @@ class Option(Block):
         self._updated = False
         self._multiline_value_joined = False
         self._space_around_delimiters = space_around_delimiters
-        self._empty_lines_in_values = empty_lines_in_values
         if line:
             super().add_line(line)
 
@@ -467,25 +493,20 @@ class Option(Block):
         super().add_line(line)
         self._values.append(line.strip())
 
+    def rm_trailing_newline(self):
+        if self._lines[-1] == "\n":
+            del self._lines[-1]
+        return self
+
     def _join_multiline_value(self):
         if not self._multiline_value_joined and not self._value_is_none:
             # do what `_join_multiline_value` in ConfigParser would do
             self._value = "\n".join(self._values).rstrip()
             self._multiline_value_joined = True
 
-    def __len__(self):
-        len = super().__len__()
-        if self._empty_lines_in_values:
-            return len - 1
-        else:
-            return len
-
     def __str__(self):
         if not self.updated:
-            if self._empty_lines_in_values:
-                return re.sub(r'\n\n$', '\n', super().__str__())
-            else:
-                return super().__str__()
+            return super().__str__()
         if self._value is None:
             return "{}{}".format(self._key, "\n")
         if self._space_around_delimiters:
@@ -730,7 +751,6 @@ class ConfigUpdater(Container, MutableMapping):
             delimiter=vi,
             container=self.last_item,
             space_around_delimiters=self._space_around_delimiters,
-            empty_lines_in_values=self._empty_lines_in_values,
             line=line,
         )
         self.last_item.add_option(entry)
@@ -874,12 +894,43 @@ class ConfigUpdater(Container, MutableMapping):
         # if any parsing errors occurred, raise an exception
         if e:
             raise e
+        # if empty_lines_in_values is true, we have to eliminate spurious newlines
+        if self._empty_lines_in_values:
+            self._check_values_with_blank_lines()
+            self._eliminate_trailing_newlines()
 
     def _handle_error(self, exc, fpname, lineno, line):
         if not exc:
             exc = ParsingError(fpname)
         exc.append(lineno, repr(line))
         return exc
+
+    def _check_values_with_blank_lines(self):
+        for section in self.section_blocks():
+            for option in section.option_blocks():
+                next_block = option.next_block
+                if isinstance(next_block, Space):
+                    # check if space is part of a multi-line value with blank lines
+                    if "".join(next_block._lines).strip():
+                        self._merge_option_with_space(option, next_block)
+
+    def _merge_option_with_space(self, option, space):
+        # remove leading whitespaces and completely empty lines ...
+        space_lines = [line for line in space._lines if line.strip()]
+        value = "".join(line.lstrip(" ") for line in space_lines)
+        # ... and append what's left to the current option
+        option._values.append(value)
+        option._multiline_value_joined = False
+        option._lines.extend(space_lines)
+        # remove everything that we merged from the space block
+        last_val_idx = max(i for i, line in enumerate(space._lines) if line.strip())
+        # +2 since we have double registration due to empty_lines_in_values
+        del space._lines[: last_val_idx + 2]
+
+    def _eliminate_trailing_newlines(self):
+        for section in self.section_blocks():
+            for option in section.option_blocks():
+                option.rm_trailing_newline()
 
     def write(self, fp, validate=True):
         """Write an .ini-format representation of the configuration state.
@@ -923,7 +974,7 @@ class ConfigUpdater(Container, MutableMapping):
         updated_cfg = str(self)
         parser.read_string(updated_cfg)
 
-    def sections_blocks(self):
+    def section_blocks(self):
         """Returns all section blocks
 
         Returns:
@@ -937,13 +988,13 @@ class ConfigUpdater(Container, MutableMapping):
         Returns:
             list: list of section names
         """
-        return [section.name for section in self.sections_blocks()]
+        return [section.name for section in self.section_blocks()]
 
     def __str__(self):
         return "".join(str(block) for block in self._structure)
 
     def __getitem__(self, key):
-        for section in self.sections_blocks():
+        for section in self.section_blocks():
             if section.name == key:
                 return section
         else:
@@ -1063,7 +1114,7 @@ class ConfigUpdater(Container, MutableMapping):
             list: list of :class:`Section` or :class:`Option` objects
         """
         if section is _UNSET:
-            return [(sect.name, sect) for sect in self.sections_blocks()]
+            return [(sect.name, sect) for sect in self.section_blocks()]
 
         section = self.__getitem__(section)
         return [(opt.key, opt) for opt in section.option_blocks()]
