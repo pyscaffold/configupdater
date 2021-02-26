@@ -890,7 +890,7 @@ key1 =
     c
     d
 [main2]
-key2 =
+key1 =
     a
     b
 
@@ -899,6 +899,29 @@ key2 =
 
 [main3]
 
+[main4]
+key1 =
+    a
+    b
+
+    c
+    d
+key2 =
+    a
+    b
+
+    c
+    d
+[main5]
+key1 =
+    a
+    b
+
+    c
+    d
+
+key2 = abcd
+[main6]
 """
 
 
