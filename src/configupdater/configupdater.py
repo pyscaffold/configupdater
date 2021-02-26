@@ -497,11 +497,6 @@ class Option(Block):
         super().add_line(line)
         self._values.append(line.strip())
 
-    def rm_trailing_newline(self):
-        if self._lines[-1] == "\n":
-            del self._lines[-1]
-        return self
-
     def _join_multiline_value(self):
         if not self._multiline_value_joined and not self._value_is_none:
             # do what `_join_multiline_value` in ConfigParser would do
