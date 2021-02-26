@@ -130,6 +130,10 @@ class Block(ABC):
         return self
 
     @property
+    def lines(self):
+        return self._lines
+
+    @property
     def container(self):
         """"Returns current container holding the block"""
         return self._container
@@ -911,17 +915,17 @@ class ConfigUpdater(Container, MutableMapping):
                 next_block = option.next_block
                 if isinstance(next_block, Space):
                     # check if space is part of a multi-line value with blank lines
-                    if "".join(next_block._lines).strip():
+                    if "".join(next_block.lines).strip():
                         self._merge_option_with_space(option, next_block)
 
     def _merge_option_with_space(self, option, space):
-        last_val_idx = max(i for i, line in enumerate(space._lines) if line.strip())
-        value_lines = space._lines[: last_val_idx + 1]
+        last_val_idx = max(i for i, line in enumerate(space.lines) if line.strip())
+        value_lines = space.lines[: last_val_idx + 1]
         merge_vals = "".join(line.lstrip(" ") for line in value_lines)
         option._values.append(merge_vals)
         option._multiline_value_joined = False
-        option._lines.extend(space._lines[: last_val_idx + 1])
-        del space._lines[: last_val_idx + 1]
+        option.lines.extend(space.lines[: last_val_idx + 1])
+        del space.lines[: last_val_idx + 1]
 
     def write(self, fp, validate=True):
         """Write an .ini-format representation of the configuration state.
