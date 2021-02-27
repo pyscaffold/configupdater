@@ -102,7 +102,7 @@ class Block(ABC):
     a reference to a container wherein the object resides.
     """
 
-    def __init__(self, container=None, **kwargs):
+    def __init__(self, container, **kwargs):
         self._container = container
         self._lines = []
         self._updated = False
@@ -268,7 +268,7 @@ class BlockBuilder(object):
 class Comment(Block):
     """Comment block"""
 
-    def __init__(self, container=None):
+    def __init__(self, container):
         super().__init__(container=container)
 
     def __repr__(self):
@@ -278,7 +278,7 @@ class Comment(Block):
 class Space(Block):
     """Vertical space block of new lines"""
 
-    def __init__(self, container=None):
+    def __init__(self, container):
         super().__init__(container=container)
 
     def __repr__(self):
