@@ -12,6 +12,7 @@ Version 2.0
 - ``last_item`` for renamed to ``last_block`` for consistency
 - Reworked some internal parts of the inheritance hierarchy
 - added ``remove`` to remove the current block
+- added ``next_block`` and ``previous_block`` for easier navigation in section
 
 Version 1.1.3
 =============
