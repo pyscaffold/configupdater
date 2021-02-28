@@ -5,15 +5,19 @@ from io import StringIO
 import pytest
 
 from configupdater import (
+    Comment,
     ConfigUpdater,
     DuplicateOptionError,
+    DuplicateSectionError,
     MissingSectionHeaderError,
     NoConfigFileReadError,
     NoOptionError,
     NoSectionError,
+    Option,
     ParsingError,
+    Section,
+    Space,
 )
-from configupdater.configupdater import DuplicateSectionError, Option, Section
 
 
 def test_reade_write_no_changes(setup_cfg_path, setup_cfg):
@@ -167,7 +171,7 @@ def test_len_section(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
     section = updater["metadata"]
-    # we test the number of entries, not options
+    # we test the number of blocks in section
     assert len(section) == 12
 
 
@@ -175,8 +179,7 @@ def test_len_option(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
     option = updater["metadata"]["classifiers"]
-    # we test the number of lines
-    assert len(option) == 3
+    assert len(option.lines) == 3
 
 
 def test_iter_option(setup_cfg_path):
@@ -941,3 +944,36 @@ def test_empty_lines_in_values_support():
     with pytest.raises(ParsingError):
         updater = ConfigUpdater(empty_lines_in_values=False)
         updater.read_string(test21_cfg_in)
+
+
+test22_cfg_in = """
+[section]
+key1 = 1
+# comment
+key2 = 2
+
+"""
+
+test22_cfg_out = """
+[section]
+key1 = 1
+key2 = 2
+"""
+
+
+def test_navigation_and_remove():
+    updater = ConfigUpdater()
+    updater.read_string(test22_cfg_in)
+    section = updater["section"]
+    key1 = section["key1"]
+    assert key1 is updater["section"].first_block
+    assert key1.previous_block is None
+    assert isinstance(key1.next_block, Comment)
+    key2 = key1.next_block.next_block
+    assert key2.value == section["key2"].value
+    assert isinstance(key2.next_block, Space)
+    assert key2.next_block is section.last_block
+    assert section.last_block.next_block is None
+    key1.next_block.remove()
+    key2.next_block.remove()
+    assert str(updater) == test22_cfg_out

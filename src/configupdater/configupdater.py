@@ -52,6 +52,10 @@ __all__ = [
     "ParsingError",
     "MissingSectionHeaderError",
     "ConfigUpdater",
+    "Option",
+    "Section",
+    "Comment",
+    "Space",
 ]
 
 
@@ -80,19 +84,31 @@ class Container(ABC):
         return self._structure
 
     @property
-    def last_item(self):
+    def first_block(self):
+        if self._structure:
+            return self._structure[0]
+        else:
+            return None
+
+    @property
+    def last_block(self):
         if self._structure:
             return self._structure[-1]
         else:
             return None
 
-    def remove_block(self, idx):
+    def _remove_block(self, idx):
         """Remove block at index idx within container
 
         Use `.container_idx` of a block to get the index.
+        Not meant for users, rather use block.remove() instead!
         """
         del self._structure[idx]
         return self
+
+    def __len__(self):
+        """"Number of blocks in container"""
+        return len(self._structure)
 
 
 class Block(ABC):
@@ -110,9 +126,6 @@ class Block(ABC):
 
     def __str__(self):
         return "".join(self._lines)
-
-    def __len__(self):
-        return len(self._lines)
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -162,18 +175,25 @@ class Block(ABC):
     @property
     def next_block(self):
         """Returns the next block in the current container"""
-        try:
-            return self._container.structure[self.container_idx + 1]
-        except IndexError:
+        idx = self.container_idx + 1
+        if idx < len(self._container):
+            return self._container.structure[idx]
+        else:
             return None
 
     @property
     def previous_block(self):
         """Returns the previous block in the current container"""
-        try:
-            return self._container.structure[self.container_idx - 1]
-        except IndexError:
+        idx = self.container_idx - 1
+        if idx >= 0:
+            return self._container.structure[idx]
+        else:
             return None
+
+    def remove(self):
+        """Remove this block from container"""
+        self.container._remove_block(self.container_idx)
+        return self
 
 
 class BlockBuilder(object):
@@ -318,10 +338,10 @@ class Section(Block, Container, MutableMapping):
         Args:
             line (str): one line in the comment
         """
-        if not isinstance(self.last_item, Comment):
+        if not isinstance(self.last_block, Comment):
             comment = Comment(container=self)
             self._structure.append(comment)
-        self.last_item.add_line(line)
+        self.last_block.add_line(line)
         return self
 
     def add_space(self, line):
@@ -332,10 +352,10 @@ class Section(Block, Container, MutableMapping):
         Args:
             line (str): one line that defines the space, maybe whitespaces
         """
-        if not isinstance(self.last_item, Space):
+        if not isinstance(self.last_block, Space):
             space = Space(container=self)
             self._structure.append(space)
-        self.last_item.add_line(line)
+        self.last_block.add_line(line)
         return self
 
     def _get_option_idx(self, key):
@@ -384,9 +404,6 @@ class Section(Block, Container, MutableMapping):
 
     def __contains__(self, key):
         return key in self.options()
-
-    def __len__(self):
-        return len(self._structure)
 
     def __iter__(self):
         """Return all entries, not just options"""
@@ -727,16 +744,16 @@ class ConfigUpdater(Container, MutableMapping):
         return optionstr.lower()
 
     def _update_curr_block(self, block_type):
-        if not isinstance(self.last_item, block_type):
+        if not isinstance(self.last_block, block_type):
             new_block = block_type(container=self)
             self._structure.append(new_block)
 
     def _add_comment(self, line):
-        if isinstance(self.last_item, Section):
-            self.last_item.add_comment(line)
+        if isinstance(self.last_block, Section):
+            self.last_block.add_comment(line)
         else:
             self._update_curr_block(Comment)
-            self.last_item.add_line(line)
+            self.last_block.add_line(line)
 
     def _add_section(self, sectname, line):
         new_section = Section(sectname, container=self)
@@ -748,18 +765,18 @@ class ConfigUpdater(Container, MutableMapping):
             key,
             value,
             delimiter=vi,
-            container=self.last_item,
+            container=self.last_block,
             space_around_delimiters=self._space_around_delimiters,
             line=line,
         )
-        self.last_item.add_option(entry)
+        self.last_block.add_option(entry)
 
     def _add_space(self, line):
-        if isinstance(self.last_item, Section):
-            self.last_item.add_space(line)
+        if isinstance(self.last_block, Section):
+            self.last_block.add_space(line)
         else:
             self._update_curr_block(Space)
-            self.last_item.add_line(line)
+            self.last_block.add_line(line)
 
     def _read(self, fp, fpname):
         """Parse a sectioned configuration file.
@@ -826,7 +843,7 @@ class ConfigUpdater(Container, MutableMapping):
                     ):
                         cursect[optname].append("")  # newlines added at join
                         if line.strip():
-                            self.last_item.last_item.add_line(line)  # HOOK
+                            self.last_block.last_block.add_line(line)  # HOOK
                 else:
                     # empty line marks end of value
                     indent_level = sys.maxsize
@@ -838,7 +855,7 @@ class ConfigUpdater(Container, MutableMapping):
             cur_indent_level = first_nonspace.start() if first_nonspace else 0
             if cursect is not None and optname and cur_indent_level > indent_level:
                 cursect[optname].append(value)
-                self.last_item.last_item.add_line(line)  # HOOK
+                self.last_block.last_block.add_line(line)  # HOOK
             # a section header or option header?
             else:
                 indent_level = cur_indent_level
@@ -1009,10 +1026,6 @@ class ConfigUpdater(Container, MutableMapping):
 
     def __contains__(self, key):
         return self.has_section(key)
-
-    def __len__(self):
-        """Number of all blocks, not just sections"""
-        return len(self._structure)
 
     def __iter__(self):
         """Iterate over all blocks, not just sections"""
