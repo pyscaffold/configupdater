@@ -1,0 +1,2 @@
+# Requirements file for ReadTheDocs, check .readthedocs.yml
+importlib-metadata; python_version<"3.8"
