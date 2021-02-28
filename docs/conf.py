@@ -152,7 +152,6 @@ html_theme = "alabaster"
 # documentation.
 html_theme_options = {
     "github_banner": "true",
-    "travis_button": "true",
     "github_repo": "pyscaffold/configupdater",
     "sidebar_width": "300px",
     "page_width": "1200px",
