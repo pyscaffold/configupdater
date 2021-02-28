@@ -52,6 +52,10 @@ __all__ = [
     "ParsingError",
     "MissingSectionHeaderError",
     "ConfigUpdater",
+    "Option",
+    "Section",
+    "Comment",
+    "Space",
 ]
 
 
@@ -69,7 +73,7 @@ _UNSET = object()
 
 
 class Container(ABC):
-    """Abstract Mixin Class"""
+    """Abstract Mixin Class describing a container that holds blocks"""
 
     def __init__(self, **kwargs):
         self._structure = list()
@@ -80,11 +84,31 @@ class Container(ABC):
         return self._structure
 
     @property
-    def last_item(self):
+    def first_block(self):
+        if self._structure:
+            return self._structure[0]
+        else:
+            return None
+
+    @property
+    def last_block(self):
         if self._structure:
             return self._structure[-1]
         else:
             return None
+
+    def _remove_block(self, idx):
+        """Remove block at index idx within container
+
+        Use `.container_idx` of a block to get the index.
+        Not meant for users, rather use block.remove() instead!
+        """
+        del self._structure[idx]
+        return self
+
+    def __len__(self):
+        """"Number of blocks in container"""
+        return len(self._structure)
 
 
 class Block(ABC):
@@ -94,17 +118,14 @@ class Block(ABC):
     a reference to a container wherein the object resides.
     """
 
-    def __init__(self, container=None, **kwargs):
+    def __init__(self, container, **kwargs):
         self._container = container
-        self.lines = []
+        self._lines = []
         self._updated = False
         super().__init__(**kwargs)
 
     def __str__(self):
-        return "".join(self.lines)
-
-    def __len__(self):
-        return len(self.lines)
+        return "".join(self._lines)
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -118,119 +139,67 @@ class Block(ABC):
         Args:
             line (str): one line to add
         """
-        self.lines.append(line)
+        self._lines.append(line)
         return self
 
     @property
+    def lines(self):
+        return self._lines
+
+    @property
     def container(self):
+        """"Returns current container holding the block"""
         return self._container
+
+    @property
+    def container_idx(self):
+        """"Returns index of the block within its container"""
+        return self._container.structure.index(self)
+
+    @property
+    def updated(self):
+        """Returns if the option was changed/updated"""
+        # if no lines were added, treat it as updated since we added it
+        return self._updated or not self._lines
 
     @property
     def add_before(self):
         """Returns a builder inserting a new block before the current block"""
-        idx = self._container.structure.index(self)
-        return BlockBuilder(self._container, idx)
+        return BlockBuilder(self._container, self.container_idx)
 
     @property
     def add_after(self):
         """Returns a builder inserting a new block after the current block"""
-        idx = self._container.structure.index(self)
-        return BlockBuilder(self._container, idx + 1)
+        return BlockBuilder(self._container, self.container_idx + 1)
 
+    @property
+    def next_block(self):
+        """Returns the next block in the current container"""
+        idx = self.container_idx + 1
+        if idx < len(self._container):
+            return self._container.structure[idx]
+        else:
+            return None
 
-class BlockBuilder(object):
-    """Builder that injects blocks at a given index position."""
+    @property
+    def previous_block(self):
+        """Returns the previous block in the current container"""
+        idx = self.container_idx - 1
+        if idx >= 0:
+            return self._container.structure[idx]
+        else:
+            return None
 
-    def __init__(self, container, idx):
-        self._container = container
-        self._idx = idx
-
-    def comment(self, text, comment_prefix="#"):
-        """Creates a comment block
-
-        Args:
-            text (str): content of comment without #
-            comment_prefix (str): character indicating start of comment
-
-        Returns:
-            self for chaining
-        """
-        comment = Comment(self._container)
-        if not text.startswith(comment_prefix):
-            text = "{} {}".format(comment_prefix, text)
-        if not text.endswith("\n"):
-            text = "{}{}".format(text, "\n")
-        comment.add_line(text)
-        self._container.structure.insert(self._idx, comment)
-        self._idx += 1
-        return self
-
-    def section(self, section):
-        """Creates a section block
-
-        Args:
-            section (str or :class:`Section`): name of section or object
-
-        Returns:
-            self for chaining
-        """
-        if not isinstance(self._container, ConfigUpdater):
-            raise ValueError("Sections can only be added at section level!")
-        if isinstance(section, str):
-            # create a new section
-            section = Section(section, container=self._container)
-        elif not isinstance(section, Section):
-            raise ValueError("Parameter must be a string or Section type!")
-        if section.name in [
-            block.name for block in self._container if isinstance(block, Section)
-        ]:
-            raise DuplicateSectionError(section.name)
-        self._container.structure.insert(self._idx, section)
-        self._idx += 1
-        return self
-
-    def space(self, newlines=1):
-        """Creates a vertical space of newlines
-
-        Args:
-            newlines (int): number of empty lines
-
-        Returns:
-            self for chaining
-        """
-        space = Space()
-        for line in range(newlines):
-            space.add_line("\n")
-        self._container.structure.insert(self._idx, space)
-        self._idx += 1
-        return self
-
-    def option(self, key, value=None, **kwargs):
-        """Creates a new option inside a section
-
-        Args:
-            key (str): key of the option
-            value (str or None): value of the option
-            **kwargs: are passed to the constructor of :class:`Option`
-
-        Returns:
-            self for chaining
-        """
-        if not isinstance(self._container, Section):
-            raise ValueError("Options can only be added inside a section!")
-        option = Option(key, value, container=self._container, **kwargs)
-        if option.key in self._container.options():
-            raise DuplicateOptionError(self._container.name, option.key)
-        option.value = value
-        self._container.structure.insert(self._idx, option)
-        self._idx += 1
+    def remove(self):
+        """Remove this block from container"""
+        self.container._remove_block(self.container_idx)
         return self
 
 
 class Comment(Block):
     """Comment block"""
 
-    def __init__(self, container=None):
+    def __init__(self, container):
         super().__init__(container=container)
 
     def __repr__(self):
@@ -240,7 +209,7 @@ class Comment(Block):
 class Space(Block):
     """Vertical space block of new lines"""
 
-    def __init__(self, container=None):
+    def __init__(self, container):
         super().__init__(container=container)
 
     def __repr__(self):
@@ -280,10 +249,10 @@ class Section(Block, Container, MutableMapping):
         Args:
             line (str): one line in the comment
         """
-        if not isinstance(self.last_item, Comment):
-            comment = Comment(self._structure)
+        if not isinstance(self.last_block, Comment):
+            comment = Comment(container=self)
             self._structure.append(comment)
-        self.last_item.add_line(line)
+        self.last_block.add_line(line)
         return self
 
     def add_space(self, line):
@@ -294,10 +263,10 @@ class Section(Block, Container, MutableMapping):
         Args:
             line (str): one line that defines the space, maybe whitespaces
         """
-        if not isinstance(self.last_item, Space):
-            space = Space(self._structure)
+        if not isinstance(self.last_block, Space):
+            space = Space(container=self)
             self._structure.append(space)
-        self.last_item.add_line(line)
+        self.last_block.add_line(line)
         return self
 
     def _get_option_idx(self, key):
@@ -347,9 +316,6 @@ class Section(Block, Container, MutableMapping):
     def __contains__(self, key):
         return key in self.options()
 
-    def __len__(self):
-        return len(self._structure)
-
     def __iter__(self):
         """Return all entries, not just options"""
         return self._structure.__iter__()
@@ -383,12 +349,6 @@ class Section(Block, Container, MutableMapping):
             dict: dictionary with same content
         """
         return {key: self.__getitem__(key).value for key in self.options()}
-
-    @property
-    def updated(self):
-        """Returns if the option was changed/updated"""
-        # if no lines were added, treat it as updated since we added it
-        return self._updated or not self.lines
 
     @property
     def name(self):
@@ -459,7 +419,7 @@ class Option(Block):
         self._multiline_value_joined = False
         self._space_around_delimiters = space_around_delimiters
         if line:
-            self.lines.append(line)
+            super().add_line(line)
 
     def add_line(self, line):
         super().add_line(line)
@@ -486,12 +446,6 @@ class Option(Block):
 
     def __repr__(self):
         return "<Option: {} = {}>".format(self.key, self.value)
-
-    @property
-    def updated(self):
-        """Returns if the option was changed/updated"""
-        # if no lines were added, treat it as updated since we added it
-        return self._updated or not self.lines
 
     @property
     def key(self):
@@ -533,13 +487,101 @@ class Option(Block):
         self._value = separator.join(values)
 
 
+class BlockBuilder(object):
+    """Builder that injects blocks at a given index position."""
+
+    def __init__(self, container, idx):
+        self._container = container
+        self._idx = idx
+
+    def comment(self, text, comment_prefix="#"):
+        """Creates a comment block
+
+        Args:
+            text (str): content of comment without #
+            comment_prefix (str): character indicating start of comment
+
+        Returns:
+            self for chaining
+        """
+        comment = Comment(self._container)
+        if not text.startswith(comment_prefix):
+            text = "{} {}".format(comment_prefix, text)
+        if not text.endswith("\n"):
+            text = "{}{}".format(text, "\n")
+        comment.add_line(text)
+        self._container.structure.insert(self._idx, comment)
+        self._idx += 1
+        return self
+
+    def section(self, section):
+        """Creates a section block
+
+        Args:
+            section (str or :class:`Section`): name of section or object
+
+        Returns:
+            self for chaining
+        """
+        if not isinstance(self._container, ConfigUpdater):
+            raise ValueError("Sections can only be added at section level!")
+        if isinstance(section, str):
+            # create a new section
+            section = Section(section, container=self._container)
+        elif not isinstance(section, Section):
+            raise ValueError("Parameter must be a string or Section type!")
+        if section.name in [
+            block.name for block in self._container if isinstance(block, Section)
+        ]:
+            raise DuplicateSectionError(section.name)
+        self._container.structure.insert(self._idx, section)
+        self._idx += 1
+        return self
+
+    def space(self, newlines=1):
+        """Creates a vertical space of newlines
+
+        Args:
+            newlines (int): number of empty lines
+
+        Returns:
+            self for chaining
+        """
+        space = Space(container=self._container)
+        for _ in range(newlines):
+            space.add_line("\n")
+        self._container.structure.insert(self._idx, space)
+        self._idx += 1
+        return self
+
+    def option(self, key, value=None, **kwargs):
+        """Creates a new option inside a section
+
+        Args:
+            key (str): key of the option
+            value (str or None): value of the option
+            **kwargs: are passed to the constructor of :class:`Option`
+
+        Returns:
+            self for chaining
+        """
+        if not isinstance(self._container, Section):
+            raise ValueError("Options can only be added inside a section!")
+        option = Option(key, value, container=self._container, **kwargs)
+        if option.key in self._container.options():
+            raise DuplicateOptionError(self._container.name, option.key)
+        option.value = value
+        self._container.structure.insert(self._idx, option)
+        self._idx += 1
+        return self
+
+
 class ConfigUpdater(Container, MutableMapping):
     """Parser for updating configuration files.
 
     ConfigUpdater follows the API of ConfigParser with some differences:
       * inline comments are treated as part of a key's value,
       * only a single config file can be updated at a time,
-      * empty lines in values are not valid,
       * the original case of sections and keys are kept,
       * control over the position of a new section/key.
 
@@ -593,6 +635,7 @@ class ConfigUpdater(Container, MutableMapping):
         comment_prefixes=("#", ";"),
         inline_comment_prefixes=None,
         strict=True,
+        empty_lines_in_values=True,
         space_around_delimiters=True
     ):
         """Constructor of ConfigUpdater
@@ -605,6 +648,9 @@ class ConfigUpdater(Container, MutableMapping):
                 default None
             strict (bool): each section must be unique as well as every key
                 within a section, default True
+            empty_lines_in_values (bool): each empty line marks the end of an option.
+                Otherwise, internal empty lines of a multiline option are kept as part
+                of the value, default: True.
             space_around_delimiters (bool): add a space before and after the
                 delimiter, default True
         """
@@ -629,8 +675,7 @@ class ConfigUpdater(Container, MutableMapping):
         self._inline_comment_prefixes = tuple(inline_comment_prefixes or ())
         self._strict = strict
         self._allow_no_value = allow_no_value
-        # Options from ConfigParser that we need to set constantly
-        self._empty_lines_in_values = False
+        self._empty_lines_in_values = empty_lines_in_values
         super().__init__()
 
     def _get_section_idx(self, name):
@@ -698,16 +743,16 @@ class ConfigUpdater(Container, MutableMapping):
         return optionstr.lower()
 
     def _update_curr_block(self, block_type):
-        if not isinstance(self.last_item, block_type):
+        if not isinstance(self.last_block, block_type):
             new_block = block_type(container=self)
             self._structure.append(new_block)
 
     def _add_comment(self, line):
-        if isinstance(self.last_item, Section):
-            self.last_item.add_comment(line)
+        if isinstance(self.last_block, Section):
+            self.last_block.add_comment(line)
         else:
             self._update_curr_block(Comment)
-            self.last_item.add_line(line)
+            self.last_block.add_line(line)
 
     def _add_section(self, sectname, line):
         new_section = Section(sectname, container=self)
@@ -719,18 +764,18 @@ class ConfigUpdater(Container, MutableMapping):
             key,
             value,
             delimiter=vi,
-            container=self.last_item,
+            container=self.last_block,
             space_around_delimiters=self._space_around_delimiters,
             line=line,
         )
-        self.last_item.add_option(entry)
+        self.last_block.add_option(entry)
 
     def _add_space(self, line):
-        if isinstance(self.last_item, Section):
-            self.last_item.add_space(line)
+        if isinstance(self.last_block, Section):
+            self.last_block.add_space(line)
         else:
             self._update_curr_block(Space)
-            self.last_item.add_line(line)
+            self.last_block.add_line(line)
 
     def _read(self, fp, fpname):
         """Parse a sectioned configuration file.
@@ -777,7 +822,8 @@ class ConfigUpdater(Container, MutableMapping):
                 inline_prefixes = next_prefixes
             # strip full line comments
             for prefix in self._comment_prefixes:
-                if line.strip().startswith(prefix):
+                # configparser would do line.strip() here
+                if line.rstrip().startswith(prefix):
                     comment_start = 0
                     self._add_comment(line)  # HOOK
                     break
@@ -795,7 +841,8 @@ class ConfigUpdater(Container, MutableMapping):
                         and cursect[optname] is not None
                     ):
                         cursect[optname].append("")  # newlines added at join
-                        self.last_item.last_item.add_line(line)  # HOOK
+                        if line.strip():
+                            self.last_block.last_block.add_line(line)  # HOOK
                 else:
                     # empty line marks end of value
                     indent_level = sys.maxsize
@@ -807,7 +854,7 @@ class ConfigUpdater(Container, MutableMapping):
             cur_indent_level = first_nonspace.start() if first_nonspace else 0
             if cursect is not None and optname and cur_indent_level > indent_level:
                 cursect[optname].append(value)
-                self.last_item.last_item.add_line(line)  # HOOK
+                self.last_block.last_block.add_line(line)  # HOOK
             # a section header or option header?
             else:
                 indent_level = cur_indent_level
@@ -863,12 +910,33 @@ class ConfigUpdater(Container, MutableMapping):
         # if any parsing errors occurred, raise an exception
         if e:
             raise e
+        # if empty_lines_in_values is true, we have to eliminate spurious newlines
+        if self._empty_lines_in_values:
+            self._check_values_with_blank_lines()
 
     def _handle_error(self, exc, fpname, lineno, line):
         if not exc:
             exc = ParsingError(fpname)
         exc.append(lineno, repr(line))
         return exc
+
+    def _check_values_with_blank_lines(self):
+        for section in self.section_blocks():
+            for option in section.option_blocks():
+                next_block = option.next_block
+                if isinstance(next_block, Space):
+                    # check if space is part of a multi-line value with blank lines
+                    if "".join(next_block.lines).strip():
+                        self._merge_option_with_space(option, next_block)
+
+    def _merge_option_with_space(self, option, space):
+        last_val_idx = max(i for i, line in enumerate(space.lines) if line.strip())
+        value_lines = space.lines[: last_val_idx + 1]
+        merge_vals = "".join(line.lstrip(" ") for line in value_lines)
+        option._values.append(merge_vals)
+        option._multiline_value_joined = False
+        option.lines.extend(space.lines[: last_val_idx + 1])
+        del space.lines[: last_val_idx + 1]
 
     def write(self, fp, validate=True):
         """Write an .ini-format representation of the configuration state.
@@ -912,7 +980,7 @@ class ConfigUpdater(Container, MutableMapping):
         updated_cfg = str(self)
         parser.read_string(updated_cfg)
 
-    def sections_blocks(self):
+    def section_blocks(self):
         """Returns all section blocks
 
         Returns:
@@ -926,13 +994,13 @@ class ConfigUpdater(Container, MutableMapping):
         Returns:
             list: list of section names
         """
-        return [section.name for section in self.sections_blocks()]
+        return [section.name for section in self.section_blocks()]
 
     def __str__(self):
         return "".join(str(block) for block in self._structure)
 
     def __getitem__(self, key):
-        for section in self.sections_blocks():
+        for section in self.section_blocks():
             if section.name == key:
                 return section
         else:
@@ -957,10 +1025,6 @@ class ConfigUpdater(Container, MutableMapping):
 
     def __contains__(self, key):
         return self.has_section(key)
-
-    def __len__(self):
-        """Number of all blocks, not just sections"""
-        return len(self._structure)
 
     def __iter__(self):
         """Iterate over all blocks, not just sections"""
@@ -1052,7 +1116,7 @@ class ConfigUpdater(Container, MutableMapping):
             list: list of :class:`Section` or :class:`Option` objects
         """
         if section is _UNSET:
-            return [(sect.name, sect) for sect in self.sections_blocks()]
+            return [(sect.name, sect) for sect in self.section_blocks()]
 
         section = self.__getitem__(section)
         return [(opt.key, opt) for opt in section.option_blocks()]

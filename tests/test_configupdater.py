@@ -5,15 +5,19 @@ from io import StringIO
 import pytest
 
 from configupdater import (
+    Comment,
     ConfigUpdater,
     DuplicateOptionError,
+    DuplicateSectionError,
     MissingSectionHeaderError,
     NoConfigFileReadError,
     NoOptionError,
     NoSectionError,
+    Option,
     ParsingError,
+    Section,
+    Space,
 )
-from configupdater.configupdater import DuplicateSectionError, Option, Section
 
 
 def test_reade_write_no_changes(setup_cfg_path, setup_cfg):
@@ -104,7 +108,7 @@ def test_len_updater(setup_cfg_path):
 def test_iter_section(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
-    # we test ne number of blocks, not sections
+    # we test the number of blocks, not sections
     assert len([block for block in updater]) == 14
 
 
@@ -167,7 +171,7 @@ def test_len_section(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
     section = updater["metadata"]
-    # we test ne number of entries, not options
+    # we test the number of blocks in section
     assert len(section) == 12
 
 
@@ -175,15 +179,14 @@ def test_len_option(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
     option = updater["metadata"]["classifiers"]
-    # we test ne number of lines
-    assert len(option) == 3
+    assert len(option.lines) == 3
 
 
 def test_iter_option(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
     section = updater["metadata"]
-    # we test ne number of entries, not options
+    # we test the number of entries, not options
     assert len([entry for entry in section]) == 12
 
 
@@ -838,3 +841,139 @@ def test_no_duplicate_blocks_with_blockbuilder():
     with pytest.raises(DuplicateSectionError):
         updater["section"].add_after.section("section")
     assert str(updater) == test19_cfg_in
+
+
+# Taken from issue #14
+test20_cfg_in = """
+[flake8]
+exclude =
+  # Trash and cache:
+  .git
+  __pycache__
+  .venv
+  .eggs
+  *.egg
+  temp
+  # Bad code that I write to test things:
+  ex.py
+new = value
+
+per-file-ignores =
+  # Disable imports in `__init__.py`:
+  lambdas/__init__.py: WPS226, WPS413
+  lambdas/contrib/mypy/lambdas_plugin.py: WPS437
+  # There are multiple assert's in tests:
+  tests/*.py: S101, WPS226, WPS432, WPS436, WPS450
+  # We need to write tests to our private class:
+  tests/test_math_expression/*.py: S101, WPS432, WPS450"""
+
+
+def test_comments_in_multiline_options():
+    updater = ConfigUpdater()
+    updater.read_string(test20_cfg_in)
+    per_file_ignores = updater["flake8"]["per-file-ignores"].value
+    exp_val = (
+        "\n# Disable imports in `__init__.py`:\nlambdas/__init__.py: WPS226, WPS413\n"
+        "lambdas/contrib/mypy/lambdas_plugin.py: WPS437\n# There are multiple assert's"
+        " in tests:\ntests/*.py: S101, WPS226, WPS432, WPS436, WPS450\n# We need to"
+        " write tests to our private class:\ntests/test_math_expression/*.py: S101,"
+        " WPS432, WPS450"
+    )
+    updater.validate_format()
+    assert per_file_ignores == exp_val
+    assert test20_cfg_in == str(updater)
+
+
+test21_cfg_in = """
+[main1]
+key1 =
+    a
+    b
+
+    c
+    d
+[main2]
+key1 =
+    a
+    b
+
+    c
+    d
+
+[main3]
+
+[main4]
+key1 =
+    a
+    b
+
+
+    c
+    d
+key2 =
+    # comment
+    a
+    b
+    # comment
+
+
+    c
+    d
+[main5]
+key1 =
+    a
+    b
+
+    c
+    d
+
+key2 = abcd
+[main6]
+"""
+
+
+def test_empty_lines_in_values_support():
+    updater = ConfigUpdater()
+    updater.read_string(test21_cfg_in)
+    parser = ConfigParser()
+    parser.read_string(test21_cfg_in)
+    assert updater["main1"]["key1"].value == parser["main1"]["key1"]
+    assert updater["main2"]["key1"].value == parser["main2"]["key1"]
+    assert updater["main4"]["key1"].value == parser["main4"]["key2"]
+    assert test21_cfg_in == str(updater)
+    with pytest.raises(ParsingError):
+        updater = ConfigUpdater(empty_lines_in_values=False)
+        updater.read_string(test21_cfg_in)
+
+
+test22_cfg_in = """
+[section]
+key1 = 1
+# comment
+key2 = 2
+
+"""
+
+test22_cfg_out = """
+[section]
+key1 = 1
+key2 = 2
+"""
+
+
+def test_navigation_and_remove():
+    updater = ConfigUpdater()
+    updater.read_string(test22_cfg_in)
+    section = updater["section"]
+    key1 = section["key1"]
+    assert key1 is updater["section"].first_block
+    assert key1.previous_block is None
+    assert isinstance(key1.next_block, Comment)
+    key2 = key1.next_block.next_block
+    assert key2.value == section["key2"].value
+    assert isinstance(key2.next_block, Space)
+    assert key2.next_block is section.last_block
+    assert section.last_block.next_block is None
+    key1.next_block.remove()
+    key2.next_block.remove()
+    assert str(updater) == test22_cfg_out
