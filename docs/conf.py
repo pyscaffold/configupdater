@@ -84,6 +84,11 @@ templates_path = ["_templates"]
 # The suffix of source filenames.
 source_suffix = ".rst"
 
+# options for autodoc/api-doc
+autodoc_default_options = {
+    'inherited-members': True,
+}
+
 # The encoding of source files.
 # source_encoding = 'utf-8-sig'
 

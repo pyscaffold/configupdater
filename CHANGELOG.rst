@@ -10,6 +10,7 @@ Version 2.0
 - Parameter ``empty_lines_in_values`` is now activated by default and can be changed
 - Renamed ``sections_blocks`` to ``section_blocks`` for consistency
 - ``last_item`` renamed to ``last_block`` for consistency
+- added ``first_block``
 - Reworked some internal parts of the inheritance hierarchy
 - added ``remove`` to remove the current block
 - added ``next_block`` and ``previous_block`` for easier navigation in section

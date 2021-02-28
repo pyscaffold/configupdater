@@ -13,19 +13,19 @@ Now we can simply do::
     from configupdater import ConfigUpdater
 
     updater = ConfigUpdater()
-    updater.read('setup.cfg')
+    updater.read("setup.cfg")
 
 which would read the file ``setup.cfg`` that is found in many projects.
 
 To change the value of an existing key we can simply do::
 
-    updater['metadata']['author'].value = "Alan Turing"
+    updater["metadata"]["author"].value = "Alan Turing"
 
 At any point we can print the current state of the configuration file with::
 
     print(updater)
 
-To update the read-in file just call ``updater.update_file()`` or ``updater.write('filename')``
+To update the read-in file just call ``updater.update_file()`` or ``updater.write("filename")``
 to write the changed configuration file to another destination. Before actually writing,
 ConfigUpdater will automatically check that the updated configuration file is still valid by
 parsing it with the help of ConfigParser.
@@ -48,7 +48,7 @@ We can add an *license* option, i.e. a key/value pair, in the same way we would 
 
     updater = ConfigUpdater()
     updater.read_string(cfg)
-    updater['metadata']['license'] = 'MIT'
+    updater["metadata"]["license"] = "MIT"
 
 A simple ``print(updater)`` will give show you that the new option was appended to the end::
 
@@ -62,9 +62,9 @@ and even add a short comment before it::
 
     updater = ConfigUpdater()
     updater.read_string(cfg)
-    (updater['metadata']['summary'].add_before
+    (updater["metadata"]["summary"].add_before
                                    .comment("Ada would have loved MIT")
-                                   .option('license', 'MIT'))
+                                   .option("license", "MIT"))
 
 which would result in::
 
@@ -78,17 +78,17 @@ Using ``add_after`` would give the same result and looks like::
 
     updater = ConfigUpdater()
     updater.read_string(cfg)
-    (updater['metadata']['author'].add_after
+    (updater["metadata"]["author"].add_after
                                   .comment("Ada would have loved MIT")
-                                  .option('license', 'MIT'))
+                                  .option("license", "MIT"))
 
 Let's say we want to rename `summary` to the more common `description`::
 
     updater = ConfigUpdater()
     updater.read_string(cfg)
-    updater['metadata']['summary'].key = 'description'
+    updater["metadata"]["summary"].key = "description"
 
-If we wanted no summary at all, we could just do ``del updater['metadata']['summary']``.
+If we wanted no summary at all, we could just do ``del updater["metadata"]["summary"]``.
 
 
 Adding and removing sections
@@ -100,7 +100,7 @@ before ``metadata`` with a comment and two new lines to separate it from ``metad
 
     updater = ConfigUpdater()
     updater.read_string(cfg)
-    (updater['metadata'].add_before
+    (updater["metadata"].add_before
                         .comment("Some specific project options")
                         .section("options")
                         .space(2))
@@ -117,7 +117,7 @@ As expected, this results in::
 We could now fill the new section with options like we learnt before. If we wanted to rename
 an existing section we could do this with the help of the ``name`` attribute::
 
-    updater['metadata'].name = 'MetaData'
+    updater["metadata"].name = "MetaData"
 
 Sometimes it might be useful to inject a new section not in a programmatic way but more declarative.
 Let's assume we have thus defined our new section in a multi-line string::
@@ -132,12 +132,12 @@ With the help of two ConfigUpdater objects we can easily inject this section int
 
     sphinx = ConfigUpdater()
     sphinx.read_string(sphinx_sect_str)
-    sphinx_sect = sphinx['build_sphinx']
+    sphinx_sect = sphinx["build_sphinx"]
 
     updater = ConfigUpdater()
     updater.read_string(cfg)
 
-    (updater['metadata'].add_after
+    (updater["metadata"].add_after
                         .space()
                         .section(sphinx_sect))
 
