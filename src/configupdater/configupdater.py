@@ -73,7 +73,7 @@ _UNSET = object()
 
 
 class Container(ABC):
-    """Abstract Mixin Class"""
+    """Abstract Mixin Class describing a container that holds blocks"""
 
     def __init__(self, **kwargs):
         self._structure = list()
@@ -582,7 +582,6 @@ class ConfigUpdater(Container, MutableMapping):
     ConfigUpdater follows the API of ConfigParser with some differences:
       * inline comments are treated as part of a key's value,
       * only a single config file can be updated at a time,
-      * empty lines in values are not valid,
       * the original case of sections and keys are kept,
       * control over the position of a new section/key.
 
