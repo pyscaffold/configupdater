@@ -5,15 +5,15 @@ Changelog
 Version 2.0
 ===========
 
-- Changes in parser, comments in multi-line option values are kept
+- Changes in parser, i.e. comments in multi-line option values are kept
 - Issue #14 is fixed
 - Parameter ``empty_lines_in_values`` is now activated by default and can be changed
 - Renamed ``sections_blocks`` to ``section_blocks`` for consistency
-- ``last_item`` renamed to ``last_block`` for consistency
-- added ``first_block``
+- Renamed ``last_item`` to ``last_block`` for consistency
+- Added ``first_block``
 - Reworked some internal parts of the inheritance hierarchy
-- added ``remove`` to remove the current block
-- added ``next_block`` and ``previous_block`` for easier navigation in section
+- Added ``remove`` to remove the current block
+- Added ``next_block`` and ``previous_block`` for easier navigation in section
 
 Version 1.1.3
 =============

@@ -107,7 +107,7 @@ class Container(ABC):
         return self
 
     def __len__(self):
-        """"Number of blocks in container"""
+        """Number of blocks in container"""
         return len(self._structure)
 
 
@@ -147,34 +147,34 @@ class Block(ABC):
         return self._lines
 
     @property
-    def container(self):
-        """"Returns current container holding the block"""
+    def container(self) -> Container:
+        """Container holding the block"""
         return self._container
 
     @property
     def container_idx(self):
-        """"Returns index of the block within its container"""
+        """Index of the block within its container"""
         return self._container.structure.index(self)
 
     @property
     def updated(self):
-        """Returns if the option was changed/updated"""
+        """True if the option was changed/updated, otherwise False"""
         # if no lines were added, treat it as updated since we added it
         return self._updated or not self._lines
 
     @property
     def add_before(self):
-        """Returns a builder inserting a new block before the current block"""
+        """Block builder inserting a new block before the current block"""
         return BlockBuilder(self._container, self.container_idx)
 
     @property
     def add_after(self):
-        """Returns a builder inserting a new block after the current block"""
+        """Block builder inserting a new block after the current block"""
         return BlockBuilder(self._container, self.container_idx + 1)
 
     @property
     def next_block(self):
-        """Returns the next block in the current container"""
+        """Next block in the current container"""
         idx = self.container_idx + 1
         if idx < len(self._container):
             return self._container.structure[idx]
@@ -183,7 +183,7 @@ class Block(ABC):
 
     @property
     def previous_block(self):
-        """Returns the previous block in the current container"""
+        """Previous block in the current container"""
         idx = self.container_idx - 1
         if idx >= 0:
             return self._container.structure[idx]
