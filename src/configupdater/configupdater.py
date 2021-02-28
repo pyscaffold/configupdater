@@ -196,95 +196,6 @@ class Block(ABC):
         return self
 
 
-class BlockBuilder(object):
-    """Builder that injects blocks at a given index position."""
-
-    def __init__(self, container, idx):
-        self._container = container
-        self._idx = idx
-
-    def comment(self, text, comment_prefix="#"):
-        """Creates a comment block
-
-        Args:
-            text (str): content of comment without #
-            comment_prefix (str): character indicating start of comment
-
-        Returns:
-            self for chaining
-        """
-        comment = Comment(self._container)
-        if not text.startswith(comment_prefix):
-            text = "{} {}".format(comment_prefix, text)
-        if not text.endswith("\n"):
-            text = "{}{}".format(text, "\n")
-        comment.add_line(text)
-        self._container.structure.insert(self._idx, comment)
-        self._idx += 1
-        return self
-
-    def section(self, section):
-        """Creates a section block
-
-        Args:
-            section (str or :class:`Section`): name of section or object
-
-        Returns:
-            self for chaining
-        """
-        if not isinstance(self._container, ConfigUpdater):
-            raise ValueError("Sections can only be added at section level!")
-        if isinstance(section, str):
-            # create a new section
-            section = Section(section, container=self._container)
-        elif not isinstance(section, Section):
-            raise ValueError("Parameter must be a string or Section type!")
-        if section.name in [
-            block.name for block in self._container if isinstance(block, Section)
-        ]:
-            raise DuplicateSectionError(section.name)
-        self._container.structure.insert(self._idx, section)
-        self._idx += 1
-        return self
-
-    def space(self, newlines=1):
-        """Creates a vertical space of newlines
-
-        Args:
-            newlines (int): number of empty lines
-
-        Returns:
-            self for chaining
-        """
-        space = Space(container=self._container)
-        for _ in range(newlines):
-            space.add_line("\n")
-        self._container.structure.insert(self._idx, space)
-        self._idx += 1
-        return self
-
-    def option(self, key, value=None, **kwargs):
-        """Creates a new option inside a section
-
-        Args:
-            key (str): key of the option
-            value (str or None): value of the option
-            **kwargs: are passed to the constructor of :class:`Option`
-
-        Returns:
-            self for chaining
-        """
-        if not isinstance(self._container, Section):
-            raise ValueError("Options can only be added inside a section!")
-        option = Option(key, value, container=self._container, **kwargs)
-        if option.key in self._container.options():
-            raise DuplicateOptionError(self._container.name, option.key)
-        option.value = value
-        self._container.structure.insert(self._idx, option)
-        self._idx += 1
-        return self
-
-
 class Comment(Block):
     """Comment block"""
 
@@ -574,6 +485,95 @@ class Option(Block):
             values = [""] + values
             separator = separator + indent
         self._value = separator.join(values)
+
+
+class BlockBuilder(object):
+    """Builder that injects blocks at a given index position."""
+
+    def __init__(self, container, idx):
+        self._container = container
+        self._idx = idx
+
+    def comment(self, text, comment_prefix="#"):
+        """Creates a comment block
+
+        Args:
+            text (str): content of comment without #
+            comment_prefix (str): character indicating start of comment
+
+        Returns:
+            self for chaining
+        """
+        comment = Comment(self._container)
+        if not text.startswith(comment_prefix):
+            text = "{} {}".format(comment_prefix, text)
+        if not text.endswith("\n"):
+            text = "{}{}".format(text, "\n")
+        comment.add_line(text)
+        self._container.structure.insert(self._idx, comment)
+        self._idx += 1
+        return self
+
+    def section(self, section):
+        """Creates a section block
+
+        Args:
+            section (str or :class:`Section`): name of section or object
+
+        Returns:
+            self for chaining
+        """
+        if not isinstance(self._container, ConfigUpdater):
+            raise ValueError("Sections can only be added at section level!")
+        if isinstance(section, str):
+            # create a new section
+            section = Section(section, container=self._container)
+        elif not isinstance(section, Section):
+            raise ValueError("Parameter must be a string or Section type!")
+        if section.name in [
+            block.name for block in self._container if isinstance(block, Section)
+        ]:
+            raise DuplicateSectionError(section.name)
+        self._container.structure.insert(self._idx, section)
+        self._idx += 1
+        return self
+
+    def space(self, newlines=1):
+        """Creates a vertical space of newlines
+
+        Args:
+            newlines (int): number of empty lines
+
+        Returns:
+            self for chaining
+        """
+        space = Space(container=self._container)
+        for _ in range(newlines):
+            space.add_line("\n")
+        self._container.structure.insert(self._idx, space)
+        self._idx += 1
+        return self
+
+    def option(self, key, value=None, **kwargs):
+        """Creates a new option inside a section
+
+        Args:
+            key (str): key of the option
+            value (str or None): value of the option
+            **kwargs: are passed to the constructor of :class:`Option`
+
+        Returns:
+            self for chaining
+        """
+        if not isinstance(self._container, Section):
+            raise ValueError("Options can only be added inside a section!")
+        option = Option(key, value, container=self._container, **kwargs)
+        if option.key in self._container.options():
+            raise DuplicateOptionError(self._container.name, option.key)
+        option.value = value
+        self._container.structure.insert(self._idx, option)
+        self._idx += 1
+        return self
 
 
 class ConfigUpdater(Container, MutableMapping):
