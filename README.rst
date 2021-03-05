@@ -10,6 +10,9 @@
 .. image:: https://img.shields.io/pypi/v/configupdater.svg
     :alt: PyPI-Server
     :target: https://pypi.org/project/configupdater/
+.. image:: https://img.shields.io/conda/vn/conda-forge/configupdater.svg
+    :alt: Conda-Forge
+    :target: https://anaconda.org/conda-forge/configupdater
 .. image:: https://pepy.tech/badge/configupdater/month
     :alt: Monthly Downloads
     :target: https://pepy.tech/project/configupdater
