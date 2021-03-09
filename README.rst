@@ -53,7 +53,7 @@ Usage
 First install the package with either::
 
     pip install configupdater
-    
+
 or::
 
     conda install -c conda-forge configupdater
