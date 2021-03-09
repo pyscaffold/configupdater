@@ -50,9 +50,13 @@ Following features are **deliberately not** implemented:
 Usage
 =====
 
-First install the package with::
+First install the package with either::
 
     pip install configupdater
+    
+or::
+
+    conda install -c conda-forge configupdater
 
 Now we can simply do::
 
