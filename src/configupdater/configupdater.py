@@ -398,7 +398,7 @@ class Section(Block[ConfigContent], Container[SectionContent]):
         Returns:
             dict: dictionary with same content
         """
-        return {opt.key: opt.value for opt in self.option_blocks()}
+        return {opt.key: opt.value for opt in self.iter_options()}
 
     @property
     def name(self) -> str:
@@ -1287,4 +1287,4 @@ class ConfigUpdater(Container[ConfigContent]):
         Returns:
             dict: dictionary with same content
         """
-        return {sect.name: sect.to_dict() for sect in self.section_blocks()}
+        return {sect.name: sect.to_dict() for sect in self.iter_sections()}
