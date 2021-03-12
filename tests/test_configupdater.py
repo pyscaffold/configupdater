@@ -141,6 +141,11 @@ def test_get_section(setup_cfg_path):
     with pytest.raises(KeyError):
         updater["non_existent_section"]
 
+    # `get_section` is equivalent to dict.get
+    assert updater.get_section("non_existent_section") is None
+    default = {}
+    assert updater.get_section("non_existent_section", default) is default
+
 
 def test_section_to_dict(setup_cfg_path):
     updater = ConfigUpdater()
@@ -202,6 +207,16 @@ def test_get_options(setup_cfg_path):
     assert options == exp_options
     with pytest.raises(NoSectionError):
         updater.options("non_existent_section")
+
+    # Section objects also have a "get" method similar to dict
+    section = updater["metadata"]
+    assert section.get("name").value == "configupdater"
+    assert section.get("non_existent_option") is None
+    assert section.get("non_existent_option", []) == []
+    # and a `get_option` that unwraps the inner value
+    assert section.get_option("name") == "configupdater"
+    assert section.get_option("non_existent_option") is None
+    assert section.get_option("non_existent_option", []) == []
 
 
 def test_items(setup_cfg_path):
