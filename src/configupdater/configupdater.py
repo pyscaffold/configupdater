@@ -331,7 +331,7 @@ class Section(Block[ConfigBlock], Container[SectionBlock]):
 
     def __getitem__(self, key: str) -> "Option":
         key = self._container.optionxform(key)
-        if key not in self.options():
+        if not self.has_option(key):
             raise KeyError(key)
         option = self._structure[self._get_option_idx(key=key)]
         return cast(Option, option)
@@ -348,7 +348,7 @@ class Section(Block[ConfigBlock], Container[SectionBlock]):
             self._structure.append(option)
 
     def __delitem__(self, key: str):
-        if key not in self.options():
+        if not self.has_option(key):
             raise KeyError(key)
         idx = self._get_option_idx(key=key)
         del self._structure[idx]
@@ -366,13 +366,17 @@ class Section(Block[ConfigBlock], Container[SectionBlock]):
         else:
             return False
 
+    def iter_options(self) -> Iterator["Option"]:
+        """Iterate only over option blocks"""
+        return (entry for entry in self._structure if isinstance(entry, Option))
+
     def option_blocks(self) -> List["Option"]:
         """Returns option blocks
 
         Returns:
             list: list of :class:`Option` blocks
         """
-        return [entry for entry in self._structure if isinstance(entry, Option)]
+        return list(self.iter_options())
 
     def options(self) -> List[str]:
         """Returns option names
@@ -380,7 +384,18 @@ class Section(Block[ConfigBlock], Container[SectionBlock]):
         Returns:
             list: list of option names as strings
         """
-        return [option.key for option in self.option_blocks()]
+        return [option.key for option in self.iter_options()]
+
+    def has_option(self, option: str) -> bool:
+        """Returns whether the given option exists.
+
+        Args:
+            option (str): name of option
+
+        Returns:
+            bool: whether the section exists
+        """
+        return next((True for o in self.iter_options() if o.key == option), False)
 
     def to_dict(self) -> Dict[str, Optional[str]]:
         """Transform to dictionary
@@ -388,7 +403,7 @@ class Section(Block[ConfigBlock], Container[SectionBlock]):
         Returns:
             dict: dictionary with same content
         """
-        return {key: self.__getitem__(key).value for key in self.options()}
+        return {opt.key: opt.value for opt in self.option_blocks()}
 
     @property
     def name(self) -> str:
@@ -1036,13 +1051,17 @@ class ConfigUpdater(Container[ConfigBlock]):
         updated_cfg = str(self)
         parser.read_string(updated_cfg)
 
+    def iter_sections(self) -> Iterator[Section]:
+        """Iterate only over section blocks"""
+        return (block for block in self._structure if isinstance(block, Section))
+
     def section_blocks(self) -> List[Section]:
         """Returns all section blocks
 
         Returns:
             list: list of :class:`Section` blocks
         """
-        return [block for block in self._structure if isinstance(block, Section)]
+        return list(self.iter_sections())
 
     def sections(self) -> List[str]:
         """Return a list of section names
@@ -1050,7 +1069,7 @@ class ConfigUpdater(Container[ConfigBlock]):
         Returns:
             list: list of section names
         """
-        return [section.name for section in self.section_blocks()]
+        return [section.name for section in self.iter_sections()]
 
     def __str__(self) -> str:
         return "".join(str(block) for block in self._structure)
@@ -1109,7 +1128,7 @@ class ConfigUpdater(Container[ConfigBlock]):
         else:
             raise ValueError("Parameter must be a string or Section type!")
 
-        if section_obj.name in self.sections():
+        if self.has_section(section_obj.name):
             raise DuplicateSectionError(section_obj.name)
 
         self._structure.append(section_obj)
@@ -1123,7 +1142,7 @@ class ConfigUpdater(Container[ConfigBlock]):
         Returns:
             bool: wether the section exists
         """
-        return section in self.sections()
+        return next((True for s in self.iter_sections() if s.name == section), False)
 
     def options(self, section: str) -> List[str]:
         """Returns list of configuration options for the named section.
@@ -1191,7 +1210,7 @@ class ConfigUpdater(Container[ConfigBlock]):
         Returns:
             bool: whether the option exists in the given section
         """
-        if section not in self.sections():
+        if not self.has_section(section):
             return False
         else:
             option = self.optionxform(option)
@@ -1257,4 +1276,4 @@ class ConfigUpdater(Container[ConfigBlock]):
         Returns:
             dict: dictionary with same content
         """
-        return {sect: self.__getitem__(sect).to_dict() for sect in self.sections()}
+        return {sect.name: sect.to_dict() for sect in self.section_blocks()}
