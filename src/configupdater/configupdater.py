@@ -331,7 +331,7 @@ class Section(Block[ConfigContent], Container[SectionContent]):
         try:
             return next(o for o in self.iter_options() if o.key == key)
         except StopIteration:
-            raise KeyError(key)
+            raise KeyError("No option `{}` found".format(key), {"key": key})
 
     def __setitem__(self, key: str, value: Optional[str]):
         if self._container.optionxform(key) in self:
@@ -347,7 +347,7 @@ class Section(Block[ConfigContent], Container[SectionContent]):
             idx = self._get_option_idx(key=key)
             del self._structure[idx]
         except StopIteration:
-            raise KeyError(key)
+            raise KeyError("No option `{}` found".format(key), {"key": key})
 
     def __contains__(self, key: str) -> bool:
         """Returns whether the given option exists.
@@ -1071,7 +1071,7 @@ class ConfigUpdater(Container[ConfigContent]):
             if section.name == key:
                 return section
 
-        raise KeyError(key)
+        raise KeyError("No section `{}` found".format(key), {"key": key})
 
     def __setitem__(self, key: str, value: Section):
         if not isinstance(value, Section):
@@ -1085,10 +1085,9 @@ class ConfigUpdater(Container[ConfigContent]):
             value.name = key
             self.add_section(value)
 
-    def __delitem__(self, section: str):
-        if not self.has_section(section):
-            raise KeyError(section)
-        self.remove_section(section)
+    def __delitem__(self, key: str):
+        if not self.remove_section(key):
+            raise KeyError("No section `{}` found".format(key), {"key": key})
 
     def __contains__(self, key: str) -> bool:
         """Returns whether the given section exists.
@@ -1271,11 +1270,12 @@ class ConfigUpdater(Container[ConfigContent]):
         Returns:
             bool: whether the section was actually removed
         """
-        existed = self.has_section(name)
-        if existed:
+        try:
             idx = self._get_section_idx(name)
             del self._structure[idx]
-        return existed
+            return True
+        except StopIteration:
+            return False
 
     def to_dict(self) -> Dict[str, Dict[str, Optional[str]]]:
         """Transform to dictionary
