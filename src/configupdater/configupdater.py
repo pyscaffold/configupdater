@@ -308,15 +308,14 @@ class Section(Block[ConfigBlock], Container[SectionBlock]):
         return self
 
     def _get_option_idx(self, key: str) -> int:
-        idx = [
-            i
-            for i, entry in enumerate(self._structure)
-            if isinstance(entry, Option) and entry.key == key
-        ]
-        if idx:
-            return idx[0]
-        else:
-            raise ValueError
+        try:
+            return next(
+                i
+                for i, entry in enumerate(self._structure)
+                if isinstance(entry, Option) and entry.key == key
+            )
+        except StopIteration:
+            raise ValueError("No option `{}` found".format(key))
 
     def __str__(self) -> str:
         if not self.updated:
@@ -723,15 +722,14 @@ class ConfigUpdater(Container[ConfigBlock]):
         super().__init__()
 
     def _get_section_idx(self, name: str) -> int:
-        idx = [
-            i
-            for i, entry in enumerate(self._structure)
-            if isinstance(entry, Section) and entry.name == name
-        ]
-        if idx:
-            return idx[0]
-        else:
-            raise ValueError
+        try:
+            return next(
+                i
+                for i, entry in enumerate(self._structure)
+                if isinstance(entry, Section) and entry.name == name
+            )
+        except StopIteration:
+            raise ValueError("No section `{}` found".format(name))
 
     def read(self, filename: str, encoding: Optional[str] = None):
         """Read and parse a filename.
