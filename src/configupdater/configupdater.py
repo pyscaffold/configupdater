@@ -42,7 +42,6 @@ from configparser import (
     ParsingError,
 )
 from typing import (
-    Any,
     Generic,
     Optional,
     TextIO,
@@ -89,7 +88,7 @@ class NoConfigFileReadError(Error):
 # Used in parser getters to indicate the default behaviour when a specific
 # option is not found it to raise an exception. Created to enable 'None' as
 # a valid fallback value.
-_UNSET: Any = object()
+_UNSET = object()
 
 T = TypeVar("T")
 E = TypeVar("E", bound=Exception)
