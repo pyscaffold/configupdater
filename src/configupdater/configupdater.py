@@ -1153,11 +1153,7 @@ class ConfigUpdater(Container[ConfigContent]):
         ...
 
     @overload
-    def get(self, section: str, option: str, fallback: None) -> None:  # noqa
-        ...
-
-    @overload
-    def get(self, section: str, option: str, fallback: Option) -> Option:  # noqa
+    def get(self, section: str, option: str, fallback: T) -> Union[Option, T]:  # noqa
         ...
 
     def get(self, section, option, fallback=_UNSET):  # noqa
