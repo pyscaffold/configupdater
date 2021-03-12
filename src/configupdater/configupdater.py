@@ -451,6 +451,24 @@ class Section(
         """
         return next((o for o in self.iter_options() if o.key == key), default)
 
+    @overload
+    def get_option(self, key: str) -> Optional[str]:
+        ...
+
+    @overload
+    def get_option(self, key: str, default: T) -> Union[str, T]:
+        ...
+
+    def get_option(self, key, default=None):
+        """Similar to :meth:`get` and :meth:`dict.get`, but instead of returning an
+        :obj:`Option` object, returns the stored value as a string.
+        """
+        option = self.get(key, _UNSET)
+        if option is _UNSET:
+            return default
+
+        return option.value
+
     # The following is a pragmatic violation of Liskov substitution principle
     # For some reason MutableMapping.items return a Set-like object
     # but we want to preserve ordering
