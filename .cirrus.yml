@@ -29,6 +29,20 @@ env:
 
 # ---- Task definitions ----
 
+typecheck_task:
+  name: typecheck (Linux - 3.9)
+  container: {image: "python:3.9-buster"}  # most recent => better type support
+  pip_cache: *pip-cache
+  mypy_cache:
+    folder: .mypy_cache
+  install_script: &debian-install
+    - apt-get install -y git
+  mypy_install_script:
+    - python -m pip install --upgrade pip setuptools mypy -e .
+  typecheck_script:
+    - python -m mypy src
+
+
 linux_mac_task:
   # Use custom cloning since otherwise git tags are missing
   clone_script: &clone |
@@ -43,8 +57,7 @@ linux_mac_task:
   matrix:
     - name: test (Linux - 3.6)
       container: {image: "python:3.6-buster"}
-      install_script: &debian-install
-        - apt-get install -y git
+      install_script: *debian-install
     - name: test (Linux - 3.7)
       container: {image: "python:3.7-buster"}
       install_script: *debian-install
