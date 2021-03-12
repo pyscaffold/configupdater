@@ -52,6 +52,7 @@ from typing import (
     Union,
     cast,
     no_type_check,
+    overload,
 )
 
 if sys.version_info[:2] >= (3, 9):
@@ -364,7 +365,7 @@ class Section(Block[ConfigBlock], Container[SectionBlock]):
         """Return all entries, not just options"""
         return iter(self._structure)
 
-    def __eq__(self, other) -> Any:
+    def __eq__(self, other) -> bool:
         if isinstance(other, self.__class__):
             return self.name == other.name and self._structure == other._structure
         else:
@@ -1148,7 +1149,19 @@ class ConfigUpdater(Container[ConfigBlock]):
             raise NoSectionError(section) from None
         return self.__getitem__(section).options()
 
-    def get(self, section: str, option: str, fallback=_UNSET) -> Option:
+    @overload
+    def get(self, section: str, option: str) -> Option:
+        ...
+
+    @overload
+    def get(self, section: str, option: str, fallback: None) -> None:  # noqa
+        ...
+
+    @overload
+    def get(self, section: str, option: str, fallback: Option) -> Option:  # noqa
+        ...
+
+    def get(self, section, option, fallback=_UNSET):  # noqa
         """Gets an option value for a given section.
 
         Args:
@@ -1172,7 +1185,15 @@ class ConfigUpdater(Container[ConfigBlock]):
                 raise NoOptionError(option, section)
             return fallback
 
-    def items(self, section=_UNSET) -> List[Tuple[Any, Any]]:
+    @overload
+    def items(self) -> List[Tuple[str, Section]]:
+        ...
+
+    @overload
+    def items(self, section: str) -> List[Tuple[str, Option]]:  # noqa
+        ...
+
+    def items(self, section=_UNSET):  # noqa
         """Return a list of (name, value) tuples for options or sections.
 
         If section is given, return a list of tuples with (name, value) for
@@ -1186,10 +1207,10 @@ class ConfigUpdater(Container[ConfigBlock]):
             list: list of :class:`Section` or :class:`Option` objects
         """
         if section is _UNSET:
-            return [(sect.name, sect) for sect in self.section_blocks()]
+            return [(sect.name, sect) for sect in self.iter_sections()]
 
         section = self.__getitem__(section)
-        return [(opt.key, opt) for opt in section.option_blocks()]
+        return [(opt.key, opt) for opt in section.iter_options()]
 
     def has_option(self, section: str, option: str) -> bool:
         """Checks for the existence of a given option in a given section.
