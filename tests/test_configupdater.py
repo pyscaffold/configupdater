@@ -108,8 +108,11 @@ def test_len_updater(setup_cfg_path):
 def test_iter_section(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
-    # we test the number of blocks, not sections
-    assert len([block for block in updater]) == 14
+    # iter_blocks will give us everything, iter_sections just the section objects and
+    # __iter__ just the keys of the section objects
+    assert len([block for block in updater.iter_blocks()]) == 14
+    assert len([block for block in updater.iter_sections()]) == 12
+    assert len([entry for entry in updater]) == 12
 
 
 def test_iter_items_section(setup_cfg_path):
@@ -184,8 +187,11 @@ def test_iter_option(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
     section = updater["metadata"]
-    # we test the number of entries, not options
-    assert len([entry for entry in section]) == 12
+    # iter_blocks will give us everything, iter_options just the option objects and
+    # __iter__ just the keys of the option objects
+    assert len([entry for entry in section.iter_blocks()]) == 12
+    assert len([entry for entry in section.iter_options()]) == 9
+    assert len([entry for entry in section]) == 9
 
 
 def test_get_options(setup_cfg_path):

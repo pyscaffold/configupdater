@@ -41,6 +41,7 @@ from configparser import (
     NoSectionError,
     ParsingError,
 )
+from enum import Enum
 from typing import (
     Generic,
     Optional,
@@ -55,12 +56,13 @@ from typing import (
 )
 
 if sys.version_info[:2] >= (3, 9):
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Iterable, Iterator, MutableMapping
 
     List = list
     Dict = dict
 else:
-    from typing import Dict, Iterable, Iterator, List
+    from typing import Dict, Iterable, Iterator, List, MutableMapping
+
 
 __all__ = [
     "NoSectionError",
@@ -88,7 +90,8 @@ class NoConfigFileReadError(Error):
 # Used in parser getters to indicate the default behaviour when a specific
 # option is not found it to raise an exception. Created to enable 'None' as
 # a valid fallback value.
-_UNSET = object()
+_UniqueValues = Enum("UniqueValues", "_UNSET")
+_UNSET = _UniqueValues._UNSET
 
 T = TypeVar("T")
 E = TypeVar("E", bound=Exception)
@@ -134,6 +137,10 @@ class Container(ABC, Generic[T]):
         """
         del self._structure[idx]
         return self
+
+    def iter_blocks(self) -> Iterator[T]:
+        """Iterate over all blocks inside container."""
+        return iter(self._structure)
 
     def __len__(self) -> int:
         """Number of blocks in container"""
@@ -247,7 +254,9 @@ class Space(Block[T]):
         return "<Space>"
 
 
-class Section(Block[ConfigContent], Container[SectionContent]):
+class Section(
+    Block[ConfigContent], Container[SectionContent], MutableMapping[str, "Option"]
+):
     """Section block holding options
 
     Attributes:
@@ -330,10 +339,12 @@ class Section(Block[ConfigContent], Container[SectionContent]):
         key = self._container.optionxform(key)
         try:
             return next(o for o in self.iter_options() if o.key == key)
-        except StopIteration:
-            raise KeyError("No option `{}` found".format(key), {"key": key})
+        except StopIteration as ex:
+            raise KeyError(f"No option `{key}` found", {"key": key}) from ex
 
-    def __setitem__(self, key: str, value: Optional[str]):
+    # The following is a pragmatic violation of Liskov substitution principle
+    # MutableMapping[str, Option] requires value: Option
+    def __setitem__(self, key: str, value: Optional[str]):  # type: ignore
         if self._container.optionxform(key) in self:
             option = self.__getitem__(key)
             option.value = value
@@ -346,10 +357,12 @@ class Section(Block[ConfigContent], Container[SectionContent]):
         try:
             idx = self._get_option_idx(key=key)
             del self._structure[idx]
-        except StopIteration:
-            raise KeyError("No option `{}` found".format(key), {"key": key})
+        except StopIteration as ex:
+            raise KeyError(f"No option `{key}` found", {"key": key}) from ex
 
-    def __contains__(self, key: str) -> bool:
+    # MutableMapping[str, Option] for some reason accepts key: object
+    # it actually doesn't matter for the implementation, so we omit the typing
+    def __contains__(self, key) -> bool:
         """Returns whether the given option exists.
 
         Args:
@@ -360,19 +373,20 @@ class Section(Block[ConfigContent], Container[SectionContent]):
         """
         return next((True for o in self.iter_options() if o.key == key), False)
 
-    def __iter__(self) -> Iterator[SectionContent]:
-        """Return all entries, not just options"""
-        return iter(self._structure)
-
+    # Omit typing so it can represent any object
     def __eq__(self, other) -> bool:
         if isinstance(other, self.__class__):
             return self.name == other.name and self._structure == other._structure
         else:
             return False
 
+    def __iter__(self) -> Iterator[str]:
+        """Iterate over the keys of contained options"""
+        return (entry.key for entry in self.iter_options())
+
     def iter_options(self) -> Iterator["Option"]:
         """Iterate only over option blocks"""
-        return (entry for entry in self._structure if isinstance(entry, Option))
+        return (entry for entry in self.iter_blocks() if isinstance(entry, Option))
 
     def option_blocks(self) -> List["Option"]:
         """Returns option blocks
@@ -423,7 +437,24 @@ class Section(Block[ConfigContent], Container[SectionContent]):
             self.__setitem__(option, value)
         return self
 
-    def items(self) -> List[Tuple[str, "Option"]]:
+    @overload
+    def get(self, key: str) -> Optional["Option"]:
+        ...
+
+    @overload
+    def get(self, key: str, default: T) -> Union["Option", T]:
+        ...
+
+    def get(self, key, default=None):
+        """This method works similarly to :meth:`dict.get`, and allows you
+        to retrieve an option object by its key.
+        """
+        return next((o for o in self.iter_options() if o.key == key), default)
+
+    # The following is a pragmatic violation of Liskov substitution principle
+    # For some reason MutableMapping.items return a Set-like object
+    # but we want to preserve ordering
+    def items(self) -> List[Tuple[str, "Option"]]:  # type: ignore
         """Return a list of (name, option) tuples for each option in
         this section.
 
@@ -576,15 +607,18 @@ class BlockBuilder:
         """
         if not isinstance(self._container, ConfigUpdater):
             raise ValueError("Sections can only be added at section level!")
+
+        container: ConfigUpdater = self._container
+
         if isinstance(section, str):
             # create a new section
-            section = Section(section, container=self._container)
+            section = Section(section, container=container)
         elif not isinstance(section, Section):
             raise ValueError("Parameter must be a string or Section type!")
-        if section.name in [
-            block.name for block in self._container if isinstance(block, Section)
-        ]:
+
+        if container.has_section(section.name):
             raise DuplicateSectionError(section.name)
+
         self._container.structure.insert(self._idx, section)
         self._idx += 1
         return self
@@ -627,7 +661,7 @@ class BlockBuilder:
         return self
 
 
-class ConfigUpdater(Container[ConfigContent]):
+class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
     """Parser for updating configuration files.
 
     ConfigUpdater follows the API of ConfigParser with some differences:
@@ -687,7 +721,7 @@ class ConfigUpdater(Container[ConfigContent]):
         inline_comment_prefixes: Optional[Tuple[str, ...]] = None,
         strict: bool = True,
         empty_lines_in_values: bool = True,
-        space_around_delimiters: bool = True
+        space_around_delimiters: bool = True,
     ):
         """Constructor of ConfigUpdater
 
@@ -828,7 +862,7 @@ class ConfigUpdater(Container[ConfigContent]):
 
     def _add_space(self, line):
         if isinstance(self.last_block, Section):
-            self.last_block.add_space(line)  # type: ignore
+            self.last_block.add_space(line)
         else:
             self._update_curr_block(Space).add_line(line)
 
@@ -1071,7 +1105,7 @@ class ConfigUpdater(Container[ConfigContent]):
             if section.name == key:
                 return section
 
-        raise KeyError("No section `{}` found".format(key), {"key": key})
+        raise KeyError(f"No section `{key}` found", {"key": key})
 
     def __setitem__(self, key: str, value: Section):
         if not isinstance(value, Section):
@@ -1087,9 +1121,11 @@ class ConfigUpdater(Container[ConfigContent]):
 
     def __delitem__(self, key: str):
         if not self.remove_section(key):
-            raise KeyError("No section `{}` found".format(key), {"key": key})
+            raise KeyError(f"No section `{key}` found", {"key": key})
 
-    def __contains__(self, key: str) -> bool:
+    # MutableMapping[str, Section] for some reason accepts key: object
+    # it actually doesn't matter for the implementation, so we omit the typing
+    def __contains__(self, key) -> bool:
         """Returns whether the given section exists.
 
         Args:
@@ -1102,9 +1138,9 @@ class ConfigUpdater(Container[ConfigContent]):
 
     has_section = __contains__
 
-    def __iter__(self) -> Iterator[ConfigContent]:
-        """Iterate over all blocks, not just sections"""
-        return iter(self._structure)
+    def __iter__(self) -> Iterator[str]:
+        """Iterate over the names of the contained sections"""
+        return (section.name for section in self.iter_sections())
 
     def __eq__(self, other) -> bool:
         if isinstance(other, self.__class__):
@@ -1147,7 +1183,11 @@ class ConfigUpdater(Container[ConfigContent]):
             raise NoSectionError(section) from None
         return self.__getitem__(section).options()
 
-    @overload
+    # The following is a pragmatic violation of Liskov substitution principle:
+    # As dicts, Mappings should have get(self, key: str, default: T) -> T
+    # but ConfigParser overwrites it and uses the function to offer a different
+    # functionality
+    @overload  # type: ignore
     def get(self, section: str, option: str) -> Option:
         ...
 
@@ -1158,6 +1198,20 @@ class ConfigUpdater(Container[ConfigContent]):
     def get(self, section, option, fallback=_UNSET):  # noqa
         """Gets an option value for a given section.
 
+        Warning:
+            Please notice this method works differently from what is expected from
+            :meth:`MutableMapping.get` (or :meth:`dict.meth` type).
+            Similarly to :meth:`configparser.ConfigParser.get`, this method requires at
+            least 2 arguments, and the second argument does not correspond to a default
+            value.
+
+            This happens because this function does not return :obj:`Section`
+            immediately contained in :obj:`ConfigUpdater`, but instead :obj:`Option`.
+
+            If you prefer being more explicit and do not require backwards
+            compatibility with :obj:`~configparser.ConfigParser`, you can use
+            :meth:`get_section` and :meth:`Section.get`.
+
         Args:
             section (str): section name
             option (str): option name
@@ -1167,19 +1221,37 @@ class ConfigUpdater(Container[ConfigContent]):
         Returns:
             :class:`Option`: Option object holding key/value pair
         """
-        if not self.has_section(section):
+        section_obj = self.get_section(section, _UNSET)
+        if section_obj is _UNSET:
             raise NoSectionError(section) from None
 
-        section_obj = self.__getitem__(section)
         option = self.optionxform(option)
-        try:
-            return section_obj[option]
-        except KeyError:
-            if fallback is _UNSET:
-                raise NoOptionError(option, section)
-            return fallback
+        value = cast(Section, section_obj).get(option, fallback)
+        # ^  we checked section_obj against _UNSET, so we are sure about its type
+
+        if value is _UNSET:
+            raise NoOptionError(option, section)
+
+        return value
 
     @overload
+    def get_section(self, name: str) -> Optional[Section]:
+        ...
+
+    @overload
+    def get_section(self, name: str, default: T) -> Union[Section, T]:
+        ...
+
+    def get_section(self, name, default=None):
+        """This method works similarly to :meth:`dict.get`, and allows you
+        to retrieve an entire section by its name
+        """
+        return next((s for s in self.iter_sections() if s.name == name), default)
+
+    # The following is a pragmatic violation of Liskov substitution principle
+    # For some reason MutableMapping.items return a Set-like object
+    # but we want to preserve ordering
+    @overload  # type: ignore
     def items(self) -> List[Tuple[str, Section]]:
         ...
 
@@ -1217,10 +1289,7 @@ class ConfigUpdater(Container[ConfigContent]):
             bool: whether the option exists in the given section
         """
         key = self.optionxform(option)
-        return next(
-            (s.has_option(key) for s in self.iter_sections() if s.name == section),
-            False,
-        )
+        return key in self.get_section(section, {})
 
     def set(self: U, section: str, option: str, value: Optional[str] = None) -> U:
         """Set an option.
