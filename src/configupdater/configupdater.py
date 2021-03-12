@@ -98,8 +98,8 @@ S = TypeVar("S", bound="Section")
 U = TypeVar("U", bound="ConfigUpdater")
 BB = TypeVar("BB", bound="BlockBuilder")
 
-ConfigBlock = Union["Section", "Comment", "Space"]
-SectionBlock = Union["Option", "Comment", "Space"]
+ConfigContent = Union["Section", "Comment", "Space"]
+SectionContent = Union["Option", "Comment", "Space"]
 
 
 class Container(ABC, Generic[T]):
@@ -247,7 +247,7 @@ class Space(Block[T]):
         return "<Space>"
 
 
-class Section(Block[ConfigBlock], Container[SectionBlock]):
+class Section(Block[ConfigContent], Container[SectionContent]):
     """Section block holding options
 
     Attributes:
@@ -258,7 +258,7 @@ class Section(Block[ConfigBlock], Container[SectionBlock]):
     def __init__(self, name: str, container: "ConfigUpdater"):
         self._container: "ConfigUpdater" = container
         self._name = name
-        self._structure: List[SectionBlock] = []
+        self._structure: List[SectionContent] = []
         self._updated = False
         super().__init__(container=container)
 
@@ -360,7 +360,7 @@ class Section(Block[ConfigBlock], Container[SectionBlock]):
         """
         return next((True for o in self.iter_options() if o.key == key), False)
 
-    def __iter__(self) -> Iterator[SectionBlock]:
+    def __iter__(self) -> Iterator[SectionContent]:
         """Return all entries, not just options"""
         return iter(self._structure)
 
@@ -441,7 +441,7 @@ class Section(Block[ConfigBlock], Container[SectionBlock]):
         return BlockBuilder(self, idx)
 
 
-class Option(Block[SectionBlock]):
+class Option(Block[SectionContent]):
     """Option block holding a key/value pair.
 
     Attributes:
@@ -627,7 +627,7 @@ class BlockBuilder:
         return self
 
 
-class ConfigUpdater(Container[ConfigBlock]):
+class ConfigUpdater(Container[ConfigContent]):
     """Parser for updating configuration files.
 
     ConfigUpdater follows the API of ConfigParser with some differences:
@@ -1103,7 +1103,7 @@ class ConfigUpdater(Container[ConfigBlock]):
 
     has_section = __contains__
 
-    def __iter__(self) -> Iterator[ConfigBlock]:
+    def __iter__(self) -> Iterator[ConfigContent]:
         """Iterate over all blocks, not just sections"""
         return iter(self._structure)
 
