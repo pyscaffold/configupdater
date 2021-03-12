@@ -137,8 +137,6 @@ def test_get_section(setup_cfg_path):
     assert section._structure
     with pytest.raises(KeyError):
         updater["non_existent_section"]
-    with pytest.raises(ValueError):
-        updater._get_section_idx("non_existent_section")
 
 
 def test_section_to_dict(setup_cfg_path):
@@ -384,8 +382,6 @@ def test_del_section():
     assert str(updater) == test2_cfg_out
     with pytest.raises(KeyError):
         del updater["section2"]
-    with pytest.raises(ValueError):
-        updater["section1"]._get_option_idx("wrong key")
 
 
 test_wrong_cfg = """
