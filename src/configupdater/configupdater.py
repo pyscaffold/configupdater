@@ -142,6 +142,12 @@ class Container(ABC, Generic[T]):
         """Iterate over all blocks inside container."""
         return iter(self._structure)
 
+    # When included in the inheritance chain together with MutableMapping
+    # (e.g. in `Section` and `ConfigUpdater`), the following
+    # will be a violation of Liskov substitution principle
+    # (MutableMapping[str, Option] expects to __iter__ over keys)
+    __iter__ = iter_blocks
+
     def __len__(self) -> int:
         """Number of blocks in container"""
         return len(self._structure)
@@ -254,7 +260,7 @@ class Space(Block[T]):
         return "<Space>"
 
 
-class Section(
+class Section(  # type: ignore[misc]
     Block[ConfigContent], Container[SectionContent], MutableMapping[str, "Option"]
 ):
     """Section block holding options
@@ -262,6 +268,14 @@ class Section(
     Attributes:
         name (str): name of the section
         updated (bool): indicates name change or a new section
+
+    Warning:
+        Despite inheriting from :class:`MutableMapping` this class overwrites a few
+        methods for convenience, and therefore does not comply with the
+        :class:`MutableMapping` specification.
+        For example :meth:`__iter__` will iterate over all the blocks inside a section
+        (options, comments and spacing) instead of the option keys, and
+        :meth:`__setitem__` expects a :obj:`str` value instead of an :obj:`Option`.
     """
 
     def __init__(self, name: str, container: "ConfigUpdater"):
@@ -379,10 +393,6 @@ class Section(
             return self.name == other.name and self._structure == other._structure
         else:
             return False
-
-    def __iter__(self) -> Iterator[str]:
-        """Iterate over the keys of contained options"""
-        return (entry.key for entry in self.iter_options())
 
     def iter_options(self) -> Iterator["Option"]:
         """Iterate only over option blocks"""
@@ -661,7 +671,9 @@ class BlockBuilder:
         return self
 
 
-class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
+class ConfigUpdater(  # type: ignore[misc]
+    Container[ConfigContent], MutableMapping[str, Section]
+):
     """Parser for updating configuration files.
 
     ConfigUpdater follows the API of ConfigParser with some differences:
@@ -677,6 +689,15 @@ class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
       * conversions of values,
       * passing key/value-pairs with ``default`` argument,
       * non-strict mode allowing duplicate sections and keys.
+
+    Warning:
+        Despite inheriting from :class:`MutableMapping` this class overwrites a few
+        methods for convenience, and therefore does not comply with the
+        :class:`MutableMapping` specification.
+        For example :meth:`__iter__` will iterate over all the blocks
+        (section, comments and spacing) instead of the section names, and
+        :meth:`get` will work similar to :meth:`configparser.ConfigParser.get` to
+        retrieve option values.
     """
 
     # Regular expressions for parsing section headers and options
@@ -1137,10 +1158,6 @@ class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
         return next((True for s in self.iter_sections() if s.name == key), False)
 
     has_section = __contains__
-
-    def __iter__(self) -> Iterator[str]:
-        """Iterate over the names of the contained sections"""
-        return (section.name for section in self.iter_sections())
 
     def __eq__(self, other) -> bool:
         if isinstance(other, self.__class__):
