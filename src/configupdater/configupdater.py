@@ -196,9 +196,9 @@ class Block(ABC, Generic[T]):
         return self._container
 
     @property
-    def container_idx(self) -> int:
+    def container_idx(self: B) -> int:
         """Index of the block within its container"""
-        return self._container.structure.index(self)  # type: ignore
+        return self._container.structure.index(self)
 
     @property
     def updated(self) -> bool:
@@ -358,7 +358,7 @@ class Section(  # type: ignore[misc]
 
     # The following is a pragmatic violation of Liskov substitution principle
     # MutableMapping[str, Option] requires value: Option
-    def __setitem__(self, key: str, value: Optional[str]):  # type: ignore
+    def __setitem__(self, key: str, value: Optional[str]):  # type: ignore[override]
         if self._container.optionxform(key) in self:
             option = self.__getitem__(key)
             option.value = value
@@ -464,7 +464,7 @@ class Section(  # type: ignore[misc]
     # The following is a pragmatic violation of Liskov substitution principle
     # For some reason MutableMapping.items return a Set-like object
     # but we want to preserve ordering
-    def items(self) -> List[Tuple[str, "Option"]]:  # type: ignore
+    def items(self) -> List[Tuple[str, "Option"]]:  # type: ignore[override]
         """Return a list of (name, option) tuples for each option in
         this section.
 
@@ -850,9 +850,11 @@ class ConfigUpdater(  # type: ignore[misc]
         self, block_type: Type[Union[Comment[T], Space[T]]]
     ) -> Union[Comment[T], Space[T]]:
         if isinstance(self.last_block, block_type):
-            return self.last_block  # type: ignore
+            return self.last_block  # type: ignore[return-value]
+            # ^  the type checker is not understanding the isinstance check
         else:
-            new_block = block_type(container=self)  # type: ignore
+            new_block = block_type(container=self)  # type: ignore[arg-type]
+            # ^  the type checker is forgetting ConfigUpdater <: Container[T]
             self._structure.append(new_block)
             return new_block
 
@@ -1034,7 +1036,8 @@ class ConfigUpdater(  # type: ignore[misc]
     ) -> Union[ParsingError, E]:
         e = exc or ParsingError(fpname)
         if hasattr(e, "append"):
-            e.append(lineno, repr(line))  # type: ignore
+            e.append(lineno, repr(line))  # type: ignore[union-attr]
+            # ^  the typechecker cannot handle hasattr
         return e
 
     def _check_values_with_blank_lines(self):
@@ -1204,7 +1207,7 @@ class ConfigUpdater(  # type: ignore[misc]
     # As dicts, Mappings should have get(self, key: str, default: T) -> T
     # but ConfigParser overwrites it and uses the function to offer a different
     # functionality
-    @overload  # type: ignore
+    @overload  # type: ignore[override]
     def get(self, section: str, option: str) -> Option:
         ...
 
@@ -1272,7 +1275,7 @@ class ConfigUpdater(  # type: ignore[misc]
     # The following is a pragmatic violation of Liskov substitution principle
     # For some reason MutableMapping.items return a Set-like object
     # but we want to preserve ordering
-    @overload  # type: ignore
+    @overload  # type: ignore[override]
     def items(self) -> List[Tuple[str, Section]]:
         ...
 
