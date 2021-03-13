@@ -1244,7 +1244,7 @@ class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
             raise NoSectionError(section) from None
 
         option = self.optionxform(option)
-        value = cast(Section, section_obj).get(option, fallback)
+        value = section_obj.get(option, fallback)
         # ^  we checked section_obj against _UNSET, so we are sure about its type
 
         if value is _UNSET:
