@@ -451,24 +451,6 @@ class Section(
         """
         return next((o for o in self.iter_options() if o.key == key), default)
 
-    @overload
-    def get_option(self, key: str) -> Optional[str]:
-        ...
-
-    @overload
-    def get_option(self, key: str, default: T) -> Union[str, T]:
-        ...
-
-    def get_option(self, key, default=None):
-        """Similar to :meth:`get` and :meth:`dict.get`, but instead of returning an
-        :obj:`Option` object, returns the stored value as a string.
-        """
-        option = self.get(key, _UNSET)
-        if option is _UNSET:
-            return default
-
-        return option.value
-
     # The following is a pragmatic violation of Liskov substitution principle
     # For some reason MutableMapping.items return a Set-like object
     # but we want to preserve ordering
@@ -1217,24 +1199,27 @@ class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
         """Gets an option value for a given section.
 
         Warning:
-            Please notice this method works differently from what is expected from
-            :meth:`MutableMapping.get` (or :meth:`dict.meth` type).
-            Similarly to :meth:`configparser.ConfigParser.get`, this method requires at
-            least 2 arguments, and the second argument does not correspond to a default
-            value.
+            Please notice this method works differently from what is expected of
+            :meth:`MutableMapping.get` (or :meth:`dict.get`).
+            Similarly to :meth:`configparser.ConfigParser.get`, will take least 2
+            arguments, and the second argument does not correspond to a default value.
 
-            This happens because this function does not return :obj:`Section`
-            immediately contained in :obj:`ConfigUpdater`, but instead :obj:`Option`.
+            This happens because this function is not designed to return a
+            :obj:`Section` of the :obj:`ConfigUpdater` document, but instead a nested
+            :obj:`Option`.
 
-            If you prefer being more explicit and do not require backwards
-            compatibility with :obj:`~configparser.ConfigParser`, you can use
-            :meth:`get_section` and :meth:`Section.get`.
+            See :meth:`get_section`, if instead, you want to retrieve a :obj:`Section`.
 
         Args:
             section (str): section name
             option (str): option name
             fallback: if the key is not found and fallback is provided, it will
                 be returned. ``None`` is a valid fallback value.
+
+        Raises:
+            :class:`NoSectionError`: if ``section`` cannot be found
+            :class:`NoOptionError`: if the option cannot be found and no ``fallback``
+                was given
 
         Returns:
             :class:`Option`: Option object holding key/value pair
@@ -1262,7 +1247,8 @@ class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
 
     def get_section(self, name, default=None):
         """This method works similarly to :meth:`dict.get`, and allows you
-        to retrieve an entire section by its name
+        to retrieve an entire section by its name, or provide a ``default`` value in
+        case it cannot be found.
         """
         return next((s for s in self.iter_sections() if s.name == name), default)
 

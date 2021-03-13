@@ -213,10 +213,6 @@ def test_get_options(setup_cfg_path):
     assert section.get("name").value == "configupdater"
     assert section.get("non_existent_option") is None
     assert section.get("non_existent_option", []) == []
-    # and a `get_option` that unwraps the inner value
-    assert section.get_option("name") == "configupdater"
-    assert section.get_option("non_existent_option") is None
-    assert section.get_option("non_existent_option", []) == []
 
 
 def test_items(setup_cfg_path):
