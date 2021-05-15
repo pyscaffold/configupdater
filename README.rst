@@ -75,7 +75,7 @@ At any point we can print the current state of the configuration file with::
 
     print(updater)
 
-To update the read-in file just call ``updater.update_file()`` or ``updater.write("filename")``
+To update the read-in file just call ``updater.update_file()`` or ``updater.write(open('filename','w'))``
 to write the changed configuration file to another destination. Before actually writing,
 ConfigUpdater will automatically check that the updated configuration file is still valid by
 parsing it with the help of ConfigParser.
