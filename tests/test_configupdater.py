@@ -977,3 +977,18 @@ def test_navigation_and_remove():
     key1.next_block.remove()
     key2.next_block.remove()
     assert str(updater) == test22_cfg_out
+
+
+test23_cfg_in = """
+[section1]
+    # indented comment
+a = 42
+"""
+
+
+def test_indented_comment():
+    updater = ConfigUpdater()
+    updater.read_string(test23_cfg_in)
+    section = updater["section1"]
+    assert isinstance(section.first_block, Comment)
+    assert str(updater) == test23_cfg_in

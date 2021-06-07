@@ -822,7 +822,8 @@ class ConfigUpdater(Container, MutableMapping):
                 inline_prefixes = next_prefixes
             # strip full line comments
             for prefix in self._comment_prefixes:
-                # configparser would do line.strip() here
+                # configparser would do line.strip() here,
+                # we do rstrip() to allow comments in multi-line options
                 if line.rstrip().startswith(prefix):
                     comment_start = 0
                     self._add_comment(line)  # HOOK
@@ -901,6 +902,9 @@ class ConfigUpdater(Container, MutableMapping):
                             # valueless option handling
                             cursect[optname] = None
                         self._add_option(optname, vi, optval, line)  # HOOK
+                    # handle indented comment
+                    elif first_nonspace.group(0) in self._comment_prefixes:
+                        self._add_comment(line)  # HOOK
                     else:
                         # a non-fatal parsing error occurred. set up the
                         # exception but keep going. the exception will be
