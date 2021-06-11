@@ -2,6 +2,13 @@
 Changelog
 =========
 
+Version 3.0 (development)
+=========================
+
+- Added type hinting, issue #16
+- Fix parsing error of indented comment lines, issue #25
+
+
 Version 2.0
 ===========
 
