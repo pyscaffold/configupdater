@@ -668,9 +668,7 @@ class BlockBuilder:
         return self
 
 
-class ConfigUpdater(
-    Container[ConfigContent], MutableMapping[str, Section]
-):
+class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
     """Parser for updating configuration files.
 
     ConfigUpdater follows the API of ConfigParser with some differences:
