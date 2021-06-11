@@ -263,14 +263,6 @@ class Section(
     Attributes:
         name (str): name of the section
         updated (bool): indicates name change or a new section
-
-    Warning:
-        Despite inheriting from :class:`MutableMapping` this class overwrites a few
-        methods for convenience, and therefore does not comply with the
-        :class:`MutableMapping` specification.
-        For example :meth:`__iter__` will iterate over all the blocks inside a section
-        (options, comments and spacing) instead of the option keys, and
-        :meth:`__setitem__` expects a :obj:`str` value instead of an :obj:`Option`.
     """
 
     def __init__(self, name: str, container: "ConfigUpdater"):
@@ -695,15 +687,6 @@ class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
       * conversions of values,
       * passing key/value-pairs with ``default`` argument,
       * non-strict mode allowing duplicate sections and keys.
-
-    Warning:
-        Despite inheriting from :class:`MutableMapping` this class overwrites a few
-        methods for convenience, and therefore does not comply with the
-        :class:`MutableMapping` specification.
-        For example :meth:`__iter__` will iterate over all the blocks
-        (section, comments and spacing) instead of the section names, and
-        :meth:`get` will work similar to :meth:`configparser.ConfigParser.get` to
-        retrieve option values.
     """
 
     # Regular expressions for parsing section headers and options
