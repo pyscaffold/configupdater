@@ -355,7 +355,9 @@ class Section(
         if self._container.optionxform(key) in self:
             if isinstance(value, Option):
                 if value.key != key:
-                    raise ValueError(f"Set key {key} does not equal option key {value.key}")
+                    raise ValueError(
+                        f"Set key {key} does not equal option key {value.key}"
+                    )
                 idx = self.__getitem__(key).container_idx
                 del self.structure[idx]
                 self.structure.insert(idx, value)
