@@ -103,6 +103,7 @@ BB = TypeVar("BB", bound="BlockBuilder")
 
 ConfigContent = Union["Section", "Comment", "Space"]
 SectionContent = Union["Option", "Comment", "Space"]
+Value = Union["Option", str]
 
 
 class Container(ABC, Generic[T]):
@@ -350,15 +351,23 @@ class Section(
         except StopIteration as ex:
             raise KeyError(f"No option `{key}` found", {"key": key}) from ex
 
-    # The following is a pragmatic violation of Liskov substitution principle
-    # MutableMapping[str, Option] requires value: Option
-    def __setitem__(self, key: str, value: Optional[str]):  # type: ignore[override]
+    def __setitem__(self, key: str, value: Optional[Value] = None):
         if self._container.optionxform(key) in self:
-            option = self.__getitem__(key)
-            option.value = value
+            if isinstance(value, Option):
+                if value.key != key:
+                    raise ValueError(f"Set key {key} does not equal option key {value.key}")
+                idx = self.__getitem__(key).container_idx
+                del self.structure[idx]
+                self.structure.insert(idx, value)
+            else:
+                option = self.__getitem__(key)
+                option.value = value
         else:
-            option = Option(key, value, container=self)
-            option.value = value
+            if isinstance(value, Option):
+                option = value
+            else:
+                option = Option(key, value, container=self)
+                option.value = value
             self._structure.append(option)
 
     def __delitem__(self, key: str):
