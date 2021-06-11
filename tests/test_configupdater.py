@@ -1,3 +1,4 @@
+import copy
 import os.path
 from configparser import ConfigParser
 from io import StringIO
@@ -342,6 +343,13 @@ def test_set_option():
     assert values == ["param1", "param2"]  # non destructive operation
     with pytest.raises(NoSectionError):
         updater.set("wrong_section", "key", "1")
+    new_option = copy.deepcopy(updater["default"]["key"])
+    updater["default"]["key"] = new_option
+    assert updater["default"]["key"] is new_option
+    new_option = copy.deepcopy(updater["default"]["key"])
+    new_option.key = "wrong_key"
+    with pytest.raises(ValueError):
+        updater["default"]["key"] = new_option
 
 
 def test_section_set_option():
@@ -1018,7 +1026,7 @@ key2 = val2
 """
 
 
-def test_iter_conistency_with_configparser():
+def test_iter_consistency_with_configparser():
     parser = ConfigParser()
     parser.read_string(test24_cfg_in)
     updater = ConfigUpdater()
