@@ -142,12 +142,6 @@ class Container(ABC, Generic[T]):
         """Iterate over all blocks inside container."""
         return iter(self._structure)
 
-    # When included in the inheritance chain together with MutableMapping
-    # (e.g. in `Section` and `ConfigUpdater`), the following
-    # will be a violation of Liskov substitution principle
-    # (MutableMapping[str, Option] expects to __iter__ over keys)
-    __iter__ = iter_blocks
-
     def __len__(self) -> int:
         """Number of blocks in container"""
         return len(self._structure)
@@ -260,7 +254,7 @@ class Space(Block[T]):
         return "<Space>"
 
 
-class Section(  # type: ignore[misc]
+class Section(
     Block[ConfigContent], Container[SectionContent], MutableMapping[str, "Option"]
 ):
     """Section block holding options
@@ -393,6 +387,9 @@ class Section(  # type: ignore[misc]
             return self.name == other.name and self._structure == other._structure
         else:
             return False
+
+    def __iter__(self) -> Iterator[str]:
+        return (b.key for b in self.iter_blocks() if isinstance(b, Option))
 
     def iter_options(self) -> Iterator["Option"]:
         """Iterate only over option blocks"""
@@ -671,7 +668,7 @@ class BlockBuilder:
         return self
 
 
-class ConfigUpdater(  # type: ignore[misc]
+class ConfigUpdater(
     Container[ConfigContent], MutableMapping[str, Section]
 ):
     """Parser for updating configuration files.
@@ -1120,6 +1117,9 @@ class ConfigUpdater(  # type: ignore[misc]
             list: list of section names
         """
         return [section.name for section in self.iter_sections()]
+
+    def __iter__(self) -> Iterator[str]:
+        return (b.name for b in self.iter_blocks() if isinstance(b, Section))
 
     def __str__(self) -> str:
         return "".join(str(block) for block in self._structure)

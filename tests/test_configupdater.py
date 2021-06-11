@@ -112,7 +112,7 @@ def test_iter_section(setup_cfg_path):
     # __iter__ should work as iter_blocks
     assert len([block for block in updater.iter_blocks()]) == 14
     assert len([block for block in updater.iter_sections()]) == 12
-    assert len([entry for entry in updater]) == 14
+    assert len([entry for entry in updater]) == 12
 
 
 def test_iter_items_section(setup_cfg_path):
@@ -196,7 +196,7 @@ def test_iter_option(setup_cfg_path):
     # __iter__ should work as iter_blocks
     assert len([entry for entry in section.iter_blocks()]) == 12
     assert len([entry for entry in section.iter_options()]) == 9
-    assert len([entry for entry in section]) == 12
+    assert len([entry for entry in section]) == 9
 
 
 def test_get_options(setup_cfg_path):
@@ -1005,3 +1005,24 @@ def test_indented_comment():
     section = updater["section1"]
     assert isinstance(section.first_block, Comment)
     assert str(updater) == test23_cfg_in
+
+
+test24_cfg_in = """
+[sec1]
+key1 = val1
+key2 = val2
+
+[sec2]
+key1 = val1
+key2 = val2
+"""
+
+
+def test_iter_conistency_with_configparser():
+    parser = ConfigParser()
+    parser.read_string(test24_cfg_in)
+    updater = ConfigUpdater()
+    updater.read_string(test24_cfg_in)
+    # [1:] to drop 'DEFAULT' section
+    assert list(parser)[1:] == list(updater)
+    assert list(parser["sec1"]) == list(updater["sec1"])
