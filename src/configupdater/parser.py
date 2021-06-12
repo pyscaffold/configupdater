@@ -1,4 +1,4 @@
-"""Parser for configuration files (normally ``*.cfg``)
+"""Parser for configuration files (normally ``*.cfg/*.ini``)
 
 A configuration file consists of sections, lead by a "[section]" header,
 and followed by "name: value" entries, with continuations and such in
@@ -145,7 +145,7 @@ class Parser:
         space_around_delimiters: bool = True,
         optionxform: Callable[[str], str] = str,
     ):
-        """Constructor of ConfigUpdater
+        """Constructor of the Parser
 
         Args:
             allow_no_value (bool): allow keys without a value, default False

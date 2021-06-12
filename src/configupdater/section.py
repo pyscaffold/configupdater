@@ -1,3 +1,15 @@
+"""Sections are intermediate containers in **ConfigUpdater**'s data model for
+configuration files.
+
+They are at the same time :class:`containers <Container>` that hold :mod:`options
+<Option>` and :class:`blocks <Block>` nested inside the top level configuration
+:class:`~configupdater.document.Document`.
+
+Note:
+    Please remember that :meth:`Section.get` method is implemented to mirror the
+    :meth:`ConfigParser API <configparser.ConfigParser.set>` and do not correspond to
+    the more usual :meth:`~collections.abc.Mapping.get` method of *dict-like* objects.
+"""
 import sys
 from typing import TYPE_CHECKING, Optional, Tuple, TypeVar, Union, overload
 
@@ -172,7 +184,7 @@ class Section(
         """Returns option blocks
 
         Returns:
-            list: list of :class:`Option` blocks
+            list: list of :class:`~configupdater.option.Option` blocks
         """
         return list(self.iter_options())
 

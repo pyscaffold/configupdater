@@ -1,3 +1,9 @@
+"""This module focus in the top level data layer API of ConfigUpdater, i.e.
+how to access and modify the sections of the configurations.
+
+Differently from :mod:`configparser`, the different aspects of the ConfigUpdater API are
+split between several modules.
+"""
 import sys
 from configparser import (
     ConfigParser,
@@ -35,6 +41,27 @@ Value = Union["Option", str]
 
 
 class Document(Container[ConfigContent], MutableMapping[str, Section]):
+    """Access to the data manipulation API from **ConfigUpdater**.
+
+    A ``Document`` object tries to implement a familiar *dict-like* interface,
+    via :class:`MutableMapping`. However, it also tries to be as compatible as possible
+    with the stdlib's :class:`~configparser.ConfigParser`. This means that there are a
+    few methods that will work differently from what users familiar with *dict-like*
+    interfaces would expect. The most notable example is :meth:`get`.
+
+    A important difference between ConfigUpdater's ``Document`` model and
+    :class:`~configparser.ConfigParser` is the behaviour of the :class:`Section`
+    objects.
+    If we represent the type of a *dict-like* (or :class:`MutableMapping`) object by
+    ``M[K, V]``, where ``K`` is the type of its keys and ``V`` is the type of the
+    associated values, ConfigUpdater's sections would be equivalent to
+    ``M[str, Option]``, while ConfigParser's would be ``M[str, str]``.
+
+    This means that when you try to access a key inside a section in ConfigUpdater, you
+    are going to receive a :class:`Option` object, not its value.
+    To access the value of the option you need to call :class:`Option.value`.
+    """
+
     def _get_section_idx(self, name: str) -> int:
         return next(
             i

@@ -1,3 +1,9 @@
+"""Together with :mod:`~configupdater.container` this module forms the basis of
+the class hierarchy in **ConfigUpdater**.
+
+The :class:`Block` is the parent class of everything that can be nested inside a
+configuration file, e.g. comments, sections, options and even sequences of white space.
+"""
 import sys
 from abc import ABC
 from typing import TYPE_CHECKING, Generic, Optional, TypeVar
@@ -110,15 +116,16 @@ class Block(ABC, Generic[T]):
         return self
 
 
-class Comment(Block[T]):
+class Hidden(Block[T]):
+    """Common class for elements that are not directly accessible via the
+    :class:`~collections.abc.MutableMapping` interface of **ConfigUpdater**,
+    like comments and vertical sections of whitespace.
+    """
+
+
+class Comment(Hidden[T]):
     """Comment block"""
 
-    def __init__(self, container: "Container[T]"):
-        super().__init__(container=container)
 
-
-class Space(Block[T]):
+class Space(Hidden[T]):
     """Vertical space block of new lines"""
-
-    def __init__(self, container: "Container[T]"):
-        super().__init__(container=container)

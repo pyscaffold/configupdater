@@ -1,3 +1,6 @@
+"""Core of the fluent API used by **ConfigUpdater** to make editing configuration files
+easier.
+"""
 from configparser import DuplicateOptionError, DuplicateSectionError
 from typing import TYPE_CHECKING, TypeVar
 
