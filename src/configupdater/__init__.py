@@ -17,3 +17,4 @@ finally:
 
 # import everything and rely on __ALL__
 from .configupdater import *  # noqa
+from .parser import *  # noqa

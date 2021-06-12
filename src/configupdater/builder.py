@@ -56,7 +56,8 @@ class BlockBuilder:
             # create a new section
             section = Section(section, container=container)
         elif not isinstance(section, Section):
-            raise ValueError("Parameter must be a string or Section type!")
+            msg = "Parameter must be a string or Section type!"
+            raise ValueError(msg, {"container": section})
 
         if container.has_section(section.name):
             raise DuplicateSectionError(section.name)
@@ -98,7 +99,8 @@ class BlockBuilder:
         from .section import Section
 
         if not isinstance(self._container, Section):
-            raise ValueError("Options can only be added inside a section!")
+            msg = "Options can only be added inside a section!"
+            raise ValueError(msg, {"container": self._container})
         option = Option(key, value, container=self._container, **kwargs)
         if option.key in self._container.options():
             raise DuplicateOptionError(self._container.name, option.key)

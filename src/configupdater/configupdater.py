@@ -1,16 +1,32 @@
-import io
-import os
 import sys
 from configparser import Error
-from typing import Optional, TextIO, Tuple, Union, cast
+from typing import Optional, TextIO, Tuple, TypeVar
 
 if sys.version_info[:2] >= (3, 9):
-    from collections.abc import Iterable, MutableMapping
+    from collections.abc import Iterable
 
     List = list
     Dict = dict
 else:
-    from typing import Iterable, MutableMapping
+    from typing import Iterable
+
+from .block import Comment, Space
+from .document import Document
+from .option import Option
+from .parser import Parser
+from .section import Section
+
+__all__ = [
+    "ConfigUpdater",
+    "Section",
+    "Option",
+    "Comment",
+    "Space",
+    "Parser",
+    "NoConfigFileReadError",
+]
+
+T = TypeVar("T", bound="ConfigUpdater")
 
 
 class NoConfigFileReadError(Error):
@@ -20,11 +36,8 @@ class NoConfigFileReadError(Error):
         super().__init__("No configuration file was yet read! Use .read(...) first.")
 
 
-ConfigContent = Union["Section", "Comment", "Space"]
-
-
-class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
-    """Parser for updating configuration files.
+class ConfigUpdater(Document):
+    """Tool to parse and modify existing ``cfg`` files.
 
     ConfigUpdater follows the API of ConfigParser with some differences:
       * inline comments are treated as part of a key's value,
@@ -52,20 +65,34 @@ class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
         empty_lines_in_values: bool = True,
         space_around_delimiters: bool = True,
     ):
-        pass
+        self._parser_opts = {
+            "allow_no_value": allow_no_value,
+            "delimiters": delimiters,
+            "comment_prefixes": comment_prefixes,
+            "inline_comment_prefixes": inline_comment_prefixes,
+            "strict": strict,
+            "empty_lines_in_values": empty_lines_in_values,
+            "space_around_delimiters": space_around_delimiters,
+        }
+        self._filename: Optional[str] = None
+        super().__init__()
 
-    def read(self, filename: str, encoding: Optional[str] = None):
+    def _parser(self, **kwargs):
+        opts = {"optionxform": self.optionxform, **self._parser_opts, **kwargs}
+        return Parser(**opts)
+
+    def read(self: T, filename: str, encoding: Optional[str] = None) -> T:
         """Read and parse a filename.
 
         Args:
             filename (str): path to file
             encoding (str): encoding of file, default None
         """
-        with open(filename, encoding=encoding) as fp:
-            self._read(fp, filename)
-        self._filename = os.path.abspath(filename)
+        self.remove_all()
+        self._filename = filename
+        return self._parser().read(filename, encoding, self)
 
-    def read_file(self, f: Iterable[str], source: Optional[str] = None):
+    def read_file(self: T, f: Iterable[str], source: Optional[str] = None) -> T:
         """Like read() but the argument must be a file-like object.
 
         The ``f`` argument must be iterable, returning one line at a time.
@@ -77,24 +104,20 @@ class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
             f: file like object
             source (str): reference name for file object, default None
         """
-        if isinstance(f, str):
-            raise RuntimeError("f must be a file-like object, not string!")
-        if source is None:
-            try:
-                source = cast(str, cast(io.FileIO, f).name)
-            except AttributeError:
-                source = "<???>"
-        self._read(f, source)
+        self.remove_all()
+        if hasattr(f, "name"):
+            self._filename = f.name  # type: ignore[attr-defined]
+        return self._parser().read_file(f, source, self)
 
-    def read_string(self, string: str, source="<string>"):
+    def read_string(self: T, string: str, source="<string>") -> T:
         """Read configuration from a given string.
 
         Args:
             string (str): string containing a configuration
             source (str): reference name for file object, default '<string>'
         """
-        sfile = io.StringIO(string)
-        self.read_file(sfile, source)
+        self.remove_all()
+        return self._parser().read_string(string, source, self)
 
     def optionxform(self, optionstr) -> str:
         """Converts an option key to lower case for unification
@@ -116,10 +139,10 @@ class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
             validate (Boolean): validate format before writing
         """
         if validate:
-            self.validate_format()
+            self.validate_format(**self._parser_opts)
         fp.write(str(self))
 
-    def update_file(self, validate: bool = True):
+    def update_file(self: T, validate: bool = True) -> T:
         """Update the read-in configuration file.
 
         Args:
@@ -128,6 +151,7 @@ class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
         if self._filename is None:
             raise NoConfigFileReadError()
         if validate:  # validate BEFORE opening the file!
-            self.validate_format()
+            self.validate_format(**self._parser_opts)
         with open(self._filename, "w") as fb:
             self.write(fb, validate=False)
+        return self

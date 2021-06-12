@@ -33,6 +33,9 @@ class Block(ABC, Generic[T]):
     def __str__(self) -> str:
         return "".join(self._lines)
 
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}: {str(self)!r}>"
+
     def __eq__(self, other) -> bool:
         if isinstance(other, self.__class__):
             return str(self) == str(other)
@@ -113,15 +116,9 @@ class Comment(Block[T]):
     def __init__(self, container: "Container[T]"):
         super().__init__(container=container)
 
-    def __repr__(self) -> str:
-        return "<Comment>"
-
 
 class Space(Block[T]):
     """Vertical space block of new lines"""
 
     def __init__(self, container: "Container[T]"):
         super().__init__(container=container)
-
-    def __repr__(self) -> str:
-        return "<Space>"

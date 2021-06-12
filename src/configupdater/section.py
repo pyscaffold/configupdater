@@ -104,7 +104,7 @@ class Section(
         return s
 
     def __repr__(self) -> str:
-        return "<Section: {}>".format(self.name)
+        return f"<Section: {self.name!r} {super()._repr_blocks()}>"
 
     def __getitem__(self, key: str) -> "Option":
         key = self._container.optionxform(key)

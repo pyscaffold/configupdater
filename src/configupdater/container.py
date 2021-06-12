@@ -1,5 +1,6 @@
 import sys
 from abc import ABC
+from textwrap import indent
 from typing import Generic, Optional, TypeVar
 
 if sys.version_info[:2] >= (3, 9):
@@ -18,6 +19,14 @@ class Container(ABC, Generic[T]):
 
     def __init__(self):
         self._structure: List[T] = []
+
+    def _repr_blocks(self) -> str:
+        blocks = "\n".join(repr(block) for block in self._structure)
+        blocks = indent(blocks, " " * 4)
+        return f"[\n{blocks.rstrip()}\n]" if blocks.strip() else "[]"
+
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__} {self._repr_blocks()}>"
 
     @property
     def structure(self) -> List[T]:
@@ -53,3 +62,11 @@ class Container(ABC, Generic[T]):
     def __len__(self) -> int:
         """Number of blocks in container"""
         return len(self._structure)
+
+    def append(self: C, block: T) -> C:
+        self._structure.append(block)
+        return self
+
+    def remove_all(self: C) -> C:
+        self._structure.clear()
+        return self

@@ -72,7 +72,7 @@ class Option(Block[SectionContent]):
         return "{}{}{}{}".format(self._key, delim, self._value, "\n")
 
     def __repr__(self) -> str:
-        return "<Option: {} = {}>".format(self.key, self.value)
+        return f"<Option: {self._key} = {self.value!r}>"
 
     @property
     def key(self) -> str:
