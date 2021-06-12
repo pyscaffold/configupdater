@@ -16,6 +16,10 @@ if sys.version_info[:2] >= (3, 9):
 else:
     from typing import Dict, Iterator, List, MutableMapping
 
+from .block import Comment, Space
+from .container import Container
+from .option import Option
+from .section import Section
 
 # Used in parser getters to indicate the default behaviour when a specific
 # option is not found it to raise an exception. Created to enable 'None' as
@@ -24,13 +28,13 @@ _UniqueValues = Enum("UniqueValues", "_UNSET")
 _UNSET = _UniqueValues._UNSET
 
 T = TypeVar("T")
-U = TypeVar("U", bound="ConfigUpdater")
+D = TypeVar("D", bound="Document")
 
 ConfigContent = Union["Section", "Comment", "Space"]
 Value = Union["Option", str]
 
 
-class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
+class Document(Container[ConfigContent], MutableMapping[str, Section]):
     def _get_section_idx(self, name: str) -> int:
         return next(
             i
@@ -284,7 +288,7 @@ class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
         key = self.optionxform(option)
         return key in self.get_section(section, {})
 
-    def set(self: U, section: str, option: str, value: Optional[str] = None) -> U:
+    def set(self: D, section: str, option: str, value: Optional[str] = None) -> D:
         """Set an option.
 
         Args:

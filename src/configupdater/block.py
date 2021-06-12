@@ -1,11 +1,15 @@
 import sys
 from abc import ABC
-from typing import Generic, Optional, TypeVar
+from typing import TYPE_CHECKING, Generic, Optional, TypeVar
 
 if sys.version_info[:2] >= (3, 9):
     List = list
 else:
     from typing import List
+
+if TYPE_CHECKING:
+    from .builder import BlockBuilder
+    from .container import Container
 
 T = TypeVar("T")
 B = TypeVar("B", bound="Block")
@@ -21,7 +25,7 @@ class Block(ABC, Generic[T]):
     inside the container.
     """
 
-    def __init__(self, container: Container[T]):
+    def __init__(self, container: "Container[T]"):
         self._container = container
         self._lines: List[str] = []
         self._updated = False
@@ -49,7 +53,7 @@ class Block(ABC, Generic[T]):
         return self._lines
 
     @property
-    def container(self) -> Container[T]:
+    def container(self) -> "Container[T]":
         """Container holding the block"""
         return self._container
 
@@ -64,15 +68,20 @@ class Block(ABC, Generic[T]):
         # if no lines were added, treat it as updated since we added it
         return self._updated or not self._lines
 
+    def _builder(self, idx: int) -> "BlockBuilder":
+        from .builder import BlockBuilder
+
+        return BlockBuilder(self._container, idx)
+
     @property
     def add_before(self) -> "BlockBuilder":
         """Block builder inserting a new block before the current block"""
-        return BlockBuilder(self._container, self.container_idx)
+        return self._builder(self.container_idx)
 
     @property
     def add_after(self) -> "BlockBuilder":
         """Block builder inserting a new block after the current block"""
-        return BlockBuilder(self._container, self.container_idx + 1)
+        return self._builder(self.container_idx + 1)
 
     @property
     def next_block(self) -> Optional[T]:
@@ -101,7 +110,7 @@ class Block(ABC, Generic[T]):
 class Comment(Block[T]):
     """Comment block"""
 
-    def __init__(self, container: Container[T]):
+    def __init__(self, container: "Container[T]"):
         super().__init__(container=container)
 
     def __repr__(self) -> str:
@@ -111,7 +120,7 @@ class Comment(Block[T]):
 class Space(Block[T]):
     """Vertical space block of new lines"""
 
-    def __init__(self, container: Container[T]):
+    def __init__(self, container: "Container[T]"):
         super().__init__(container=container)
 
     def __repr__(self) -> str:

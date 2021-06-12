@@ -1,5 +1,5 @@
 import sys
-from typing import Optional, Tuple, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Optional, Tuple, TypeVar, Union, overload
 
 if sys.version_info[:2] >= (3, 9):
     from collections.abc import Iterator, MutableMapping
@@ -8,6 +8,14 @@ if sys.version_info[:2] >= (3, 9):
     Dict = dict
 else:
     from typing import Dict, Iterator, List, MutableMapping
+
+if TYPE_CHECKING:
+    from .document import Document
+
+from .block import Block, Comment, Space
+from .builder import BlockBuilder
+from .container import Container
+from .option import Option
 
 T = TypeVar("T")
 S = TypeVar("S", bound="Section")
@@ -27,8 +35,8 @@ class Section(
         updated (bool): indicates name change or a new section
     """
 
-    def __init__(self, name: str, container: "ConfigUpdater"):
-        self._container: "ConfigUpdater" = container
+    def __init__(self, name: str, container: "Document"):
+        self._container: "Document" = container
         self._name = name
         self._structure: List[SectionContent] = []
         self._updated = False

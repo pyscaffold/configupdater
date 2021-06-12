@@ -1,11 +1,17 @@
 import sys
-from typing import Optional, Union, cast
+from typing import TYPE_CHECKING, Optional, Union, cast
 
 if sys.version_info[:2] >= (3, 9):
     List = list
     Dict = dict
 else:
     from typing import List
+
+
+if TYPE_CHECKING:
+    from .section import Section
+
+from .block import Block, Comment, Space
 
 SectionContent = Union["Option", "Comment", "Space"]
 Value = Union["Option", str]
@@ -24,12 +30,12 @@ class Option(Block[SectionContent]):
         self,
         key: str,
         value: Optional[str],
-        container: Section,
+        container: "Section",
         delimiter: str = "=",
         space_around_delimiters: bool = True,
         line: Optional[str] = None,
     ):
-        self._container: Section = container
+        self._container: "Section" = container
         super().__init__(container=container)
         self._key = key
         self._values: List[Optional[str]] = [value]
