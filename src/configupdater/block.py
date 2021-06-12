@@ -1,0 +1,118 @@
+import sys
+from abc import ABC
+from typing import Generic, Optional, TypeVar
+
+if sys.version_info[:2] >= (3, 9):
+    List = list
+else:
+    from typing import List
+
+T = TypeVar("T")
+B = TypeVar("B", bound="Block")
+
+
+class Block(ABC, Generic[T]):
+    """Abstract Block type holding lines
+
+    Block objects hold original lines from the configuration file and hold
+    a reference to a container wherein the object resides.
+
+    The type variable ``T`` is a reference for the type of the sibling blocks
+    inside the container.
+    """
+
+    def __init__(self, container: Container[T]):
+        self._container = container
+        self._lines: List[str] = []
+        self._updated = False
+
+    def __str__(self) -> str:
+        return "".join(self._lines)
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, self.__class__):
+            return str(self) == str(other)
+        else:
+            return False
+
+    def add_line(self: B, line: str) -> B:
+        """Add a line to the current block
+
+        Args:
+            line (str): one line to add
+        """
+        self._lines.append(line)
+        return self
+
+    @property
+    def lines(self) -> List[str]:
+        return self._lines
+
+    @property
+    def container(self) -> Container[T]:
+        """Container holding the block"""
+        return self._container
+
+    @property
+    def container_idx(self: B) -> int:
+        """Index of the block within its container"""
+        return self._container.structure.index(self)
+
+    @property
+    def updated(self) -> bool:
+        """True if the option was changed/updated, otherwise False"""
+        # if no lines were added, treat it as updated since we added it
+        return self._updated or not self._lines
+
+    @property
+    def add_before(self) -> "BlockBuilder":
+        """Block builder inserting a new block before the current block"""
+        return BlockBuilder(self._container, self.container_idx)
+
+    @property
+    def add_after(self) -> "BlockBuilder":
+        """Block builder inserting a new block after the current block"""
+        return BlockBuilder(self._container, self.container_idx + 1)
+
+    @property
+    def next_block(self) -> Optional[T]:
+        """Next block in the current container"""
+        idx = self.container_idx + 1
+        if idx < len(self._container):
+            return self._container.structure[idx]
+        else:
+            return None
+
+    @property
+    def previous_block(self) -> Optional[T]:
+        """Previous block in the current container"""
+        idx = self.container_idx - 1
+        if idx >= 0:
+            return self._container.structure[idx]
+        else:
+            return None
+
+    def remove(self: B) -> B:
+        """Remove this block from container"""
+        self.container._remove_block(self.container_idx)
+        return self
+
+
+class Comment(Block[T]):
+    """Comment block"""
+
+    def __init__(self, container: Container[T]):
+        super().__init__(container=container)
+
+    def __repr__(self) -> str:
+        return "<Comment>"
+
+
+class Space(Block[T]):
+    """Vertical space block of new lines"""
+
+    def __init__(self, container: Container[T]):
+        super().__init__(container=container)
+
+    def __repr__(self) -> str:
+        return "<Space>"
