@@ -291,6 +291,7 @@ key =
 def test_get_option():
     updater = ConfigUpdater()
     updater.read_string(test1_cfg_in)
+    updater.read_string(test1_cfg_in)
     option = updater["default"]["key"]
     assert option.value == "1"
     with pytest.raises(KeyError):
@@ -961,6 +962,11 @@ def test_empty_lines_in_values_support():
     assert updater["main1"]["key1"].value == parser["main1"]["key1"]
     assert updater["main2"]["key1"].value == parser["main2"]["key1"]
     assert updater["main4"]["key1"].value == parser["main4"]["key2"]
+
+    # Make sure values are not being stored in "whitespace nodes"
+    value = (x.strip() for x in updater["main1"]["key1"].value.splitlines())
+    assert [v for v in value if v] == ["a", "b", "c", "d"]
+
     assert test21_cfg_in == str(updater)
     with pytest.raises(ParsingError):
         updater = ConfigUpdater(empty_lines_in_values=False)

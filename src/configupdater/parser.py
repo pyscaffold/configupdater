@@ -1,10 +1,10 @@
-"""Configuration file updater.
+"""Parser for configuration files (normally ``*.cfg``)
 
 A configuration file consists of sections, lead by a "[section]" header,
 and followed by "name: value" entries, with continuations and such in
 the style of RFC 822.
 
-The basic idea of ConfigUpdater is that a configuration file consists of
+The basic idea of **ConfigUpdater** is that a configuration file consists of
 three kinds of building blocks: sections, comments and spaces for separation.
 A section itself consists of three kinds of blocks: options, comments and
 spaces. This gives us the corresponding data structures to describe a
@@ -29,7 +29,6 @@ import io
 import os
 import re
 import sys
-from collections import OrderedDict
 from configparser import (
     DuplicateOptionError,
     DuplicateSectionError,
@@ -38,15 +37,20 @@ from configparser import (
     NoSectionError,
     ParsingError,
 )
-from typing import Optional, Tuple, Type, TypeVar, Union, cast, no_type_check
+from typing import Callable, Optional, Tuple, Type, TypeVar, Union, cast, overload
 
 if sys.version_info[:2] >= (3, 9):
-    from collections.abc import Iterable, MutableMapping
+    from collections.abc import Iterable
 
     List = list
+    Dict = dict
 else:
-    from typing import Iterable, List, MutableMapping
+    from typing import Iterable, List, Dict
 
+from .block import Comment, Space
+from .document import Document
+from .option import Option
+from .section import Section
 
 __all__ = [
     "NoSectionError",
@@ -55,19 +59,33 @@ __all__ = [
     "NoOptionError",
     "ParsingError",
     "MissingSectionHeaderError",
-    "ConfigUpdater",
+    "InconsistentStateError",
+    "Parser",
 ]
 
 T = TypeVar("T")
 E = TypeVar("E", bound=Exception)
+D = TypeVar("D", bound=Document)
 
 ConfigContent = Union["Section", "Comment", "Space"]
 
 
-class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
+class InconsistentStateError(Exception):
+    """Error that happens when a parsing assumption is violated"""
+
+    def __init__(self, msg, fpname="<???>", lineno: int = -1, line: str = "???"):
+        super().__init__(msg)
+        self.args = (msg, fpname, lineno, line)
+
+    def __str__(self):
+        (msg, fpname, lineno, line) = self.args
+        return f"{msg}\n{fpname}({lineno}): {line!r}"
+
+
+class Parser:
     """Parser for updating configuration files.
 
-    ConfigUpdater follows the API of ConfigParser with some differences:
+    ConfigUpdater's parser follows ConfigParser with some differences:
       * inline comments are treated as part of a key's value,
       * only a single config file can be updated at a time,
       * the original case of sections and keys are kept,
@@ -125,6 +143,7 @@ class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
         strict: bool = True,
         empty_lines_in_values: bool = True,
         space_around_delimiters: bool = True,
+        optionxform: Callable[[str], str] = str,
     ):
         """Constructor of ConfigUpdater
 
@@ -142,14 +161,18 @@ class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
             space_around_delimiters (bool): add a space before and after the
                 delimiter, default True
         """
+        self._document: Document  # bind later
+        self._optionxform_fn = optionxform
+        self._lineno = -1
+        self._fpname = "<???>"
+
         self._filename: Optional[str] = None
         self._space_around_delimiters: bool = space_around_delimiters
 
-        self._dict = OrderedDict  # no reason to let the user change this
+        self._dict = dict  # no reason to let the user change this
         # keeping _sections to keep code aligned with ConfigParser but
-        # _structure takes the actual role instead. Only use self._structure!
-        self._sections: OrderedDict[str, List[str]] = self._dict()
-        self._structure: List[Union[Comment, Space, Section]] = []
+        # _document takes the actual role instead. Only use self._document!
+        self._sections: Dict[str, Dict[str, List[str]]] = self._dict()
         self._delimiters: Tuple[str, ...] = tuple(delimiters)
         if delimiters == ("=", ":"):
             self._optcre = self.OPTCRE_NV if allow_no_value else self.OPTCRE
@@ -166,20 +189,57 @@ class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
         self._strict = strict
         self._allow_no_value = allow_no_value
         self._empty_lines_in_values = empty_lines_in_values
-        super().__init__()
 
-    def read(self, filename: str, encoding: Optional[str] = None):
+    def _get_args(self) -> dict:
+        args = (
+            "allow_no_value",
+            "delimiters",
+            "comment_prefixes",
+            "inline_comment_prefixes",
+            "strict",
+            "empty_lines_in_values",
+            "space_around_delimiters",
+        )
+        return {attr: getattr(self, f"_{attr}") for attr in args}
+
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}: {self._get_args()!r}>"
+
+    @overload
+    def read(self, filename: str, encoding: Optional[str] = None) -> Document:
+        ...
+
+    @overload
+    def read(self, filename: str, encoding: str, into: D) -> D:
+        ...
+
+    @overload
+    def read(self, filename: str, *, into: D, encoding: Optional[str] = None) -> D:
+        ...
+
+    def read(self, filename, encoding=None, into=None):
         """Read and parse a filename.
 
         Args:
             filename (str): path to file
-            encoding (str): encoding of file, default None
+            encoding (Optional[str]): encoding of file, default None
+            into (Optional[Document]): object to be populated with the parsed config
         """
+        document = Document() if into is None else into
         with open(filename, encoding=encoding) as fp:
-            self._read(fp, filename)
+            self._read(fp, filename, document)
         self._filename = os.path.abspath(filename)
+        return document
 
-    def read_file(self, f: Iterable[str], source: Optional[str] = None):
+    @overload
+    def read_file(self, f: Iterable[str], source: Optional[str], into: D) -> D:
+        ...
+
+    @overload
+    def read_file(self, f: Iterable[str], source: Optional[str]) -> Document:
+        ...
+
+    def read_file(self, f, source=None, into=None):
         """Like read() but the argument must be a file-like object.
 
         The ``f`` argument must be iterable, returning one line at a time.
@@ -189,72 +249,110 @@ class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
 
         Args:
             f: file like object
-            source (str): reference name for file object, default None
+            source (Optional[str]): reference name for file object, default None
+            into (Optional[Document]): object to be populated with the parsed config
         """
         if isinstance(f, str):
             raise RuntimeError("f must be a file-like object, not string!")
+        document = Document() if into is None else into
         if source is None:
             try:
                 source = cast(str, cast(io.FileIO, f).name)
             except AttributeError:
                 source = "<???>"
-        self._read(f, source)
+        self._read(f, source, document)
+        return document
 
-    def read_string(self, string: str, source="<string>"):
+    @overload
+    def read_string(self, string: str, source: str = "<string>") -> Document:
+        ...
+
+    @overload
+    def read_string(self, string: str, source: str, into: D) -> D:
+        ...
+
+    @overload
+    def read_string(self, string: str, *, into: D, source: str = "<string>") -> D:
+        ...
+
+    def read_string(self, string, source="<string>", into=None):
         """Read configuration from a given string.
 
         Args:
             string (str): string containing a configuration
             source (str): reference name for file object, default '<string>'
+            into (Optional[Document]): object to be populated with the parsed config
         """
         sfile = io.StringIO(string)
-        self.read_file(sfile, source)
+        self.read_file(sfile, source, into)
+
+    def optionxform(self, string: str) -> str:
+        fn = self._optionxform_fn
+        return fn(string)
+
+    @property
+    def _last_block(self):
+        return self._document.last_block
 
     def _update_curr_block(
         self, block_type: Type[Union[Comment[T], Space[T]]]
     ) -> Union[Comment[T], Space[T]]:
-        if isinstance(self.last_block, block_type):
-            return self.last_block  # type: ignore[return-value]
-            # ^  the type checker is not understanding the isinstance check
+        if isinstance(self._last_block, block_type):
+            return self._last_block
         else:
-            new_block = block_type(container=self)  # type: ignore[arg-type]
+            new_block = block_type(container=self._document)  # type: ignore[arg-type]
             # ^  the type checker is forgetting ConfigUpdater <: Container[T]
-            self._structure.append(new_block)
+            self._document.append(new_block)
             return new_block
 
-    def _add_comment(self, line):
-        if isinstance(self.last_block, Section):
-            self.last_block.add_comment(line)
+    def _add_comment(self, line: str):
+        if isinstance(self._last_block, Section):
+            self._last_block.add_comment(line)
         else:
             self._update_curr_block(Comment).add_line(line)
 
-    def _add_section(self, sectname, line):
-        new_section = Section(sectname, container=self)
+    def _add_section(self, sectname: str, line: str):
+        new_section = Section(sectname, container=self._document)
         new_section.add_line(line)
-        self._structure.append(new_section)
+        self._document.append(new_section)
 
-    def _add_option(self, key, vi, value, line):
+    def _add_option(self, key: str, vi: str, value: str, line: str):
+        if not isinstance(self._last_block, Section):
+            msg = f"{self._last_block!r} should be Section"
+            raise InconsistentStateError(msg, self._fpname, self._lineno, line)
         entry = Option(
             key,
             value,
             delimiter=vi,
-            container=self.last_block,
+            container=self._last_block,
             space_around_delimiters=self._space_around_delimiters,
             line=line,
         )
-        assert isinstance(self.last_block, Section)
-        # TODO: Replace the assertion with proper handling
-        #       Why last_block was not being checked before?
-        self.last_block.add_option(entry)
+        self._last_block.add_option(entry)
 
-    def _add_space(self, line):
-        if isinstance(self.last_block, Section):
-            self.last_block.add_space(line)
+    def _add_option_line(self, line: str):
+        last_section = self._last_block
+        if not isinstance(last_section, Section):
+            msg = f"{last_section!r} should be Section"
+            raise InconsistentStateError(msg, self._fpname, self._lineno, line)
+        # if empty_lines_in_values is true, we later will merge options and whitespace
+        # (in the _check_values_with_blank_lines function called at the end).
+        # This allows option values to have empty new lines inside them
+        # So for now we can add parts of option values to Space nodes, than we check if
+        # that is an error or not.
+        last_option = last_section.last_block
+        if not isinstance(last_option, (Option, Space)):
+            msg = f"{last_option!r} should be Option or Space"
+            raise InconsistentStateError(msg, self._fpname, self._lineno, line)
+        last_option.add_line(line)
+
+    def _add_space(self, line: str):
+        if isinstance(self._last_block, Section):
+            self._last_block.add_space(line)
         else:
             self._update_curr_block(Space).add_line(line)
 
-    @no_type_check
-    def _read(self, fp: Iterable[str], fpname: str):
+    def _read(self, fp: Iterable[str], fpname: str, into: Document):
         """Parse a sectioned configuration file.
 
         Each section in a configuration file contains a header, indicated by
@@ -275,16 +373,18 @@ class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
         mess here as close as possible to the original messod (pardon
         this german pun) for consistency reasons and later upgrades.
         """
-        self._structure = []
-        elements_added = set()
-        cursect = None  # None, or a dictionary
-        sectname = None
-        optname = None
+        self._document = into
+        elements_added: set = set()
+        cursect: Optional[Dict[str, List[str]]] = None  # None, or a dictionary
+        sectname: Optional[str] = None
+        optname: Optional[str] = None
         lineno = 0
         indent_level = 0
-        e = None  # None, or an exception
+        e: Optional[Exception] = None  # None, or an exception
+        self._fpname = fpname
         for lineno, line in enumerate(fp, start=1):
-            comment_start = sys.maxsize
+            self._lineno = lineno
+            comment_start: Optional[int] = sys.maxsize
             # strip inline comments
             inline_prefixes = {p: -1 for p in self._inline_comment_prefixes}
             while comment_start == sys.maxsize and inline_prefixes:
@@ -320,7 +420,7 @@ class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
                     ):
                         cursect[optname].append("")  # newlines added at join
                         if line.strip():
-                            self.last_block.last_block.add_line(line)  # HOOK
+                            self._add_option_line(line)  # HOOK
                 else:
                     # empty line marks end of value
                     indent_level = sys.maxsize
@@ -332,7 +432,7 @@ class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
             cur_indent_level = first_nonspace.start() if first_nonspace else 0
             if cursect is not None and optname and cur_indent_level > indent_level:
                 cursect[optname].append(value)
-                self.last_block.last_block.add_line(line)  # HOOK
+                self._add_option_line(line)  # HOOK
             # a section header or option header?
             else:
                 indent_level = cur_indent_level
@@ -365,10 +465,12 @@ class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
                         # optname = self.optionxform(optname.rstrip())
                         # keep original case of key
                         optname = optname.rstrip()
+                        if sectname is None:
+                            msg = f"Could not find the section name for {optname}"
+                            raise InconsistentStateError(msg, fpname, lineno, line)
                         if self._strict and (sectname, optname) in elements_added:
-                            raise DuplicateOptionError(
-                                sectname, optname, fpname, lineno
-                            )
+                            args = (sectname, optname, fpname, lineno)
+                            raise DuplicateOptionError(*args)
                         elements_added.add((sectname, optname))
                         # This check is fine because the OPTCRE cannot
                         # match if it would set optval to None
@@ -380,7 +482,10 @@ class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
                             cursect[optname] = None
                         self._add_option(optname, vi, optval, line)  # HOOK
                     # handle indented comment
-                    elif first_nonspace.group(0) in self._comment_prefixes:
+                    elif (
+                        first_nonspace is not None
+                        and first_nonspace.group(0) in self._comment_prefixes
+                    ):
                         self._add_comment(line)  # HOOK
                     else:
                         # a non-fatal parsing error occurred. set up the
@@ -405,7 +510,7 @@ class ConfigUpdater(Container[ConfigContent], MutableMapping[str, Section]):
         return e
 
     def _check_values_with_blank_lines(self):
-        for section in self.section_blocks():
+        for section in self._document.section_blocks():
             for option in section.option_blocks():
                 next_block = option.next_block
                 if isinstance(next_block, Space):
