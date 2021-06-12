@@ -1,3 +1,15 @@
+"""Options are the ultimate mean of configuration inside a configuration value.
+
+They are always associated with a :attr:`~Option.key` (or the name of the configuration
+parameter) and a :attr:`~Option.value`.
+
+Options can also have multi-line values that are usually interpreted as a list of
+values.
+
+When editing configuration files with ConfigUpdater, a handy way of setting a multi-line
+(or comma separated value) for an specific option is to use the
+:meth:`~Option.set_values` method.
+"""
 import sys
 from typing import TYPE_CHECKING, Optional, Union, cast
 

@@ -1,3 +1,9 @@
+"""Together with :mod:`~configupdater.block` this module forms the basis of
+the class hierarchy in **ConfigUpdater**.
+
+The :class:`Container` is the parent class of everything that can contain configuration
+blocks, e.g. a section or the entire file itself.
+"""
 import sys
 from abc import ABC
 from textwrap import indent

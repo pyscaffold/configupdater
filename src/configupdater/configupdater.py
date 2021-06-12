@@ -1,3 +1,11 @@
+"""As the main entry point of the ConfigUpdater library, this module is responsible
+for combining the data layer provided by the :mod:`configupdater.document` module
+and the parsing capabilities of :mod:`configupdater.parser`.
+
+To complete the API, this module adds file handling functions, so that you can read a
+configuration file from the disk, change it to your liking and save the updated
+content.
+"""
 import sys
 from configparser import Error
 from typing import Optional, TextIO, Tuple, TypeVar
@@ -52,6 +60,18 @@ class ConfigUpdater(Document):
       * conversions of values,
       * passing key/value-pairs with ``default`` argument,
       * non-strict mode allowing duplicate sections and keys.
+
+    **ConfigUpdater** objects can be created by passing the same kind of arguments
+    accepted by the :class:`Parser`. After a ConfigUpdater object is created, you can
+    load some content into it by calling any of the ``read*`` methods
+    (:meth:`read`, :meth:`read_file` and :meth:`read_string`).
+
+    Once the content is loaded you can use the ConfigUpdater object more or less in the
+    same way you would use a nested dictionary. Please have a look into
+    :class:`Document` to understand the main differences.
+
+    When you are done changing the configuration file, you can call :meth:`write` or
+    :meth:`update_file` methods.
     """
 
     def __init__(
@@ -119,20 +139,9 @@ class ConfigUpdater(Document):
         self.remove_all()
         return self._parser().read_string(string, source, self)
 
-    def optionxform(self, optionstr) -> str:
-        """Converts an option key to lower case for unification
-
-        Args:
-             optionstr (str): key name
-
-        Returns:
-            str: unified option name
-        """
-        return optionstr.lower()
-
     def write(self, fp: TextIO, validate: bool = True):
         # TODO: For Python>=3.8 instead of TextIO we can define a Writeable protocol
-        """Write an .ini-format representation of the configuration state.
+        """Write an .cfg/.ini-format representation of the configuration state.
 
         Args:
             fp (file-like object): open file handle
