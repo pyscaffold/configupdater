@@ -13,12 +13,11 @@ When editing configuration files with ConfigUpdater, a handy way of setting a mu
 import sys
 from typing import TYPE_CHECKING, Optional, Union, cast
 
-if sys.version_info[:2] >= (3, 9):
+if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     List = list
     Dict = dict
 else:
-    from typing import List
-
+    from typing import List  # pragma: no cover
 
 if TYPE_CHECKING:
     from .section import Section

@@ -10,12 +10,12 @@ import sys
 from configparser import Error
 from typing import Optional, TextIO, Tuple, TypeVar
 
-if sys.version_info[:2] >= (3, 9):
+if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     from collections.abc import Iterable
 
     List = list
     Dict = dict
-else:
+else:  # pragma: no cover
     from typing import Iterable
 
 from .block import Comment, Space
