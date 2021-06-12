@@ -1,17 +1,20 @@
 from configparser import DuplicateOptionError, DuplicateSectionError
-from typing import TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
-BB = TypeVar("BB", bound="BlockBuilder")
+if TYPE_CHECKING:
+    from .container import Container
+
+T = TypeVar("T", bound="BlockBuilder")
 
 
 class BlockBuilder:
     """Builder that injects blocks at a given index position."""
 
-    def __init__(self, container: Container, idx: int):
+    def __init__(self, container: "Container", idx: int):
         self._container = container
         self._idx = idx
 
-    def comment(self: BB, text: str, comment_prefix="#") -> BB:
+    def comment(self: T, text: str, comment_prefix="#") -> T:
         """Creates a comment block
 
         Args:
@@ -21,6 +24,8 @@ class BlockBuilder:
         Returns:
             self for chaining
         """
+        from .block import Comment
+
         comment = Comment(self._container)
         if not text.startswith(comment_prefix):
             text = "{} {}".format(comment_prefix, text)
@@ -31,7 +36,7 @@ class BlockBuilder:
         self._idx += 1
         return self
 
-    def section(self: BB, section) -> BB:
+    def section(self: T, section) -> T:
         """Creates a section block
 
         Args:
@@ -40,10 +45,12 @@ class BlockBuilder:
         Returns:
             self for chaining
         """
-        if not isinstance(self._container, ConfigUpdater):
-            raise ValueError("Sections can only be added at section level!")
+        from .document import Document
+        from .section import Section
 
-        container: ConfigUpdater = self._container
+        container = self._container
+        if not isinstance(container, Document):
+            raise ValueError("Sections can only be added at section level!")
 
         if isinstance(section, str):
             # create a new section
@@ -58,7 +65,7 @@ class BlockBuilder:
         self._idx += 1
         return self
 
-    def space(self: BB, newlines=1) -> BB:
+    def space(self: T, newlines=1) -> T:
         """Creates a vertical space of newlines
 
         Args:
@@ -67,6 +74,8 @@ class BlockBuilder:
         Returns:
             self for chaining
         """
+        from .block import Space
+
         space = Space(container=self._container)
         for _ in range(newlines):
             space.add_line("\n")
@@ -74,7 +83,7 @@ class BlockBuilder:
         self._idx += 1
         return self
 
-    def option(self: BB, key, value=None, **kwargs) -> BB:
+    def option(self: T, key, value=None, **kwargs) -> T:
         """Creates a new option inside a section
 
         Args:
@@ -85,6 +94,9 @@ class BlockBuilder:
         Returns:
             self for chaining
         """
+        from .option import Option
+        from .section import Section
+
         if not isinstance(self._container, Section):
             raise ValueError("Options can only be added inside a section!")
         option = Option(key, value, container=self._container, **kwargs)
