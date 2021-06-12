@@ -39,12 +39,12 @@ from configparser import (
 )
 from typing import Callable, Optional, Tuple, Type, TypeVar, Union, cast, overload
 
-if sys.version_info[:2] >= (3, 9):
+if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     from collections.abc import Iterable
 
     List = list
     Dict = dict
-else:
+else:  # pragma: no cover
     from typing import Iterable, List, Dict
 
 from .block import Comment, Space
@@ -70,8 +70,10 @@ D = TypeVar("D", bound=Document)
 ConfigContent = Union["Section", "Comment", "Space"]
 
 
-class InconsistentStateError(Exception):
-    """Error that happens when a parsing assumption is violated"""
+class InconsistentStateError(Exception):  # pragma: no cover (not expected to happen)
+    """Internal parser error, some of the parsing algorithm assumptions was violated,
+    and the internal state machine ended up in an unpredicted state.
+    """
 
     def __init__(self, msg, fpname="<???>", lineno: int = -1, line: str = "???"):
         super().__init__(msg)
@@ -232,11 +234,17 @@ class Parser:
         return document
 
     @overload
+    def read_file(self, f: Iterable[str], source: Optional[str]) -> Document:
+        ...
+
+    @overload
     def read_file(self, f: Iterable[str], source: Optional[str], into: D) -> D:
         ...
 
     @overload
-    def read_file(self, f: Iterable[str], source: Optional[str]) -> Document:
+    def read_file(
+        self, f: Iterable[str], *, into: D, source: Optional[str] = None
+    ) -> D:
         ...
 
     def read_file(self, f, source=None, into=None):
@@ -317,7 +325,7 @@ class Parser:
         self._document.append(new_section)
 
     def _add_option(self, key: str, vi: str, value: str, line: str):
-        if not isinstance(self._last_block, Section):
+        if not isinstance(self._last_block, Section):  # pragma: no cover
             msg = f"{self._last_block!r} should be Section"
             raise InconsistentStateError(msg, self._fpname, self._lineno, line)
         entry = Option(
@@ -332,7 +340,7 @@ class Parser:
 
     def _add_option_line(self, line: str):
         last_section = self._last_block
-        if not isinstance(last_section, Section):
+        if not isinstance(last_section, Section):  # pragma: no cover
             msg = f"{last_section!r} should be Section"
             raise InconsistentStateError(msg, self._fpname, self._lineno, line)
         # if empty_lines_in_values is true, we later will merge options and whitespace
@@ -341,7 +349,7 @@ class Parser:
         # So for now we can add parts of option values to Space nodes, than we check if
         # that is an error or not.
         last_option = last_section.last_block
-        if not isinstance(last_option, (Option, Space)):
+        if not isinstance(last_option, (Option, Space)):  # pragma: no cover
             msg = f"{last_option!r} should be Option or Space"
             raise InconsistentStateError(msg, self._fpname, self._lineno, line)
         last_option.add_line(line)
@@ -465,7 +473,7 @@ class Parser:
                         # optname = self.optionxform(optname.rstrip())
                         # keep original case of key
                         optname = optname.rstrip()
-                        if sectname is None:
+                        if sectname is None:  # pragma: no cover
                             msg = f"Could not find the section name for {optname}"
                             raise InconsistentStateError(msg, fpname, lineno, line)
                         if self._strict and (sectname, optname) in elements_added:

@@ -14,12 +14,12 @@ from configparser import (
 from enum import Enum
 from typing import Optional, Tuple, TypeVar, Union, overload
 
-if sys.version_info[:2] >= (3, 9):
+if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     from collections.abc import Iterator, MutableMapping
 
     List = list
     Dict = dict
-else:
+else:  # pragma: no cover
     from typing import Dict, Iterator, List, MutableMapping
 
 from .block import Comment, Space

@@ -9,11 +9,11 @@ from abc import ABC
 from textwrap import indent
 from typing import Generic, Optional, TypeVar
 
-if sys.version_info[:2] >= (3, 9):
+if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     from collections.abc import Iterator
 
     List = list
-else:
+else:  # pragma: no cover
     from typing import Iterator, List
 
 T = TypeVar("T")

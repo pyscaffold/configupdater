@@ -8,9 +8,9 @@ import sys
 from abc import ABC
 from typing import TYPE_CHECKING, Generic, Optional, TypeVar
 
-if sys.version_info[:2] >= (3, 9):
+if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     List = list
-else:
+else:  # pragma: no cover
     from typing import List
 
 if TYPE_CHECKING:

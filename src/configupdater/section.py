@@ -13,12 +13,12 @@ Note:
 import sys
 from typing import TYPE_CHECKING, Optional, Tuple, TypeVar, Union, overload
 
-if sys.version_info[:2] >= (3, 9):
+if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     from collections.abc import Iterator, MutableMapping
 
     List = list
     Dict = dict
-else:
+else:  # pragma: no cover
     from typing import Dict, Iterator, List, MutableMapping
 
 if TYPE_CHECKING:

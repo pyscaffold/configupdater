@@ -12,6 +12,9 @@ source =
 [report]
 # Regexes for lines to exclude from consideration
 exclude_lines =
+    # Don't complain about ellipsis (used in overloaded methods)
+    \.\.\.
+
     # Have to re-enable the standard pragma
     pragma: no cover
 
@@ -26,3 +29,4 @@ exclude_lines =
     # Don't complain if non-runnable code isn't run:
     if 0:
     if __name__ == .__main__.:
+    if TYPE_CHECKING:
