@@ -48,6 +48,7 @@ class ConfigUpdater(Document):
     """Tool to parse and modify existing ``cfg`` files.
 
     ConfigUpdater follows the API of ConfigParser with some differences:
+
       * inline comments are treated as part of a key's value,
       * only a single config file can be updated at a time,
       * the original case of sections and keys are kept,
@@ -108,7 +109,7 @@ class ConfigUpdater(Document):
             filename (str): path to file
             encoding (str): encoding of file, default None
         """
-        self.remove_all()
+        self.clear()
         self._filename = filename
         return self._parser().read(filename, encoding, self)
 
@@ -124,7 +125,7 @@ class ConfigUpdater(Document):
             f: file like object
             source (str): reference name for file object, default None
         """
-        self.remove_all()
+        self.clear()
         if hasattr(f, "name"):
             self._filename = f.name  # type: ignore[attr-defined]
         return self._parser().read_file(f, source, self)
@@ -136,7 +137,7 @@ class ConfigUpdater(Document):
             string (str): string containing a configuration
             source (str): reference name for file object, default '<string>'
         """
-        self.remove_all()
+        self.clear()
         return self._parser().read_string(string, source, self)
 
     def write(self, fp: TextIO, validate: bool = True):

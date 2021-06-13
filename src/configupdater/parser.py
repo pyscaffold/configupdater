@@ -88,6 +88,7 @@ class Parser:
     """Parser for updating configuration files.
 
     ConfigUpdater's parser follows ConfigParser with some differences:
+
       * inline comments are treated as part of a key's value,
       * only a single config file can be updated at a time,
       * the original case of sections and keys are kept,
