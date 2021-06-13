@@ -160,6 +160,9 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         else:
             return False
 
+    def clear(self):
+        self._structure.clear()
+
     def add_section(self, section: Union[str, Section]):
         """Create a new section in the configuration.
 

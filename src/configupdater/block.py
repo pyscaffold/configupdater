@@ -116,16 +116,9 @@ class Block(ABC, Generic[T]):
         return self
 
 
-class Hidden(Block[T]):
-    """Common class for elements that are not directly accessible via the
-    :class:`~collections.abc.MutableMapping` interface of **ConfigUpdater**,
-    like comments and vertical sections of whitespace.
-    """
-
-
-class Comment(Hidden[T]):
+class Comment(Block[T]):
     """Comment block"""
 
 
-class Space(Hidden[T]):
+class Space(Block[T]):
     """Vertical space block of new lines"""

@@ -72,7 +72,3 @@ class Container(ABC, Generic[T]):
     def append(self: C, block: T) -> C:
         self._structure.append(block)
         return self
-
-    def remove_all(self: C) -> C:
-        self._structure.clear()
-        return self

@@ -262,3 +262,6 @@ class Section(
             idx (int): index where to insert
         """
         return BlockBuilder(self, idx)
+
+    def clear(self):
+        self._structure.clear()
