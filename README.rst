@@ -17,9 +17,16 @@
     :alt: Monthly Downloads
     :target: https://pepy.tech/project/configupdater
 
-=============
-ConfigUpdater
-=============
+|
+
+.. image:: https://configupdater.readthedocs.io/en/latest/_latest/banner-640x323.png
+    :height: 640px
+    :width: 323px
+    :scale: 60 %
+    :alt: Config Updater
+    :align: center
+
+|
 
 The sole purpose of `ConfigUpdater`_ is to easily update an INI config file
 with no changes to the original file except the intended ones. This means
