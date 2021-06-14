@@ -19,7 +19,7 @@
 
 |
 
-.. image:: https://configupdater.readthedocs.io/en/latest/_latest/banner-640x323.png
+.. image:: https://configupdater.readthedocs.io/en/latest/_images/banner-640x323.png
     :height: 640px
     :width: 323px
     :scale: 60 %
