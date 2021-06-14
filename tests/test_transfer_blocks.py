@@ -1,4 +1,3 @@
-from copy import copy
 from textwrap import dedent
 
 from configupdater import ConfigUpdater
@@ -34,10 +33,10 @@ def test_transfering_blocks_between_elements():
     source2 = ConfigUpdater()
     source2.read_string(dedent(template2))
 
-    target["section1"] = copy(source1["section1"])
+    target["section1"] = source1["section1"].remove()
     assert "section1" in target
 
-    target["section1"].add_after.section(copy(source2["section2"]))
+    target["section1"].add_after.section(source2["section2"].remove())
     # Help with debugging
     print(f"@@@ target:\n{target}")
     print(f"@@@ source1:\n{source1}")
