@@ -1,6 +1,11 @@
-=============
-ConfigUpdater
-=============
+.. image:: gfx/banner-640x323.png
+   :height: 323px
+   :width: 640px
+   :scale: 60 %
+   :alt: ConfigUpdater
+   :align: center
+
+|
 
 The sole purpose of `ConfigUpdater`_ is to easily update an INI config file
 with no changes to the original file except the intended ones. This means
