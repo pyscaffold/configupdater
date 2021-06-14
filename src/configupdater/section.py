@@ -62,8 +62,7 @@ class Section(
         Args:
             entry (Option): key value pair as Option object
         """
-        self._structure.append(entry)
-        return self
+        return self.append(entry)
 
     def add_comment(self: S, line: str) -> S:
         """Add a Comment object to the section
@@ -77,7 +76,7 @@ class Section(
             comment: Comment = self.last_block
         else:
             comment = Comment(container=self)
-            self._structure.append(comment)
+            self.append(comment)
 
         comment.add_line(line)
         return self
@@ -94,7 +93,7 @@ class Section(
             space = self.last_block
         else:
             space = Space(container=self)
-            self._structure.append(space)
+            self.append(space)
 
         space.add_line(line)
         return self
@@ -129,12 +128,11 @@ class Section(
         if self._container.optionxform(key) in self:
             if isinstance(value, Option):
                 if value.key != key:
-                    raise ValueError(
-                        f"Set key {key} does not equal option key {value.key}"
-                    )
+                    msg = f"Set key {key} does not equal option key {value.key}"
+                    raise ValueError(msg)
                 idx = self.__getitem__(key).container_idx
-                del self.structure[idx]
-                self.structure.insert(idx, value)
+                self._structure.pop(idx)._detach()
+                self.insert(idx, value)
             else:
                 option = self.__getitem__(key)
                 option.value = value
@@ -144,12 +142,12 @@ class Section(
             else:
                 option = Option(key, value, container=self)
                 option.value = value
-            self._structure.append(option)
+            self.append(option)
 
     def __delitem__(self, key: str):
         try:
             idx = self._get_option_idx(key=key)
-            del self._structure[idx]
+            self._structure.pop(idx)._detach()
         except StopIteration as ex:
             raise KeyError(f"No option `{key}` found", {"key": key}) from ex
 
@@ -264,4 +262,4 @@ class Section(
         return BlockBuilder(self, idx)
 
     def clear(self):
-        self._structure.clear()
+        self._remove_all()

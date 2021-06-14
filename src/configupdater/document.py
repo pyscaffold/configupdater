@@ -128,8 +128,8 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
             raise ValueError("Value must be of type Section!")
         if isinstance(key, str) and key in self:
             idx = self._get_section_idx(key)
-            del self._structure[idx]
-            self._structure.insert(idx, value)
+            self._structure.pop(idx)._detach()
+            self.insert(idx, value)
         else:
             # name the section by the key
             value.name = key
@@ -161,7 +161,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
             return False
 
     def clear(self):
-        self._structure.clear()
+        self._remove_all()
 
     def add_section(self, section: Union[str, Section]):
         """Create a new section in the configuration.
@@ -183,7 +183,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         if self.has_section(section_obj.name):
             raise DuplicateSectionError(section_obj.name)
 
-        self._structure.append(section_obj)
+        self.append(section_obj)
 
     def options(self, section: str) -> List[str]:
         """Returns list of configuration options for the named section.
@@ -360,7 +360,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         """
         try:
             idx = self._get_section_idx(name)
-            del self._structure[idx]
+            self._structure.pop(idx)._detach()
             return True
         except StopIteration:
             return False

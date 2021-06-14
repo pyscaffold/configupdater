@@ -6,6 +6,7 @@ from io import StringIO
 import pytest
 
 from configupdater import (
+    AlreadyAttachedWarning,
     Comment,
     ConfigUpdater,
     DuplicateOptionError,
@@ -553,7 +554,8 @@ def test_add_before_after_section():
     sect_updater.read_string(test6_cfg_in)
     section = sect_updater["section0"]
     section.name = "new_section"
-    updater["section2"].add_after.section(section)
+    with pytest.warns(AlreadyAttachedWarning):
+        updater["section2"].add_after.section(section)
     assert str(updater) == test6_cfg_out_new_sect
     with pytest.raises(DuplicateSectionError):
         updater["section2"].add_after.section(section)
@@ -608,14 +610,14 @@ def test_set_item_section():
         updater["section"] = "newsection"
     sect_updater.read_string(test6_cfg_in)
     section = sect_updater["section0"]
-    updater["new_section"] = section
+    updater["new_section"] = section.remove()
     assert str(updater) == test6_cfg_out_new_sect
     # test overwriting an existing section
     updater.read_string(test6_cfg_in)
     sect_updater.read_string(test6_cfg_in)
     exist_section = sect_updater["section0"]
     exist_section["key0"] = 42
-    updater["section0"] = exist_section
+    updater["section0"] = exist_section.remove()
     assert str(updater) == test6_cfg_out_overwritten
 
 
