@@ -67,7 +67,7 @@ T = TypeVar("T")
 E = TypeVar("E", bound=Exception)
 D = TypeVar("D", bound=Document)
 
-ConfigContent = Union["Section", "Comment", "Space"]
+Hidden = Union[Comment, Space]
 
 
 class InconsistentStateError(Exception):  # pragma: no cover (not expected to happen)
@@ -303,14 +303,11 @@ class Parser:
     def _last_block(self):
         return self._document.last_block
 
-    def _update_curr_block(
-        self, block_type: Type[Union[Comment[T], Space[T]]]
-    ) -> Union[Comment[T], Space[T]]:
+    def _update_curr_block(self, block_type: Type[Hidden]) -> Hidden:
         if isinstance(self._last_block, block_type):
             return self._last_block
         else:
-            new_block = block_type(container=self._document)  # type: ignore[arg-type]
-            # ^  the type checker is forgetting ConfigUpdater <: Container[T]
+            new_block = block_type(container=self._document)
             self._document.append(new_block)
             return new_block
 

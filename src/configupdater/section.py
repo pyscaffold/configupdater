@@ -32,14 +32,12 @@ from .option import Option
 T = TypeVar("T")
 S = TypeVar("S", bound="Section")
 
-ConfigContent = Union["Section", "Comment", "Space"]
-SectionContent = Union["Option", "Comment", "Space"]
+
+Content = Union["Option", "Comment", "Space"]
 Value = Union["Option", str]
 
 
-class Section(
-    Block[ConfigContent], Container[SectionContent], MutableMapping[str, "Option"]
-):
+class Section(Block, Container[Content], MutableMapping[str, "Option"]):
     """Section block holding options
 
     Attributes:
@@ -50,7 +48,7 @@ class Section(
     def __init__(self, name: str, container: "Document"):
         self._container: "Document" = container
         self._name = name
-        self._structure: List[SectionContent] = []
+        self._structure: List[Content] = []
         self._updated = False
         super().__init__(container=container)
 

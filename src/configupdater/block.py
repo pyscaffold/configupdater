@@ -6,7 +6,7 @@ configuration file, e.g. comments, sections, options and even sequences of white
 """
 import sys
 from abc import ABC
-from typing import TYPE_CHECKING, Generic, Optional, TypeVar
+from typing import TYPE_CHECKING, Optional, TypeVar
 
 if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     List = list
@@ -17,7 +17,6 @@ if TYPE_CHECKING:
     from .builder import BlockBuilder
     from .container import Container
 
-T = TypeVar("T")
 B = TypeVar("B", bound="Block")
 
 
@@ -28,17 +27,14 @@ class NotAttachedError(Exception):
         super().__init__(self.__class__.__doc__)
 
 
-class Block(ABC, Generic[T]):
+class Block(ABC):
     """Abstract Block type holding lines
 
     Block objects hold original lines from the configuration file and hold
     a reference to a container wherein the object resides.
-
-    The type variable ``T`` is a reference for the type of the sibling blocks
-    inside the container.
     """
 
-    def __init__(self, container: Optional["Container[T]"] = None):
+    def __init__(self, container: Optional["Container"] = None):
         self._container = container
         self._lines: List[str] = []
         self._updated = False
@@ -72,7 +68,7 @@ class Block(ABC, Generic[T]):
         return self._lines
 
     @property
-    def container(self) -> "Container[T]":
+    def container(self) -> "Container":
         """Container holding the block"""
         if self._container is None:
             raise NotAttachedError
@@ -105,7 +101,7 @@ class Block(ABC, Generic[T]):
         return self._builder(self.container_idx + 1)
 
     @property
-    def next_block(self) -> Optional[T]:
+    def next_block(self) -> Optional["Block"]:
         """Next block in the current container"""
         idx = self.container_idx + 1
         if idx < len(self.container):
@@ -114,7 +110,7 @@ class Block(ABC, Generic[T]):
             return None
 
     @property
-    def previous_block(self) -> Optional[T]:
+    def previous_block(self) -> Optional["Block"]:
         """Previous block in the current container"""
         idx = self.container_idx - 1
         if idx >= 0:
@@ -130,7 +126,7 @@ class Block(ABC, Generic[T]):
     def is_attached(self) -> bool:
         return not (self._container is None)
 
-    def _attach(self: B, container: "Container[T]") -> B:
+    def _attach(self: B, container: "Container") -> B:
         self._container = container
         return self
 
@@ -139,9 +135,9 @@ class Block(ABC, Generic[T]):
         return self
 
 
-class Comment(Block[T]):
+class Comment(Block):
     """Comment block"""
 
 
-class Space(Block[T]):
+class Space(Block):
     """Vertical space block of new lines"""

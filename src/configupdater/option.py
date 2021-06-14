@@ -22,13 +22,12 @@ else:
 if TYPE_CHECKING:
     from .section import Section
 
-from .block import Block, Comment, Space
+from .block import Block
 
-SectionContent = Union["Option", "Comment", "Space"]
 Value = Union["Option", str]
 
 
-class Option(Block[SectionContent]):
+class Option(Block):
     """Option block holding a key/value pair.
 
     Attributes:
