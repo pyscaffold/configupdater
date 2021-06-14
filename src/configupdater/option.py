@@ -65,6 +65,7 @@ class Option(Block[SectionContent]):
         """
         super().add_line(line)
         self._values.append(line.strip())
+        return self
 
     def _join_multiline_value(self):
         if not self._multiline_value_joined and not self._value_is_none:
