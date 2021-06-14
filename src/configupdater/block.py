@@ -49,7 +49,10 @@ class Block(ABC, Generic[T]):
             return False
 
     def add_line(self: B, line: str) -> B:
-        """Add a line to the current block
+        """PRIVATE: this function is not part of the public API of Block.
+        It is only used internally by other classes of the package during parsing.
+
+        Add a line to the current block
 
         Args:
             line (str): one line to add

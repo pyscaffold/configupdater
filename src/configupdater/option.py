@@ -60,6 +60,9 @@ class Option(Block[SectionContent]):
             super().add_line(line)
 
     def add_line(self, line: str):
+        """PRIVATE: this function is not part of the public API of Option.
+        It is only used internally by other classes of the package during parsing.
+        """
         super().add_line(line)
         self._values.append(line.strip())
 
