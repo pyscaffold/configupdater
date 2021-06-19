@@ -20,9 +20,14 @@ configuration file.
 
 .. note::
 
-   ConfigUpdater was created by starting from Python's ConfigParser source
-   code and changing it according to my needs. Thus this source code
-   is subject to the PSF License in a way but I am not a lawyer.
+   ConfigUpdater is based on Python's ConfigParser source code, specially regarding the
+   ``parser`` module.
+   The main parsing rules and algorithm are preserved, however ConfigUpdater implements
+   its own modified version of the abstract syntax tree to support retaining comments
+   and whitespace in an attempt to provide format-preserving document manipulation.
+   The copyright and license of the original ConfigParser code is included as an
+   attachment to ConfigUpdater's own license, at the root of the source code repository;
+   see the file LICENSE for details.
 """
 
 import io
