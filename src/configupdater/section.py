@@ -130,7 +130,7 @@ class Section(
             if isinstance(value, Option):
                 if value.key != key:
                     raise ValueError(
-                        f"Set key {key} does not equal option key {value.key}"
+                        f"Set key `{key}` does not equal option key `{value.key}`"
                     )
                 idx = self.__getitem__(key).container_idx
                 del self.structure[idx]
