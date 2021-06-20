@@ -131,8 +131,10 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
             del self._structure[idx]
             self._structure.insert(idx, value)
         else:
-            # name the section by the key
-            value.name = key
+            if value.name != key:
+                raise ValueError(
+                    f"Set key `{key}` does not equal option key `{value.name}`"
+                )
             self.add_section(value)
 
     def __delitem__(self, key: str):

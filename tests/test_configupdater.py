@@ -608,6 +608,9 @@ def test_set_item_section():
         updater["section"] = "newsection"
     sect_updater.read_string(test6_cfg_in)
     section = sect_updater["section0"]
+    with pytest.raises(ValueError):
+        updater["new_section"] = section
+    section.name = "new_section"
     updater["new_section"] = section
     assert str(updater) == test6_cfg_out_new_sect
     # test overwriting an existing section
