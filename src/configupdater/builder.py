@@ -5,6 +5,7 @@ from configparser import DuplicateOptionError, DuplicateSectionError
 from typing import TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
+    from .block import Block
     from .container import Container
 
 T = TypeVar("T", bound="BlockBuilder")
