@@ -46,7 +46,7 @@ class Option(Block[SectionContent]):
         space_around_delimiters: bool = True,
         line: Optional[str] = None,
     ):
-        self._container: "Section" = container
+        self._container: Optional["Section"] = container
         super().__init__(container=container)
         self._key = key
         self._values: List[Optional[str]] = [value]
