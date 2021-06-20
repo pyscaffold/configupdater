@@ -18,7 +18,7 @@ if sys.version_info[:2] >= (3, 9):  # pragma: no cover
 else:  # pragma: no cover
     from typing import Iterable
 
-from .block import Comment, Space
+from .block import Comment, NotAttachedError, Space
 from .document import Document
 from .option import Option
 from .parser import Parser
@@ -32,6 +32,7 @@ __all__ = [
     "Space",
     "Parser",
     "NoConfigFileReadError",
+    "NotAttachedError",
 ]
 
 T = TypeVar("T", bound="ConfigUpdater")

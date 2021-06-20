@@ -41,7 +41,7 @@ class Option(Block[SectionContent]):
         self,
         key: str,
         value: Optional[str],
-        container: "Section",
+        container: Optional["Section"] = None,
         delimiter: str = "=",
         space_around_delimiters: bool = True,
         line: Optional[str] = None,

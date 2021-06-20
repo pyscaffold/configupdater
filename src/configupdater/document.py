@@ -176,7 +176,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         """
         if isinstance(section, str):
             # create a new section
-            section_obj = Section(section, container=self)
+            section_obj = Section(section)
         elif isinstance(section, Section):
             section_obj = section
         else:
@@ -185,6 +185,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         if self.has_section(section_obj.name):
             raise DuplicateSectionError(section_obj.name)
 
+        section_obj.attach(self)
         self._structure.append(section_obj)
 
     def options(self, section: str) -> List[str]:
