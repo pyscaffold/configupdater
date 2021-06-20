@@ -90,7 +90,7 @@ class Option(Block[SectionContent]):
 
     @property
     def key(self) -> str:
-        return self._container._container.optionxform(self._key)
+        return self.container.container.optionxform(self._key)
 
     @key.setter
     def key(self, value: str):

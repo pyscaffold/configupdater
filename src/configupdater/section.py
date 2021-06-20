@@ -120,21 +120,23 @@ class Section(
         return f"<Section: {self.name!r} {super()._repr_blocks()}>"
 
     def __getitem__(self, key: str) -> "Option":
-        key = self._container.optionxform(key)
+        key = self.container.optionxform(key)
         try:
             return next(o for o in self.iter_options() if o.key == key)
         except StopIteration as ex:
             raise KeyError(f"No option `{key}` found", {"key": key}) from ex
 
     def __setitem__(self, key: str, value: Optional[Value] = None):
-        if self._container.optionxform(key) in self:
+        if self.container.optionxform(key) in self:
             if isinstance(value, Option):
                 if value.key != key:
                     raise ValueError(
                         f"Set key `{key}` does not equal option key `{value.key}`"
                     )
-                idx = self.__getitem__(key).container_idx
-                del self.structure[idx]
+                curr_value = self.__getitem__(key)
+                idx = curr_value.container_idx
+                curr_value.remove()
+                value.attach(self)
                 self.structure.insert(idx, value)
             else:
                 option = self.__getitem__(key)
@@ -145,6 +147,7 @@ class Section(
             else:
                 option = Option(key, value, container=self)
                 option.value = value
+            option.attach(self)
             self._structure.append(option)
 
     def __delitem__(self, key: str):
@@ -223,7 +226,7 @@ class Section(
             option (str): option name
             value (str): value, default None
         """
-        option = self._container.optionxform(option)
+        option = self.container.optionxform(option)
         if option in self.options():
             self.__getitem__(option).value = value
         else:
