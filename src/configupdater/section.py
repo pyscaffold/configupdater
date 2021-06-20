@@ -48,7 +48,7 @@ class Section(
     """
 
     def __init__(self, name: str, container: Optional["Document"] = None):
-        self._container: "Document" = container
+        self._container: Optional["Document"] = container
         self._name = name
         self._structure: List[SectionContent] = []
         self._updated = False
