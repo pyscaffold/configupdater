@@ -47,7 +47,7 @@ class Section(
         updated (bool): indicates name change or a new section
     """
 
-    def __init__(self, name: str, container: "Document"):
+    def __init__(self, name: str, container: Optional["Document"] = None):
         self._container: "Document" = container
         self._name = name
         self._structure: List[SectionContent] = []
@@ -62,6 +62,7 @@ class Section(
         Args:
             entry (Option): key value pair as Option object
         """
+        entry.attach(self)
         self._structure.append(entry)
         return self
 

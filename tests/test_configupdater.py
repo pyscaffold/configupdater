@@ -14,6 +14,7 @@ from configupdater import (
     NoConfigFileReadError,
     NoOptionError,
     NoSectionError,
+    NotAttachedError,
     Option,
     ParsingError,
     Section,
@@ -1043,3 +1044,22 @@ def test_iter_consistency_with_configparser():
     # [1:] to drop 'DEFAULT' section
     assert list(parser)[1:] == list(updater)
     assert list(parser["sec1"]) == list(updater["sec1"])
+
+
+def test_add_detached_section_option_objects():
+    updater = ConfigUpdater()
+    updater.read_string(test24_cfg_in)
+    sec2 = updater["sec2"]
+    assert sec2.container is updater
+    sec2.remove()
+    assert not updater.has_section("sec2")
+    assert not sec2.has_container()
+    with pytest.raises(NotAttachedError):
+        sec2.container
+
+    new_sec2 = Section("new-sec2")
+    new_opt = Option(key="new-key", value="new-value")
+    new_sec2.add_option(new_opt)
+    updater.add_section(new_sec2)
+    assert updater.has_section("new-sec2")
+    assert updater["new-sec2"]["new-key"].value == "new-value"

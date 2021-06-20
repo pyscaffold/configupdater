@@ -21,6 +21,13 @@ T = TypeVar("T")
 B = TypeVar("B", bound="Block")
 
 
+class NotAttachedError(Exception):
+    """The block is not attached to a container yet. Try to insert it first."""
+
+    def __init__(self):
+        super().__init__(self.__class__.__doc__)
+
+
 class Block(ABC, Generic[T]):
     """Abstract Block type holding lines
 
@@ -31,7 +38,7 @@ class Block(ABC, Generic[T]):
     inside the container.
     """
 
-    def __init__(self, container: "Container[T]"):
+    def __init__(self, container: Optional["Container[T]"] = None):
         self._container = container
         self._lines: List[str] = []
         self._updated = False
@@ -67,12 +74,14 @@ class Block(ABC, Generic[T]):
     @property
     def container(self) -> "Container[T]":
         """Container holding the block"""
+        if self._container is None:
+            raise NotAttachedError
         return self._container
 
     @property
     def container_idx(self: B) -> int:
         """Index of the block within its container"""
-        return self._container.structure.index(self)
+        return self.container.structure.index(self)
 
     @property
     def updated(self) -> bool:
@@ -83,7 +92,7 @@ class Block(ABC, Generic[T]):
     def _builder(self, idx: int) -> "BlockBuilder":
         from .builder import BlockBuilder
 
-        return BlockBuilder(self._container, idx)
+        return BlockBuilder(self.container, idx)
 
     @property
     def add_before(self) -> "BlockBuilder":
@@ -99,8 +108,8 @@ class Block(ABC, Generic[T]):
     def next_block(self) -> Optional[T]:
         """Next block in the current container"""
         idx = self.container_idx + 1
-        if idx < len(self._container):
-            return self._container.structure[idx]
+        if idx < len(self.container):
+            return self.container.structure[idx]
         else:
             return None
 
@@ -109,13 +118,27 @@ class Block(ABC, Generic[T]):
         """Previous block in the current container"""
         idx = self.container_idx - 1
         if idx >= 0:
-            return self._container.structure[idx]
+            return self.container.structure[idx]
         else:
             return None
 
     def remove(self: B) -> B:
         """Remove this block from container"""
         self.container._remove_block(self.container_idx)
+        return self.detach()
+
+    def has_container(self) -> bool:
+        """Checks if this block has a container attached"""
+        return not (self._container is None)
+
+    def attach(self: B, container: "Container[T]") -> B:
+        """Attach a container to this block"""
+        self._container = container
+        return self
+
+    def detach(self: B) -> B:
+        """Detach the container from this block"""
+        self._container = None
         return self
 
 
