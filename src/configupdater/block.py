@@ -28,6 +28,13 @@ class NotAttachedError(Exception):
         super().__init__(self.__class__.__doc__)
 
 
+class AlreadyAttachedError(Exception):
+    """The block has been already attached to a container. Try to remove it first."""
+
+    def __init__(self):
+        super().__init__(self.__class__.__doc__)
+
+
 class Block(ABC, Generic[T]):
     """Abstract Block type holding lines
 
@@ -125,20 +132,21 @@ class Block(ABC, Generic[T]):
     def remove(self: B) -> B:
         """Remove this block from container"""
         self.container._remove_block(self.container_idx)
-        return self.detach()
+        self._container = None
+        return self
 
     def has_container(self) -> bool:
         """Checks if this block has a container attached"""
         return not (self._container is None)
 
     def attach(self: B, container: "Container[T]") -> B:
-        """Attach a container to this block"""
-        self._container = container
-        return self
+        """PRIVATE: Don't use this as a user!
 
-    def detach(self: B) -> B:
-        """Detach the container from this block"""
-        self._container = None
+        Rather use `add_*` or the bracket notation
+        """
+        if self._container is not None and self._container is not container:
+            raise AlreadyAttachedError
+        self._container = container
         return self
 
 

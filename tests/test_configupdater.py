@@ -2,10 +2,12 @@ import copy
 import os.path
 from configparser import ConfigParser
 from io import StringIO
+from textwrap import dedent
 
 import pytest
 
 from configupdater import (
+    AlreadyAttachedError,
     Comment,
     ConfigUpdater,
     DuplicateOptionError,
@@ -619,7 +621,7 @@ def test_set_item_section():
     sect_updater.read_string(test6_cfg_in)
     exist_section = sect_updater["section0"]
     exist_section["key0"] = 42
-    updater["section0"] = exist_section
+    updater["section0"] = exist_section.remove()
     assert str(updater) == test6_cfg_out_overwritten
 
 
@@ -1049,6 +1051,7 @@ def test_iter_consistency_with_configparser():
 def test_add_detached_section_option_objects():
     updater = ConfigUpdater()
     updater.read_string(test24_cfg_in)
+    sec1 = updater["sec1"]
     sec2 = updater["sec2"]
     assert sec2.container is updater
     sec2.remove()
@@ -1060,6 +1063,51 @@ def test_add_detached_section_option_objects():
     new_sec2 = Section("new-sec2")
     new_opt = Option(key="new-key", value="new-value")
     new_sec2.add_option(new_opt)
+    with pytest.raises(AlreadyAttachedError):
+        sec1.add_option(new_opt)
     updater.add_section(new_sec2)
     assert updater.has_section("new-sec2")
     assert updater["new-sec2"]["new-key"].value == "new-value"
+
+    new_sec3 = Section("new-sec3")
+    new_opt2 = Option(key="new-key", value="new-value")
+    updater["new-sec3"] = new_sec3
+    new_sec3["new-key"] = new_opt2
+
+
+def test_transferring_blocks_between_elements():
+    # Let's say a user have a big new section that it wants to insert in an existing
+    # document. Instead of programmatically creating this new section using the builder
+    # API, they might be tempted to parse this new section from template files.
+
+    existing = """\
+    [section0]
+    option0 = 0
+    """
+
+    template1 = """\
+    [section1]
+    option1 = 1
+    """
+
+    template2 = """\
+    [section2]
+    option2 = 2
+    # comment
+    """
+
+    target = ConfigUpdater()
+    target.read_string(dedent(existing))
+
+    source1 = ConfigUpdater()
+    source1.read_string(dedent(template1))
+
+    source2 = ConfigUpdater()
+    source2.read_string(dedent(template2))
+
+    target["section1"] = source1["section1"].remove()
+    assert "section1" in target
+
+    target["section1"].add_after.section(source2["section2"])
+    assert "section2" not in source1
+    assert "section2" in target
