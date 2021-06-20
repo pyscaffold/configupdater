@@ -17,6 +17,11 @@ class BlockBuilder:
         self._container = container
         self._idx = idx
 
+    def _insert(self: T, block: "Block") -> T:
+        self._container.structure.insert(self._idx, block)
+        self._idx += 1
+        return self
+
     def comment(self: T, text: str, comment_prefix="#") -> T:
         """Creates a comment block
 
@@ -34,10 +39,7 @@ class BlockBuilder:
             text = "{} {}".format(comment_prefix, text)
         if not text.endswith("\n"):
             text = "{}{}".format(text, "\n")
-        comment.add_line(text)
-        self._container.structure.insert(self._idx, comment)
-        self._idx += 1
-        return self
+        return self._insert(comment.add_line(text))
 
     def section(self: T, section) -> T:
         """Creates a section block
@@ -65,9 +67,7 @@ class BlockBuilder:
         if container.has_section(section.name):
             raise DuplicateSectionError(section.name)
 
-        self._container.structure.insert(self._idx, section)
-        self._idx += 1
-        return self
+        return self._insert(section)
 
     def space(self: T, newlines=1) -> T:
         """Creates a vertical space of newlines
@@ -83,9 +83,7 @@ class BlockBuilder:
         space = Space(container=self._container)
         for _ in range(newlines):
             space.add_line("\n")
-        self._container.structure.insert(self._idx, space)
-        self._idx += 1
-        return self
+        return self._insert(space)
 
     def option(self: T, key, value=None, **kwargs) -> T:
         """Creates a new option inside a section
@@ -108,6 +106,4 @@ class BlockBuilder:
         if option.key in self._container.options():
             raise DuplicateOptionError(self._container.name, option.key)
         option.value = value
-        self._container.structure.insert(self._idx, option)
-        self._idx += 1
-        return self
+        return self._insert(option)
