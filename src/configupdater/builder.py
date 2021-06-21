@@ -2,11 +2,12 @@
 easier.
 """
 from configparser import DuplicateOptionError, DuplicateSectionError
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, TypeVar, Union
 
 if TYPE_CHECKING:
     from .block import Block
     from .container import Container
+    from .section import Section
 
 T = TypeVar("T", bound="BlockBuilder")
 
@@ -42,7 +43,7 @@ class BlockBuilder:
             text = "{}{}".format(text, "\n")
         return self._insert(comment.add_line(text))
 
-    def section(self: T, section) -> T:
+    def section(self: T, section: Union[str, "Section"]) -> T:
         """Creates a section block
 
         Args:
@@ -60,7 +61,7 @@ class BlockBuilder:
 
         if isinstance(section, str):
             # create a new section
-            section = Section(section, container=container)
+            section = Section(section)
         elif not isinstance(section, Section):
             msg = "Parameter must be a string or Section type!"
             raise ValueError(msg, {"container": section})
@@ -68,9 +69,10 @@ class BlockBuilder:
         if container.has_section(section.name):
             raise DuplicateSectionError(section.name)
 
+        section.attach(container)
         return self._insert(section)
 
-    def space(self: T, newlines=1) -> T:
+    def space(self: T, newlines: int = 1) -> T:
         """Creates a vertical space of newlines
 
         Args:
