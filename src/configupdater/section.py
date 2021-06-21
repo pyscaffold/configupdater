@@ -11,7 +11,7 @@ Note:
     the more usual :meth:`~collections.abc.Mapping.get` method of *dict-like* objects.
 """
 import sys
-from typing import TYPE_CHECKING, Optional, Tuple, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Optional, Tuple, TypeVar, Union, cast, overload
 
 if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     from collections.abc import Iterator, MutableMapping
@@ -32,14 +32,11 @@ from .option import Option
 T = TypeVar("T")
 S = TypeVar("S", bound="Section")
 
-ConfigContent = Union["Section", "Comment", "Space"]
-SectionContent = Union["Option", "Comment", "Space"]
+Content = Union["Option", "Comment", "Space"]
 Value = Union["Option", str]
 
 
-class Section(
-    Block[ConfigContent], Container[SectionContent], MutableMapping[str, "Option"]
-):
+class Section(Block, Container[Content], MutableMapping[str, "Option"]):
     """Section block holding options
 
     Attributes:
@@ -50,9 +47,13 @@ class Section(
     def __init__(self, name: str, container: Optional["Document"] = None):
         self._container: Optional["Document"] = container
         self._name = name
-        self._structure: List[SectionContent] = []
+        self._structure: List[Content] = []
         self._updated = False
         super().__init__(container=container)
+
+    @property
+    def document(self):
+        return cast("Document", self.container)
 
     def add_option(self: S, entry: "Option") -> S:
         """Add an Option object to the section
@@ -120,14 +121,14 @@ class Section(
         return f"<Section: {self.name!r} {super()._repr_blocks()}>"
 
     def __getitem__(self, key: str) -> "Option":
-        key = self.container.optionxform(key)
+        key = self.document.optionxform(key)
         try:
             return next(o for o in self.iter_options() if o.key == key)
         except StopIteration as ex:
             raise KeyError(f"No option `{key}` found", {"key": key}) from ex
 
     def __setitem__(self, key: str, value: Optional[Value] = None):
-        if self.container.optionxform(key) in self:
+        if self.document.optionxform(key) in self:
             if isinstance(value, Option):
                 if value.key != key:
                     raise ValueError(
@@ -226,7 +227,7 @@ class Section(
             option (str): option name
             value (str): value, default None
         """
-        option = self.container.optionxform(option)
+        option = self.document.optionxform(option)
         if option in self.options():
             self.__getitem__(option).value = value
         else:
