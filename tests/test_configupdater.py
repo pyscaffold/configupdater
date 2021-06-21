@@ -556,7 +556,7 @@ def test_add_before_after_section():
     sect_updater.read_string(test6_cfg_in)
     section = sect_updater["section0"]
     section.name = "new_section"
-    updater["section2"].add_after.section(section.pop())
+    updater["section2"].add_after.section(section.detach())
     assert str(updater) == test6_cfg_out_new_sect
     with pytest.raises(DuplicateSectionError):
         updater["section2"].add_after.section(section)
@@ -614,14 +614,14 @@ def test_set_item_section():
     with pytest.raises(ValueError):
         updater["new_section"] = section
     section.name = "new_section"
-    updater["new_section"] = section.pop()
+    updater["new_section"] = section.detach()
     assert str(updater) == test6_cfg_out_new_sect
     # test overwriting an existing section
     updater.read_string(test6_cfg_in)
     sect_updater.read_string(test6_cfg_in)
     exist_section = sect_updater["section0"]
     exist_section["key0"] = 42
-    updater["section0"] = exist_section.pop()
+    updater["section0"] = exist_section.detach()
     assert str(updater) == test6_cfg_out_overwritten
 
 
@@ -1007,8 +1007,8 @@ def test_navigation_and_remove():
     assert isinstance(key2.next_block, Space)
     assert key2.next_block is section.last_block
     assert section.last_block.next_block is None
-    key1.next_block.pop()
-    key2.next_block.pop()
+    key1.next_block.detach()
+    key2.next_block.detach()
     assert str(updater) == test22_cfg_out
 
 
@@ -1054,7 +1054,7 @@ def test_add_detached_section_option_objects():
     sec1 = updater["sec1"]
     sec2 = updater["sec2"]
     assert sec2.container is updater
-    sec2.pop()
+    sec2.detach()
     assert not updater.has_section("sec2")
     assert not sec2.has_container()
     with pytest.raises(NotAttachedError):
@@ -1105,9 +1105,9 @@ def test_transferring_blocks_between_elements():
     source2 = ConfigUpdater()
     source2.read_string(dedent(template2))
 
-    target["section1"] = source1["section1"].pop()
+    target["section1"] = source1["section1"].detach()
     assert "section1" in target
 
-    target["section1"].add_after.section(source2["section2"].pop())
+    target["section1"].add_after.section(source2["section2"].detach())
     assert "section2" not in source1
     assert "section2" in target

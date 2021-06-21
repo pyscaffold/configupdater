@@ -56,7 +56,7 @@ class Container(ABC, Generic[T]):
         """Remove block at index idx within container
 
         Use `.container_idx` of a block to get the index.
-        Not meant for users, rather use block.pop() instead!
+        Not meant for users, rather use block.detach() instead!
         """
         del self._structure[idx]
         return self
