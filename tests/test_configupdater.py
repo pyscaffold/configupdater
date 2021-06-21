@@ -556,7 +556,7 @@ def test_add_before_after_section():
     sect_updater.read_string(test6_cfg_in)
     section = sect_updater["section0"]
     section.name = "new_section"
-    updater["section2"].add_after.section(section)
+    updater["section2"].add_after.section(section.pop())
     assert str(updater) == test6_cfg_out_new_sect
     with pytest.raises(DuplicateSectionError):
         updater["section2"].add_after.section(section)
@@ -614,7 +614,7 @@ def test_set_item_section():
     with pytest.raises(ValueError):
         updater["new_section"] = section
     section.name = "new_section"
-    updater["new_section"] = section
+    updater["new_section"] = section.pop()
     assert str(updater) == test6_cfg_out_new_sect
     # test overwriting an existing section
     updater.read_string(test6_cfg_in)
@@ -1108,6 +1108,6 @@ def test_transferring_blocks_between_elements():
     target["section1"] = source1["section1"].pop()
     assert "section1" in target
 
-    target["section1"].add_after.section(source2["section2"])
+    target["section1"].add_after.section(source2["section2"].pop())
     assert "section2" not in source1
     assert "section2" in target
