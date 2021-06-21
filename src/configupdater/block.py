@@ -6,7 +6,7 @@ configuration file, e.g. comments, sections, options and even sequences of white
 """
 import sys
 from abc import ABC
-from typing import TYPE_CHECKING, Generic, Optional, TypeVar
+from typing import TYPE_CHECKING, Optional, TypeVar
 
 if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     List = list
@@ -35,7 +35,7 @@ class AlreadyAttachedError(Exception):
         super().__init__(self.__class__.__doc__)
 
 
-class Block(ABC, Generic[T]):
+class Block(ABC):
     """Abstract Block type holding lines
 
     Block objects hold original lines from the configuration file and hold
@@ -45,7 +45,7 @@ class Block(ABC, Generic[T]):
     inside the container.
     """
 
-    def __init__(self, container: Optional["Container[T]"] = None):
+    def __init__(self, container: Optional["Container"] = None):
         self._container = container
         self._lines: List[str] = []
         self._updated = False
@@ -79,7 +79,7 @@ class Block(ABC, Generic[T]):
         return self._lines
 
     @property
-    def container(self) -> "Container[T]":
+    def container(self) -> "Container":
         """Container holding the block"""
         if self._container is None:
             raise NotAttachedError
@@ -112,7 +112,7 @@ class Block(ABC, Generic[T]):
         return self._builder(self.container_idx + 1)
 
     @property
-    def next_block(self) -> Optional[T]:
+    def next_block(self) -> Optional["Block"]:
         """Next block in the current container"""
         idx = self.container_idx + 1
         if idx < len(self.container):
@@ -121,7 +121,7 @@ class Block(ABC, Generic[T]):
             return None
 
     @property
-    def previous_block(self) -> Optional[T]:
+    def previous_block(self) -> Optional["Block"]:
         """Previous block in the current container"""
         idx = self.container_idx - 1
         if idx >= 0:
@@ -139,7 +139,7 @@ class Block(ABC, Generic[T]):
         """Checks if this block has a container attached"""
         return not (self._container is None)
 
-    def attach(self: B, container: "Container[T]") -> B:
+    def attach(self: B, container: "Container") -> B:
         """PRIVATE: Don't use this as a user!
 
         Rather use `add_*` or the bracket notation
@@ -150,9 +150,9 @@ class Block(ABC, Generic[T]):
         return self
 
 
-class Comment(Block[T]):
+class Comment(Block):
     """Comment block"""
 
 
-class Space(Block[T]):
+class Space(Block):
     """Vertical space block of new lines"""

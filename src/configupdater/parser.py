@@ -309,12 +309,12 @@ class Parser:
         return self._document.last_block
 
     def _update_curr_block(
-        self, block_type: Type[Union[Comment[T], Space[T]]]
-    ) -> Union[Comment[T], Space[T]]:
+        self, block_type: Type[Union[Comment, Space]]
+    ) -> Union[Comment, Space]:
         if isinstance(self._last_block, block_type):
             return self._last_block
         else:
-            new_block = block_type(container=self._document)  # type: ignore[arg-type]
+            new_block = block_type(container=self._document)
             # ^  the type checker is forgetting ConfigUpdater <: Container[T]
             self._document.append(new_block)
             return new_block

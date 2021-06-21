@@ -22,13 +22,12 @@ else:
 if TYPE_CHECKING:
     from .section import Section
 
-from .block import Block, Comment, Space
+from .block import Block
 
-SectionContent = Union["Option", "Comment", "Space"]
 Value = Union["Option", str]
 
 
-class Option(Block[SectionContent]):
+class Option(Block):
     """Option block holding a key/value pair.
 
     Attributes:
@@ -46,7 +45,6 @@ class Option(Block[SectionContent]):
         space_around_delimiters: bool = True,
         line: Optional[str] = None,
     ):
-        self._container: Optional["Section"] = container
         super().__init__(container=container)
         self._key = key
         self._values: List[Optional[str]] = [value]
@@ -90,7 +88,8 @@ class Option(Block[SectionContent]):
 
     @property
     def key(self) -> str:
-        return self.container.container.optionxform(self._key)
+        section = cast("Section", self.container)
+        return section.document.optionxform(self._key)
 
     @key.setter
     def key(self, value: str):
