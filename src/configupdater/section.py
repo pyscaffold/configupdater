@@ -136,7 +136,7 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
                     )
                 curr_value = self.__getitem__(key)
                 idx = curr_value.container_idx
-                curr_value.pop()
+                curr_value.detach()
                 value.attach(self)
                 self.structure.insert(idx, value)
             else:

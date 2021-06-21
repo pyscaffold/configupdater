@@ -129,7 +129,7 @@ class Block(ABC):
         else:
             return None
 
-    def pop(self: B) -> B:
+    def detach(self: B) -> B:
         """Remove and return this block from container"""
         self.container._remove_block(self.container_idx)
         self._container = None
