@@ -129,8 +129,8 @@ class Block(ABC):
         else:
             return None
 
-    def remove(self: B) -> B:
-        """Remove this block from container"""
+    def pop(self: B) -> B:
+        """Remove and return this block from container"""
         self.container._remove_block(self.container_idx)
         self._container = None
         return self

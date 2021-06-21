@@ -621,7 +621,7 @@ def test_set_item_section():
     sect_updater.read_string(test6_cfg_in)
     exist_section = sect_updater["section0"]
     exist_section["key0"] = 42
-    updater["section0"] = exist_section.remove()
+    updater["section0"] = exist_section.pop()
     assert str(updater) == test6_cfg_out_overwritten
 
 
@@ -1007,8 +1007,8 @@ def test_navigation_and_remove():
     assert isinstance(key2.next_block, Space)
     assert key2.next_block is section.last_block
     assert section.last_block.next_block is None
-    key1.next_block.remove()
-    key2.next_block.remove()
+    key1.next_block.pop()
+    key2.next_block.pop()
     assert str(updater) == test22_cfg_out
 
 
@@ -1054,7 +1054,7 @@ def test_add_detached_section_option_objects():
     sec1 = updater["sec1"]
     sec2 = updater["sec2"]
     assert sec2.container is updater
-    sec2.remove()
+    sec2.pop()
     assert not updater.has_section("sec2")
     assert not sec2.has_container()
     with pytest.raises(NotAttachedError):
@@ -1105,7 +1105,7 @@ def test_transferring_blocks_between_elements():
     source2 = ConfigUpdater()
     source2.read_string(dedent(template2))
 
-    target["section1"] = source1["section1"].remove()
+    target["section1"] = source1["section1"].pop()
     assert "section1" in target
 
     target["section1"].add_after.section(source2["section2"])
