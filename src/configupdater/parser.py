@@ -336,12 +336,14 @@ class Parser:
             raise InconsistentStateError(msg, self._fpname, self._lineno, line)
         entry = Option(
             key,
-            value,
+            value=None,
             delimiter=vi,
             container=self._last_block,
             space_around_delimiters=self._space_around_delimiters,
             line=line,
         )
+        # Initially add the value as further lines might follow
+        entry.add_value(value)
         self._last_block.add_option(entry)
 
     def _add_option_line(self, line: str):

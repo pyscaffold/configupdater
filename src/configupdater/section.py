@@ -146,8 +146,7 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
             if isinstance(value, Option):
                 option = value
             else:
-                option = Option(key, value, container=self)
-                option.value = value
+                option = Option(key, value)
             option.attach(self)
             self._structure.append(option)
 

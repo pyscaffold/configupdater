@@ -39,7 +39,7 @@ class Option(Block):
     def __init__(
         self,
         key: str,
-        value: Optional[str],
+        value: Optional[str] = None,
         container: Optional["Section"] = None,
         delimiter: str = "=",
         space_around_delimiters: bool = True,
@@ -47,7 +47,7 @@ class Option(Block):
     ):
         super().__init__(container=container)
         self._key = key
-        self._values: List[Optional[str]] = [value]
+        self._values: List[Optional[str]] = [] if value is None else [value]
         self._value_is_none = value is None
         self._delimiter = delimiter
         self._value: Optional[str] = None  # will be filled after join_multiline_value
@@ -56,13 +56,22 @@ class Option(Block):
         self._space_around_delimiters = space_around_delimiters
         if line:
             super().add_line(line)
+        if value is not None:
+            self.value = value
+
+    def add_value(self, value: Optional[str]):
+        """PRIVATE: this function is not part of the public API of Option.
+        It is only used internally by other classes of the package during parsing.
+        """
+        self._value_is_none = value is None
+        self._values.append(value)
 
     def add_line(self, line: str):
         """PRIVATE: this function is not part of the public API of Option.
         It is only used internally by other classes of the package during parsing.
         """
         super().add_line(line)
-        self._values.append(line.strip())
+        self.add_value(line.strip())
 
     def _join_multiline_value(self):
         if not self._multiline_value_joined and not self._value_is_none:
