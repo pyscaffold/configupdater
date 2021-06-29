@@ -164,6 +164,8 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
             return False
 
     def clear(self):
+        for block in self._structure:
+            block.detach()
         self._structure.clear()
 
     def add_section(self, section: Union[str, Section]):

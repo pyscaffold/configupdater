@@ -268,4 +268,6 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
         return BlockBuilder(self, idx)
 
     def clear(self):
+        for block in self._structure:
+            block.detach()
         self._structure.clear()
