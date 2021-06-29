@@ -1111,3 +1111,35 @@ def test_transferring_blocks_between_elements():
     target["section1"].add_after.section(source2["section2"].detach())
     assert "section2" not in source1
     assert "section2" in target
+
+
+def test_transfering_sections_and_manipulating_options():
+    # This test case is similar to `test_transfering_sections_between_elements`,
+    # but now we use the builder API in the options inside the transferred section.
+    # We need to make sure that when a section is copied to a different tree,
+    # the references inside the options are updated, so we don't end up adding blocks in
+    # the original object.
+
+    existing = """\
+    [section0]
+    option0 = 0
+    """
+
+    template1 = """\
+    [section1]
+    option1 = 1
+    """
+
+    target = ConfigUpdater()
+    target.read_string(dedent(existing))
+
+    source1 = ConfigUpdater()
+    source1.read_string(dedent(template1))
+
+    target["section1"] = source1["section1"].detach()
+    assert "section1" in target
+
+    target["section1"]["option1"].add_after.option("option2", "value")
+
+    assert "option2" not in str(source1)
+    assert "option2" in str(target)
