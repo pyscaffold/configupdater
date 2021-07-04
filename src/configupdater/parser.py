@@ -113,7 +113,7 @@ class Parser:
         \[                                 # [
         (?P<header>[^]]+)                  # very permissive!
         \]                                 # ]
-        (?P<raw_comment>.*)                # match any comment
+        (?P<raw_comment>.*)                # match any suffix
         """
     _OPT_TMPL: str = r"""
         (?P<option>.*?)                    # very permissive!
