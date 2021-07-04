@@ -298,7 +298,7 @@ class Parser:
             into (Optional[Document]): object to be populated with the parsed config
         """
         sfile = io.StringIO(string)
-        self.read_file(sfile, source, into)
+        return self.read_file(sfile, source, into)
 
     def optionxform(self, string: str) -> str:
         fn = self._optionxform_fn
