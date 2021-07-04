@@ -113,6 +113,7 @@ class Parser:
         \[                                 # [
         (?P<header>[^]]+)                  # very permissive!
         \]                                 # ]
+        (?P<raw_comment>.*)                # match any comment
         """
     _OPT_TMPL: str = r"""
         (?P<option>.*?)                    # very permissive!
@@ -325,9 +326,10 @@ class Parser:
         else:
             self._update_curr_block(Comment).add_line(line)
 
-    def _add_section(self, sectname: str, line: str):
+    def _add_section(self, sectname: str, raw_comment: str, line: str):
         new_section = Section(sectname, container=self._document)
         new_section.add_line(line)
+        new_section.raw_comment = raw_comment
         self._document.append(new_section)
 
     def _add_option(self, key: str, vi: str, value: str, line: str):
@@ -467,7 +469,7 @@ class Parser:
                         elements_added.add(sectname)
                     # So sections can't start with a continuation line
                     optname = None
-                    self._add_section(sectname, line)  # HOOK
+                    self._add_section(sectname, mo.group("raw_comment"), line)  # HOOK
                 # no section header in the file?
                 elif cursect is None:
                     raise MissingSectionHeaderError(fpname, lineno, line)

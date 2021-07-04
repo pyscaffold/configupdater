@@ -1143,3 +1143,29 @@ def test_transfering_sections_and_manipulating_options():
 
     assert "option2" not in str(source1)
     assert "option2" in str(target)
+
+
+def test_section_comment():
+    section = """\
+    [section0] # section comment
+    key = value
+    """
+
+    updater = ConfigUpdater()
+    updater.read_string(dedent(section))
+
+    updater["section0"].name = "section1"
+
+    expected = """\
+    [section1] # section comment
+    key = value
+    """
+    assert str(updater) == dedent(expected)
+    assert updater["section1"].raw_comment == " # section comment"
+
+    updater["section1"].raw_comment = " # new comment"
+    expected = """\
+    [section1] # new comment
+    key = value
+    """
+    assert str(updater) == dedent(expected)

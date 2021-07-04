@@ -47,6 +47,7 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
     def __init__(self, name: str, container: Optional["Document"] = None):
         self._container: Optional["Document"] = container
         self._name = name
+        self._raw_comment = ""
         self._structure: List[Content] = []
         self._updated = False
         super().__init__(container=container)
@@ -112,7 +113,7 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
         if not self.updated:
             s = super().__str__()
         else:
-            s = "[{}]\n".format(self._name)
+            s = "[{}]{}\n".format(self._name, self.raw_comment)
         for entry in self._structure:
             s += str(entry)
         return s
@@ -217,6 +218,15 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
     @name.setter
     def name(self, value: str):
         self._name = str(value)
+        self._updated = True
+
+    @property
+    def raw_comment(self):
+        return self._raw_comment
+
+    @raw_comment.setter
+    def raw_comment(self, value: str):
+        self._raw_comment = value
         self._updated = True
 
     def set(self: S, option: str, value: Optional[str] = None) -> S:

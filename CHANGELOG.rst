@@ -7,6 +7,7 @@ Version 3.0 (development)
 
 - Added type hinting, issue #16
 - Fix parsing error of indented comment lines, issue #25
+- Allow handling of raw section comment, issue #25
 
 
 Version 2.0
