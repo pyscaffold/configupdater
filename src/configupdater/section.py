@@ -222,10 +222,15 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
 
     @property
     def raw_comment(self):
+        """Raw comment (includes comment mark) inline with the section header"""
         return self._raw_comment
 
     @raw_comment.setter
     def raw_comment(self, value: str):
+        """Add/replace a single comment inline with the section header.
+        The given value should be a raw comment, i.e. it needs to contain the
+        comment mark.
+        """
         self._raw_comment = value
         self._updated = True
 
