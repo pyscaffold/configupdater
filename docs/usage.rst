@@ -82,7 +82,7 @@ Using ``add_after`` would give the same result and looks like::
                                   .comment("Ada would have loved MIT")
                                   .option("license", "MIT"))
 
-Let's say we want to rename `summary` to the more common `description`::
+Let's say we want to rename ``summary`` to the more common ``description``::
 
     updater = ConfigUpdater()
     updater.read_string(cfg)
@@ -139,9 +139,10 @@ With the help of two ConfigUpdater objects we can easily inject this section int
 
     (updater["metadata"].add_after
                         .space()
-                        .section(sphinx_sect))
+                        .section(sphinx_sect.detach()))
 
-This results in::
+The :meth:`~configupdater.block.Block.detach` method will remove the ``build_sphinx``
+section from the first object and add it to the second object. This results in::
 
     [metadata]
     author = Ada Lovelace
@@ -150,6 +151,26 @@ This results in::
     [build_sphinx]
     source_dir = docs
     build_dir = docs/_build
+
+Alternatively, if you want to preserve ``build_sphinx`` in both
+:class:`~configupdater.ConfigUpdater` objects (i.e., prevent it from being
+removed from the first while still adding a copy to the second), you call also
+rely on stdlib's :func:`copy.deepcopy` function instead of
+:meth:`~configupdater.block.Block.detach`::
+
+    from copy import deepcopy
+
+    (updater["metadata"].add_after
+                        .space()
+                        .section(deepcopy(sphinx_sect)))
+
+This technique can be used for all objects inside ConfigUpdater: sections,
+options, comments and blank spaces.
+
+Shallow copies are discouraged in the context of ConfigUpdater because each
+configuration block keeps a reference to its container to allow easy document
+editing. When doing editions (such as adding or changing options and comments)
+based on a shallow copy, the results can be unreliable and unexpected.
 
 For more examples on how the API of ConfigUpdater works it's best to take a look into the
 `unit tests`_ and read the references.
