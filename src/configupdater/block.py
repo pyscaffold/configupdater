@@ -30,7 +30,10 @@ class NotAttachedError(Exception):
 
 
 class AlreadyAttachedError(Exception):
-    """The block has been already attached to a container. Try to remove it first."""
+    """The block has been already attached to a container.
+    Try to remove it first using ``detach`` or create a copy using stdlib's
+    ``copy.deepcopy``.
+    """
 
     def __init__(self):
         super().__init__(self.__class__.__doc__)
