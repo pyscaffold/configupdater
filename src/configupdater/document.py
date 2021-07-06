@@ -69,7 +69,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
             if isinstance(entry, Section) and entry.name == name
         )
 
-    def optionxform(self, optionstr) -> str:
+    def optionxform(self, optionstr: str) -> str:
         """Converts an option key to lower case for unification
 
         Args:
