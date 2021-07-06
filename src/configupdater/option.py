@@ -11,7 +11,7 @@ When editing configuration files with ConfigUpdater, a handy way of setting a mu
 :meth:`~Option.set_values` method.
 """
 import sys
-from typing import TYPE_CHECKING, Optional, Union, cast
+from typing import TYPE_CHECKING, Optional, TypeVar, Union, cast
 
 if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     List = list
@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 from .block import Block
 
 Value = Union["Option", str]
+T = TypeVar("T", bound="Option")
 
 
 class Option(Block):
@@ -94,6 +95,17 @@ class Option(Block):
 
     def __repr__(self) -> str:
         return f"<Option: {self._key} = {self.value!r}>"
+
+    def _intantiate_copy(self: T) -> T:
+        """Will be called by :meth:`Block.__deepcopy__`"""
+        self._join_multiline_value()
+        return self.__class__(
+            self._key,
+            self._value,
+            container=None,
+            delimiter=self._delimiter,
+            space_around_delimiters=self._space_around_delimiters,
+        )
 
     def optionxform(self, optionstr: str) -> str:
         if self.has_container():
