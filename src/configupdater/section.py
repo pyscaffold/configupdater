@@ -121,6 +121,17 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
     def __repr__(self) -> str:
         return f"<Section: {self.name!r} {super()._repr_blocks()}>"
 
+    def _intantiate_copy(self: S) -> S:
+        """Will be called by :meth:`Block.__deepcopy__`"""
+        clone = self.__class__(self._name, container=None)
+        # ^  A fresh copy should always be made detached from any container
+        clone._raw_comment = self._raw_comment
+        return clone
+
+    def __deepcopy__(self: S, memo: dict) -> S:
+        clone = Block.__deepcopy__(self, memo)  # specific due to multi-inheritance
+        return clone._copy_structure(self._structure, memo)
+
     def optionxform(self, optionstr: str) -> str:
         if self.has_container():
             return self.document.optionxform(optionstr)
