@@ -121,15 +121,20 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
     def __repr__(self) -> str:
         return f"<Section: {self.name!r} {super()._repr_blocks()}>"
 
+    def optionxform(self, optionstr: str) -> str:
+        if self.has_container():
+            return self.document.optionxform(optionstr)
+        return optionstr.lower()
+
     def __getitem__(self, key: str) -> "Option":
-        key = self.document.optionxform(key)
+        key = self.optionxform(key)
         try:
             return next(o for o in self.iter_options() if o.key == key)
         except StopIteration as ex:
             raise KeyError(f"No option `{key}` found", {"key": key}) from ex
 
     def __setitem__(self, key: str, value: Optional[Value] = None):
-        if self.document.optionxform(key) in self:
+        if self.optionxform(key) in self:
             if isinstance(value, Option):
                 if value.key != key:
                     raise ValueError(
@@ -241,7 +246,7 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
             option (str): option name
             value (str): value, default None
         """
-        option = self.document.optionxform(option)
+        option = self.optionxform(option)
         if option in self.options():
             self.__getitem__(option).value = value
         else:
