@@ -347,10 +347,10 @@ def test_set_option():
     assert values == ["param1", "param2"]  # non destructive operation
     with pytest.raises(NoSectionError):
         updater.set("wrong_section", "key", "1")
-    new_option = copy.copy(updater["default"]["key"])
+    new_option = copy.deepcopy(updater["default"]["key"])
     updater["default"]["key"] = new_option
     assert updater["default"]["key"] is new_option
-    new_option = copy.copy(updater["default"]["key"])
+    new_option = copy.deepcopy(updater["default"]["key"])
     new_option.key = "wrong_key"
     with pytest.raises(ValueError):
         updater["default"]["key"] = new_option
@@ -1143,6 +1143,63 @@ def test_transfering_sections_and_manipulating_options():
 
     assert "option2" not in str(source1)
     assert "option2" in str(target)
+
+
+def test_transfering_sections_and_manipulating_options_with_deepcopy():
+    existing = """\
+    [section0]
+    option0 = 0
+    """
+
+    template1 = """\
+    [section1]
+    option1 = 1
+    """
+
+    template2 = """\
+    [section2]
+    option2 = 2
+    # comment
+    """
+
+    target = ConfigUpdater()
+    target.read_string(dedent(existing))
+
+    source1 = ConfigUpdater()
+    source1.read_string(dedent(template1))
+
+    source2 = ConfigUpdater()
+    source2.read_string(dedent(template2))
+
+    target["section1"] = copy.deepcopy(source1["section1"])
+    assert "section1" in target
+    assert "section1" in source1
+
+    target["section1"].add_after.section(copy.deepcopy(source2["section2"]))
+    target["section2"]["option2"] = "value"
+    assert "option2 = value" in str(target)
+    assert "option2" not in str(source1)
+    assert "value" not in str(source2)
+
+
+def test_deepcopy():
+    example = """\
+    [options]
+    testing =   # Add here test requirements (used by tox)
+        sphinx  # required for system tests
+        flake8  # required for system tests
+    """
+    updater = ConfigUpdater().read_string(dedent(example))
+    clone = copy.deepcopy(updater)
+    assert clone["options"].container is clone
+    assert clone["options"]["testing"].container is not updater["options"]
+    clone["options"]["testing"].detach()
+    assert "testing" not in str(clone)
+    assert "testing" in str(updater)
+    clone.add_section("other")
+    assert "other" in clone
+    assert "other" not in updater
+    assert str(updater) == dedent(example)
 
 
 def test_section_comment():
