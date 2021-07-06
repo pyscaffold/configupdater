@@ -39,8 +39,9 @@ class Container(ABC, Generic[T]):
         return f"<{self.__class__.__name__} {self._repr_blocks()}>"
 
     def __deepcopy__(self: C, memo: dict) -> C:
-        copy = self._intantiate_copy()
-        return copy._copy_structure(self._structure, memo)
+        clone = self._intantiate_copy()
+        memo[id(self)] = clone
+        return clone._copy_structure(self._structure, memo)
 
     def _copy_structure(self: C, structure: List[T], memo: dict) -> C:
         """``__deepcopy__`` auxiliary method also useful with multi-inheritance"""
