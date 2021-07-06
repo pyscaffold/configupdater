@@ -39,7 +39,7 @@ class Container(ABC, Generic[T]):
         return f"<{self.__class__.__name__} {self._repr_blocks()}>"
 
     def __deepcopy__(self: C, memo: dict) -> C:
-        clone = self._intantiate_copy()
+        clone = self._instantiate_copy()
         memo[id(self)] = clone
         return clone._copy_structure(self._structure, memo)
 
@@ -48,7 +48,7 @@ class Container(ABC, Generic[T]):
         self._structure = [b.attach(self) for b in deepcopy(structure, memo)]
         return self
 
-    def _intantiate_copy(self: C) -> C:
+    def _instantiate_copy(self: C) -> C:
         """Auxiliary method that allows subclasses calling ``__deepcopy__``"""
         return self.__class__()  # allow overwrite for different init args
 
