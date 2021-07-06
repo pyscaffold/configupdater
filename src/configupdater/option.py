@@ -96,7 +96,7 @@ class Option(Block):
     def __repr__(self) -> str:
         return f"<Option: {self._key} = {self.value!r}>"
 
-    def _intantiate_copy(self: T) -> T:
+    def _instantiate_copy(self: T) -> T:
         """Will be called by :meth:`Block.__deepcopy__`"""
         self._join_multiline_value()
         return self.__class__(

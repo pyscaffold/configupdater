@@ -64,13 +64,13 @@ class Block(ABC):
             return False
 
     def __deepcopy__(self: B, memo: dict) -> B:
-        clone = self._intantiate_copy()
+        clone = self._instantiate_copy()
         clone._lines = deepcopy(self._lines, memo)
         clone._updated = self._updated
         memo[id(self)] = clone
         return clone
 
-    def _intantiate_copy(self: B) -> B:
+    def _instantiate_copy(self: B) -> B:
         """Auxiliary method that allows subclasses calling ``__deepcopy__``"""
         return self.__class__(container=None)  # allow overwrite for different init args
         # ^  A fresh copy should always be made detached from any container
