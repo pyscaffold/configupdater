@@ -6,8 +6,9 @@ blocks, e.g. a section or the entire file itself.
 """
 import sys
 from abc import ABC
+from copy import deepcopy
 from textwrap import indent
-from typing import Generic, Optional, TypeVar
+from typing import TYPE_CHECKING, Generic, Optional, TypeVar
 
 if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     from collections.abc import Iterator
@@ -16,7 +17,10 @@ if sys.version_info[:2] >= (3, 9):  # pragma: no cover
 else:  # pragma: no cover
     from typing import Iterator, List
 
-T = TypeVar("T")
+if TYPE_CHECKING:
+    from .block import Block  # noqa
+
+T = TypeVar("T", bound="Block")
 C = TypeVar("C", bound="Container")
 
 
@@ -33,6 +37,19 @@ class Container(ABC, Generic[T]):
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} {self._repr_blocks()}>"
+
+    def __deepcopy__(self: C, memo: dict) -> C:
+        copy = self._intantiate_copy()
+        return copy._copy_structure(self._structure, memo)
+
+    def _copy_structure(self: C, structure: List[T], memo: dict) -> C:
+        """``__deepcopy__`` auxiliary method also useful with multi-inheritance"""
+        self._structure = [b.attach(self) for b in deepcopy(structure, memo)]
+        return self
+
+    def _intantiate_copy(self: C) -> C:
+        """Auxiliary method that allows subclasses calling ``__deepcopy__``"""
+        return self.__class__()  # allow overwrite for different init args
 
     @property
     def structure(self) -> List[T]:
