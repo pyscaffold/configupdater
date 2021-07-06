@@ -100,7 +100,7 @@ class ConfigUpdater(Document):
         self._filename: Optional[str] = None
         super().__init__()
 
-    def _intantiate_copy(self: T) -> T:
+    def _instantiate_copy(self: T) -> T:
         """Will be called by ``Container.__deepcopy__``"""
         clone = self.__class__(**self._parser_opts)
         clone._filename = self._filename
