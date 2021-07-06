@@ -6,6 +6,7 @@ configuration file, e.g. comments, sections, options and even sequences of white
 """
 import sys
 from abc import ABC
+from copy import deepcopy
 from typing import TYPE_CHECKING, Optional, TypeVar
 
 if sys.version_info[:2] >= (3, 9):  # pragma: no cover
@@ -61,6 +62,18 @@ class Block(ABC):
             return str(self) == str(other)
         else:
             return False
+
+    def __deepcopy__(self: B, memo: dict) -> B:
+        clone = self._intantiate_copy()
+        clone._lines = deepcopy(self._lines, memo)
+        clone._updated = self._updated
+        memo[id(self)] = clone
+        return clone
+
+    def _intantiate_copy(self: B) -> B:
+        """Auxiliary method that allows subclasses calling ``__deepcopy__``"""
+        return self.__class__(container=None)  # allow overwrite for different init args
+        # ^  A fresh copy should always be made detached from any container
 
     def add_line(self: B, line: str) -> B:
         """PRIVATE: this function is not part of the public API of Block.
