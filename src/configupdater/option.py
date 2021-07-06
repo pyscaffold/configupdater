@@ -95,10 +95,15 @@ class Option(Block):
     def __repr__(self) -> str:
         return f"<Option: {self._key} = {self.value!r}>"
 
+    def optionxform(self, optionstr: str) -> str:
+        if self.has_container():
+            section = cast("Section", self.container)
+            return section.optionxform(optionstr)
+        return optionstr.lower()
+
     @property
     def key(self) -> str:
-        section = cast("Section", self.container)
-        return section.document.optionxform(self._key)
+        return self.optionxform(self._key)
 
     @key.setter
     def key(self, value: str):
