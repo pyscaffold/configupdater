@@ -1169,3 +1169,26 @@ def test_section_comment():
     key = value
     """
     assert str(updater) == dedent(expected)
+
+
+def test_setitem_detached_option():
+    existing = """\
+    [section0]
+    option0 = 0
+    option1 = # No value
+    """
+
+    template1 = """\
+    [section1]
+    option1 = 1
+    """
+
+    target = ConfigUpdater()
+    target.read_string(dedent(existing))
+
+    source1 = ConfigUpdater()
+    source1.read_string(dedent(template1))
+
+    option1 = source1["section1"]["option1"].detach()
+    target["section0"]["option1"] = option1
+    assert target["section0"]["option1"] == "1"
