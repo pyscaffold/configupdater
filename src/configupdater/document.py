@@ -69,8 +69,14 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
             if isinstance(entry, Section) and entry.name == name
         )
 
-    def optionxform(self, optionstr: str) -> str:
-        """Converts an option key to lower case for unification
+    def optionxform(self, optionstr) -> str:
+        """Converts an option key for unification
+
+        By default it uses :meth:`str.lower`, which means that ConfigUpdater will
+        compare options in a case insensitive way.
+
+        This implementation mimics ConfigParser API, and can be configured as described
+        in :meth:`configparser.ConfigParser.optionxform`.
 
         Args:
              optionstr (str): key name

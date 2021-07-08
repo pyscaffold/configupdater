@@ -108,10 +108,17 @@ class Option(Block):
         )
 
     def optionxform(self, optionstr: str) -> str:
+        """Delegates :meth:`~configupdater.document.Document.optionxform`
+        to its parent container.
+
+        Please notice that when the option object is :obj:`detached
+        <configupdater.block.Block.detach>`, this method will simply return
+        ``optionstr`` as it is, without any changes.
+        """
         if self.has_container():
             section = cast("Section", self.container)
             return section.optionxform(optionstr)
-        return optionstr.lower()
+        return optionstr
 
     @property
     def key(self) -> str:
@@ -122,6 +129,11 @@ class Option(Block):
         self._join_multiline_value()
         self._key = value
         self._updated = True
+
+    @property
+    def raw_key(self) -> str:
+        """Equivalent to :obj:`key`, but before applying :meth:`optionxform`."""
+        return self._key
 
     @property
     def value(self) -> Optional[str]:
