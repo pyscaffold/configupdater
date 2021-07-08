@@ -1248,4 +1248,4 @@ def test_setitem_detached_option():
 
     option1 = source1["section1"]["option1"].detach()
     target["section0"]["option1"] = option1
-    assert target["section0"]["option1"] == "1"
+    assert target["section0"]["option1"].value == "1"
