@@ -133,6 +133,13 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
         return clone._copy_structure(self._structure, memo)
 
     def optionxform(self, optionstr: str) -> str:
+        """Delegates :meth:`~configupdater.document.Document.optionxform`
+        to its parent container.
+
+        Please notice that when the option object is :obj:`detached
+        <configupdater.block.Block.detach>`, this method will simply return
+        ``optionstr`` as it is, without any changes.
+        """
         if self.has_container():
             return self.document.optionxform(optionstr)
         return optionstr.lower()
@@ -145,19 +152,32 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
             raise KeyError(f"No option `{key}` found", {"key": key}) from ex
 
     def __setitem__(self, key: str, value: Optional[Value] = None):
-        if self.optionxform(key) in self:
+        """Set the value of an option.
+
+        Please notice that this method used :meth:`optionxform` to verify if the given
+        option already exists inside the section object. Therefore, calling it when the
+        section is :obj:`detached <configupdater.block.Block.detach>`, might result in
+        inconsistent behavior, especially if the configuration document uses mixed cases
+        for the option keys strings.
+        """
+        given_key = self.optionxform(key)
+        if given_key in self:
             if isinstance(value, Option):
-                if value.key != key:
+                value_key = self.optionxform(value.raw_key)
+                # ^ Calculate value_key according to the optionxform of the current
+                #   document, in the case the option is imported from a document with a
+                #   different optionxform
+                if value_key != given_key:
                     raise ValueError(
-                        f"Set key `{key}` does not equal option key `{value.key}`"
+                        f"Set key `{given_key}` does not equal option key `{value_key}`"
                     )
-                curr_value = self.__getitem__(key)
+                curr_value = self.__getitem__(given_key)
                 idx = curr_value.container_idx
                 curr_value.detach()
                 value.attach(self)
                 self.structure.insert(idx, value)
             else:
-                option = self.__getitem__(key)
+                option = self.__getitem__(given_key)
                 option.value = value
         else:
             if isinstance(value, Option):
