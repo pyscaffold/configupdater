@@ -22,10 +22,10 @@ T = TypeVar("T")
 B = TypeVar("B", bound="Block")
 
 
-def _block_short_repr(block) -> str:
+def _short_repr(block) -> str:
     if isinstance(block, str):
         return block
-    name = getattr(block, "key", None) or getattr(block, "name", None)
+    name = getattr(block, "raw_key", None) or getattr(block, "name", None)
     name = f" {name!r}" if name else ""
     return f"<{block.__class__.__name__}{name}>"
 
@@ -34,7 +34,7 @@ class NotAttachedError(Exception):
     """{block} is not attached to a container yet. Try to insert it first."""
 
     def __init__(self, block: Union[str, "Block"] = "The block"):
-        msg = cast(str, self.__class__.__doc__).format(_block_short_repr(block))
+        msg = cast(str, self.__class__.__doc__).format(block=_short_repr(block))
         super().__init__(msg)
 
 
@@ -45,7 +45,7 @@ class AlreadyAttachedError(Exception):
     """
 
     def __init__(self, block: Union[str, "Block"] = "The block"):
-        msg = cast(str, self.__class__.__doc__).format(_block_short_repr(block))
+        msg = cast(str, self.__class__.__doc__).format(block=_short_repr(block))
         super().__init__(msg)
 
 
