@@ -7,7 +7,7 @@ configuration file, e.g. comments, sections, options and even sequences of white
 import sys
 from abc import ABC
 from copy import deepcopy
-from typing import TYPE_CHECKING, Optional, TypeVar
+from typing import TYPE_CHECKING, Optional, TypeVar, Union, cast
 
 if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     List = list
@@ -22,21 +22,31 @@ T = TypeVar("T")
 B = TypeVar("B", bound="Block")
 
 
-class NotAttachedError(Exception):
-    """The block is not attached to a container yet. Try to insert it first."""
+def _block_short_repr(block) -> str:
+    if isinstance(block, str):
+        return block
+    name = getattr(block, "key", None) or getattr(block, "name", None)
+    name = f" {name!r}" if name else ""
+    return f"<{block.__class__.__name__}{name}>"
 
-    def __init__(self):
-        super().__init__(self.__class__.__doc__)
+
+class NotAttachedError(Exception):
+    """{block} is not attached to a container yet. Try to insert it first."""
+
+    def __init__(self, block: Union[str, "Block"] = "The block"):
+        msg = cast(str, self.__class__.__doc__).format(_block_short_repr(block))
+        super().__init__(msg)
 
 
 class AlreadyAttachedError(Exception):
-    """The block has been already attached to a container.
+    """{block} has been already attached to a container.
     Try to remove it first using ``detach`` or create a copy using stdlib's
     ``copy.deepcopy``.
     """
 
-    def __init__(self):
-        super().__init__(self.__class__.__doc__)
+    def __init__(self, block: Union[str, "Block"] = "The block"):
+        msg = cast(str, self.__class__.__doc__).format(_block_short_repr(block))
+        super().__init__(msg)
 
 
 class Block(ABC):
@@ -98,7 +108,7 @@ class Block(ABC):
     def container(self) -> "Container":
         """Container holding the block"""
         if self._container is None:
-            raise NotAttachedError
+            raise NotAttachedError(self)
         return self._container
 
     @property
@@ -161,7 +171,7 @@ class Block(ABC):
         Rather use `add_*` or the bracket notation
         """
         if self._container is not None and self._container is not container:
-            raise AlreadyAttachedError
+            raise AlreadyAttachedError(self)
         self._container = container
         return self
 
