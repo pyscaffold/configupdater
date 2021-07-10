@@ -3,7 +3,7 @@ from textwrap import dedent
 
 import pytest
 
-from configupdater.block import NotAttachedError
+from configupdater.block import AlreadyAttachedError, NotAttachedError
 from configupdater.parser import Parser
 
 
@@ -52,3 +52,23 @@ def test_deepcopy():
     clone.add_before.comment("# other comment")
     assert "# other comment" in str(other)
     assert "# other comment" not in str(doc)
+
+
+def test_clear_error_message():
+    # Make sure the error messages specify the exact object
+    example = """\
+    [options.extras_require]
+    testing =   # Add here test requirements (used by tox)
+        sphinx  # required for system tests
+        flake8  # required for system tests
+    """
+    doc = Parser().read_string(dedent(example))
+    section = doc["options.extras_require"]
+    clone = deepcopy(section)
+    with pytest.raises(NotAttachedError) as ex:
+        clone["testing"] = ""
+    assert "<Section 'option.extras_require'>" in ex.value
+
+    with pytest.raises(AlreadyAttachedError) as ex:
+        section["testing"] = clone["testing"]
+    assert "<Option 'testing'>" in ex.value
