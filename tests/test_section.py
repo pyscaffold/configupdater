@@ -67,8 +67,8 @@ def test_clear_error_message():
     clone = deepcopy(section)
     with pytest.raises(NotAttachedError) as ex:
         clone["testing"] = ""
-    assert "<Section 'option.extras_require'>" in ex.value
+    assert "<Section 'options.extras_require'>" in str(ex.value)
 
     with pytest.raises(AlreadyAttachedError) as ex:
-        section["testing"] = clone["testing"]
-    assert "<Option 'testing'>" in ex.value
+        section["testing"] = next(clone.iter_options())
+    assert "<Option 'testing'>" in str(ex.value)
