@@ -1063,9 +1063,9 @@ def test_add_detached_section_option_objects():
     new_sec2 = Section("new-sec2")
     new_opt = Option(key="new-key", value="new-value")
     new_sec2.add_option(new_opt)
-    updater.add_section(new_sec2)
     with pytest.raises(AlreadyAttachedError):
         sec1.add_option(new_opt)
+    updater.add_section(new_sec2)
     assert updater.has_section("new-sec2")
     assert updater["new-sec2"]["new-key"].value == "new-value"
 
