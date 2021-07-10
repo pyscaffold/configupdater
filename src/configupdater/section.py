@@ -53,7 +53,7 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
         super().__init__(container=container)
 
     @property
-    def document(self):
+    def document(self) -> "Document":
         return cast("Document", self.container)
 
     def add_option(self: S, entry: "Option") -> S:
@@ -132,20 +132,8 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
         clone = Block.__deepcopy__(self, memo)  # specific due to multi-inheritance
         return clone._copy_structure(self._structure, memo)
 
-    def optionxform(self, optionstr: str) -> str:
-        """Delegates :meth:`~configupdater.document.Document.optionxform`
-        to its parent container.
-
-        Please notice that when the option object is :obj:`detached
-        <configupdater.block.Block.detach>`, this method will simply return
-        ``optionstr`` as it is, without any changes.
-        """
-        if self.has_container():
-            return self.document.optionxform(optionstr)
-        return optionstr
-
     def __getitem__(self, key: str) -> "Option":
-        key = self.optionxform(key)
+        key = self.document.optionxform(key)
         try:
             return next(o for o in self.iter_options() if o.key == key)
         except StopIteration as ex:
@@ -154,16 +142,14 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
     def __setitem__(self, key: str, value: Optional[Value] = None):
         """Set the value of an option.
 
-        Please notice that this method used :meth:`optionxform` to verify if the given
-        option already exists inside the section object. Therefore, calling it when the
-        section is :obj:`detached <configupdater.block.Block.detach>`, might result in
-        inconsistent behavior, especially if the configuration document uses mixed cases
-        for the option keys strings.
+        Please notice that this method used
+        :meth:`~configupdater.document.Document.optionxform` to verify if the given
+        option already exists inside the section object.
         """
-        given_key = self.optionxform(key)
+        given_key = self.document.optionxform(key)
         if given_key in self:
             if isinstance(value, Option):
-                value_key = self.optionxform(value.raw_key)
+                value_key = self.document.optionxform(value.raw_key)
                 # ^ Calculate value_key according to the optionxform of the current
                 #   document, in the case the option is imported from a document with a
                 #   different optionxform
@@ -277,7 +263,7 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
             option (str): option name
             value (str): value, default None
         """
-        option = self.optionxform(option)
+        option = self.document.optionxform(option)
         if option in self.options():
             self.__getitem__(option).value = value
         else:
