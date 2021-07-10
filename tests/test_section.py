@@ -15,16 +15,20 @@ def test_deepcopy():
         flake8  # required for system tests
     """
     doc = Parser().read_string(dedent(example))
+    other = Parser().read_string("")
     section = doc["options.extras_require"]
     option = section["testing"]
     assert option.container is section
 
     clone = deepcopy(section)
+    with pytest.raises(NotAttachedError):  # copies should always be created detached
+        assert clone.container is None
+
+    other.add_section(clone)  # needed to be able to modify section
+    assert clone.container is other
 
     assert str(clone) == str(section)
     assert section.container is doc
-    with pytest.raises(NotAttachedError):
-        assert clone.container is None  # copies should always be created detached
 
     # Make sure no side effects are felt by the original when the copy is modified
     # and vice-versa
@@ -43,7 +47,8 @@ def test_deepcopy():
 
     section.add_after.comment("# new comment")
     assert "# new comment" in str(doc)
-    assert "# new comment" not in str(clone)
+    assert "# new comment" not in str(other)
 
-    with pytest.raises(NotAttachedError):
-        clone.add_before.comment("# new comment")
+    clone.add_before.comment("# other comment")
+    assert "# other comment" in str(other)
+    assert "# other comment" not in str(doc)

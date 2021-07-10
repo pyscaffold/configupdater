@@ -107,22 +107,22 @@ class Option(Block):
             space_around_delimiters=self._space_around_delimiters,
         )
 
-    def optionxform(self, optionstr: str) -> str:
-        """Delegates :meth:`~configupdater.document.Document.optionxform`
-        to its parent container.
-
-        Please notice that when the option object is :obj:`detached
-        <configupdater.block.Block.detach>`, this method will simply return
-        ``optionstr`` as it is, without any changes.
-        """
-        if self.has_container():
-            section = cast("Section", self.container)
-            return section.optionxform(optionstr)
-        return optionstr
+    @property
+    def section(self) -> "Section":
+        return cast("Section", self.container)
 
     @property
     def key(self) -> str:
-        return self.optionxform(self._key)
+        """Key string associated with the option.
+
+        Please notice that usually, the option key is normalized with
+        :meth:`~configupdater.document.Document.optionxform`, however,
+        when the option object is :obj:`detached <configupdater.block.Block.detach>`,
+        this method will simply return the key as it is, without any changes.
+        """
+        if self.has_container():
+            return self.section.document.optionxform(self._key)
+        return self._key
 
     @key.setter
     def key(self, value: str):
