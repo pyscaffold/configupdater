@@ -142,7 +142,7 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
         """
         if self.has_container():
             return self.document.optionxform(optionstr)
-        return optionstr.lower()
+        return optionstr
 
     def __getitem__(self, key: str) -> "Option":
         key = self.optionxform(key)
