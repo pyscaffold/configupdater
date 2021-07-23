@@ -120,9 +120,7 @@ class Option(Block):
         when the option object is :obj:`detached <configupdater.block.Block.detach>`,
         this method will simply return the key as it is, without any changes.
         """
-        if self.has_container():
-            return self.section.document.optionxform(self._key)
-        return self._key
+        return self.section.document.optionxform(self._key)
 
     @key.setter
     def key(self, value: str):
