@@ -115,10 +115,11 @@ class Option(Block):
     def key(self) -> str:
         """Key string associated with the option.
 
-        Please notice that usually, the option key is normalized with
-        :meth:`~configupdater.document.Document.optionxform`, however,
-        when the option object is :obj:`detached <configupdater.block.Block.detach>`,
-        this method will simply return the key as it is, without any changes.
+        Please notice that the option key is normalized with
+        :meth:`~configupdater.document.Document.optionxform`.
+
+        When the option object is :obj:`detached <configupdater.block.Block.detach>`,
+        this method will raise a :obj:`NotAttachedError`.
         """
         return self.section.document.optionxform(self._key)
 
