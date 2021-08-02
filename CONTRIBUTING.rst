@@ -82,9 +82,9 @@ Clone the repository
 
 .. _PyPI: https://pypi.python.org/
 .. _project repository: https://github.com/pyscaffold/configupdater/
-.. _Git: http://git-scm.com/
-.. _Miniconda: https://conda.io/miniconda.html
+.. _Git: https://git-scm.com/
+.. _Miniconda: https://docs.conda.io/en/latest/miniconda.html
 .. _issue tracker: https://github.com/pyscaffold/configupdater/issues
-.. _Create a Gitub account: https://github.com/signup/free
+.. _Create a Gitub account: https://github.com/join
 .. _creating a PR: https://help.github.com/articles/creating-a-pull-request/
-.. _flake8: http://flake8.pycqa.org/
+.. _flake8: https://flake8.pycqa.org/
