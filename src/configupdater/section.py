@@ -146,30 +146,31 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
         :meth:`~configupdater.document.Document.optionxform` to verify if the given
         option already exists inside the section object.
         """
+        # First we check for inconsistencies
         given_key = self.document.optionxform(key)
-        if given_key in self:
+        if isinstance(value, Option):
+            value_key = self.document.optionxform(value.raw_key)
+            # ^ Calculate value_key according to the optionxform of the current
+            #   document, in the case the option is imported from a document with a
+            #   different optionxform
+            option = value
+            if value_key != given_key:
+                msg = f"Set key `{given_key}` does not equal option key `{value_key}`"
+                raise ValueError(msg)
+        else:
+            option = Option(key, value)
+
+        if given_key in self:  # Replace an existing option
             if isinstance(value, Option):
-                value_key = self.document.optionxform(value.raw_key)
-                # ^ Calculate value_key according to the optionxform of the current
-                #   document, in the case the option is imported from a document with a
-                #   different optionxform
-                if value_key != given_key:
-                    raise ValueError(
-                        f"Set key `{given_key}` does not equal option key `{value_key}`"
-                    )
                 curr_value = self.__getitem__(given_key)
                 idx = curr_value.container_idx
                 curr_value.detach()
                 value.attach(self)
-                self.structure.insert(idx, value)
+                self._structure.insert(idx, value)
             else:
                 option = self.__getitem__(given_key)
                 option.value = value
-        else:
-            if isinstance(value, Option):
-                option = value
-            else:
-                option = Option(key, value)
+        else:  # Append a new option
             option.attach(self)
             self._structure.append(option)
 
