@@ -1,5 +1,7 @@
 from textwrap import dedent
 
+import pytest
+
 from configupdater import ConfigUpdater
 
 
@@ -45,7 +47,7 @@ def test_custom():
     assert custom["section1"]["key"].raw_key == "k_e_y"
 
 
-def test_contains():
+def test_section_contains():
     config = """\
     [section1]
     key = value
@@ -65,16 +67,34 @@ def test_contains():
     assert "KEY" not in lowercase["section1"]
 
 
-def test_add_option():
+def test_section_setitem():
     cfg = ConfigUpdater()
     cfg.optionxform = str.upper
-    cfg.read_string("[section1]")
+    cfg.read_string("[section1]\nOTHERKEY = 0")
 
-    assert "OTHERKEY" not in cfg["section1"]
-    cfg["section1"]["otherkey"] = "othervalue"
-    assert "OTHERKEY" in cfg["section1"]
-    assert cfg["section1"]["OTHERKEY"].value == "othervalue"
+    assert "KEY" not in cfg["section1"]
+    cfg["section1"]["key"] = "value"
+    assert "KEY" in cfg["section1"]
+    assert cfg["section1"]["KEY"].value == "value"
 
-    cfg["section1"]["otherkey"] = "42"
-    assert cfg["section1"]["OTHERKEY"].value == "42"
-    assert cfg["section1"]["otherkey"].value == "42"
+    cfg["section1"]["key"] = "42"
+    assert cfg["section1"]["KEY"].value == "42"
+    assert cfg["section1"]["key"].value == "42"
+
+    other = ConfigUpdater()
+    other.optionxform = str.lower
+    other.read_string("[section1]\nkEy = value")
+    option = other["section1"]["key"].detach()
+
+    with pytest.raises(ValueError):
+        # otherkey exists in section1, but option is `key` instead of `otherkey`
+        cfg["section1"]["otherkey"] = option
+    with pytest.raises(ValueError):
+        # anotherkey exists in section1 and option is `key` instead of `anotherkey`
+        cfg["section1"]["anotherkey"] = option
+
+    assert cfg["section1"]["key"].raw_key == "key"
+    cfg["section1"]["key"] = option
+    assert cfg["section1"]["key"].value == "value"
+    assert cfg["section1"]["key"].key == "KEY"
+    assert cfg["section1"]["key"].raw_key == "kEy"
