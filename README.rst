@@ -20,8 +20,8 @@
 |
 
 .. image:: https://configupdater.readthedocs.io/en/latest/_images/banner-640x323.png
-    :height: 640px
-    :width: 323px
+    :height: 323px
+    :width: 640px
     :scale: 60 %
     :alt: Config Updater
     :align: center
