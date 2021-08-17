@@ -2,12 +2,16 @@
 Changelog
 =========
 
-Version 3.0 (development)
-=========================
+Version 3.0
+===========
 
 - Added type hinting, issue #16
 - Fix parsing error of indented comment lines, issue #25
 - Allow handling of raw section comment, issue #25
+- More unit testing of optionxform, issue #55
+- Allowing sections/options to be copied from one document to the other, issue #47
+- New logo, issue #29
+- Whole API was rechecked by @abravalheri and changed for consistency, issue #19
 
 
 Version 2.0
