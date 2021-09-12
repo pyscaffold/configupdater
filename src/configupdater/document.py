@@ -15,12 +15,12 @@ from enum import Enum
 from typing import Optional, Tuple, TypeVar, Union, overload
 
 if sys.version_info[:2] >= (3, 9):  # pragma: no cover
-    from collections.abc import Iterator, MutableMapping
+    from collections.abc import Iterable, Iterator, MutableMapping
 
     List = list
     Dict = dict
 else:  # pragma: no cover
-    from typing import Dict, Iterator, List, MutableMapping
+    from typing import Dict, Iterable, Iterator, List, MutableMapping
 
 from .block import Comment, Space
 from .container import Container
@@ -322,23 +322,25 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         key = self.optionxform(option)
         return key in self.get_section(section, {})
 
-    def set(self: D, section: str, option: str, value: Optional[str] = None) -> D:
+    def set(
+        self: D,
+        section: str,
+        option: str,
+        value: Union[None, str, Iterable[str]] = None,
+    ) -> D:
         """Set an option.
 
         Args:
-            section (str): section name
-            option (str): option name
-            value (str): value, default None
+            section: section name
+            option: option name
+            value: value, default None
         """
         try:
             section_obj = self.__getitem__(section)
         except KeyError:
             raise NoSectionError(section) from None
         option = self.optionxform(option)
-        if option in section_obj:
-            section_obj[option].value = value
-        else:
-            section_obj[option] = value
+        section_obj.set(option, value)
         return self
 
     def remove_option(self, section: str, option: str) -> bool:

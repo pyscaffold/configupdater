@@ -14,10 +14,12 @@ import sys
 from typing import TYPE_CHECKING, Optional, TypeVar, Union, cast
 
 if sys.version_info[:2] >= (3, 9):  # pragma: no cover
+    from collections.abc import Iterable
+
     List = list
     Dict = dict
 else:
-    from typing import List  # pragma: no cover
+    from typing import Iterable, List  # pragma: no cover
 
 if TYPE_CHECKING:
     from .section import Section
@@ -146,7 +148,7 @@ class Option(Block):
         self._value = value
         self._values = [value]
 
-    def set_values(self, values: List[str], separator="\n", indent=4 * " "):
+    def set_values(self, values: Iterable[str], separator="\n", indent=4 * " "):
         """Sets the value to a given list of options, e.g. multi-line values
 
         Args:
