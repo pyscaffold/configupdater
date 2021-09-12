@@ -11,16 +11,15 @@ Note:
     the more usual :meth:`~collections.abc.Mapping.get` method of *dict-like* objects.
 """
 import sys
-from typing import TYPE_CHECKING, Optional, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, Optional, Tuple, TypeVar, Union, cast, overload
 
 if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     from collections.abc import Iterable, Iterator, MutableMapping
 
     List = list
     Dict = dict
-    Tuple = tuple
 else:  # pragma: no cover
-    from typing import Dict, Iterable, Iterator, List, MutableMapping, Tuple
+    from typing import Dict, Iterable, Iterator, List, MutableMapping
 
 if TYPE_CHECKING:
     from .document import Document
