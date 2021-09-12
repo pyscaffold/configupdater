@@ -11,15 +11,16 @@ Note:
     the more usual :meth:`~collections.abc.Mapping.get` method of *dict-like* objects.
 """
 import sys
-from typing import TYPE_CHECKING, Optional, Tuple, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, Optional, TypeVar, Union, cast, overload
 
 if sys.version_info[:2] >= (3, 9):  # pragma: no cover
-    from collections.abc import Iterator, MutableMapping
+    from collections.abc import Iterable, Iterator, MutableMapping
 
     List = list
     Dict = dict
+    Tuple = tuple
 else:  # pragma: no cover
-    from typing import Dict, Iterator, List, MutableMapping
+    from typing import Dict, Iterable, Iterator, List, MutableMapping, Tuple
 
 if TYPE_CHECKING:
     from .document import Document
@@ -257,18 +258,20 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
         self._raw_comment = value
         self._updated = True
 
-    def set(self: S, option: str, value: Optional[str] = None) -> S:
+    def set(self: S, option: str, value: Union[None, str, Iterable[str]] = None) -> S:
         """Set an option for chaining.
 
         Args:
-            option (str): option name
-            value (str): value, default None
+            option: option name
+            value: value, default None
         """
         option = self.document.optionxform(option)
-        if option in self.options():
-            self.__getitem__(option).value = value
+        if option not in self.options():
+            self[option] = Option(option)
+        if isinstance(value, str) or value is None:
+            self[option].value = value
         else:
-            self.__setitem__(option, value)
+            self[option].set_values(value)
         return self
 
     @overload

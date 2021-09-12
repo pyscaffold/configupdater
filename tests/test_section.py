@@ -7,6 +7,23 @@ from configupdater.block import AlreadyAttachedError, NotAttachedError
 from configupdater.parser import Parser
 
 
+def test_set():
+    example = """\
+    [options.extras_require]
+    testing =   # Add here test requirements (used by tox)
+        sphinx  # required for system tests
+        flake8  # required for system tests
+    """
+    doc = Parser().read_string(dedent(example))
+    section = doc["options.extras_require"]
+
+    section.set("all", "pyscaffold")
+    assert section["all"].value == "pyscaffold"
+
+    section.set("testing", ["pyscaffoldext-markdown", "rst-to-myst"])
+    assert section["testing"].value == "\n    pyscaffoldext-markdown\n    rst-to-myst"
+
+
 def test_deepcopy():
     example = """\
     [options.extras_require]
