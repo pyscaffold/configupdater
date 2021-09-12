@@ -268,7 +268,7 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
         option = self.document.optionxform(option)
         if option not in self.options():
             self[option] = Option(option)
-        if isinstance(value, str) or value is None:
+        if not isinstance(value, Iterable) or isinstance(value, str):
             self[option].value = value
         else:
             self[option].set_values(value)
