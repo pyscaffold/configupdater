@@ -2,7 +2,7 @@
 easier.
 """
 from configparser import DuplicateOptionError, DuplicateSectionError
-from typing import TYPE_CHECKING, TypeVar, Union
+from typing import TYPE_CHECKING, Optional, TypeVar, Union
 
 if TYPE_CHECKING:
     from .block import Block
@@ -88,7 +88,7 @@ class BlockBuilder:
             space.add_line("\n")
         return self._insert(space)
 
-    def option(self: T, key, value=None, **kwargs) -> T:
+    def option(self: T, key, value: Optional[str] = None, **kwargs) -> T:
         """Creates a new option inside a section
 
         Args:
@@ -99,14 +99,14 @@ class BlockBuilder:
         Returns:
             self for chaining
         """
-        from .option import Option
         from .section import Section
 
         if not isinstance(self._container, Section):
             msg = "Options can only be added inside a section!"
             raise ValueError(msg, {"container": self._container})
-        option = Option(key, value, container=self._container, **kwargs)
-        if option.key in self._container.options():
-            raise DuplicateOptionError(self._container.name, option.key)
+        section = self._container
+        option = section.create_option(key, value)
+        if option.key in section.options():
+            raise DuplicateOptionError(section.name, option.key)
         option.value = value
         return self._insert(option)

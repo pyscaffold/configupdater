@@ -158,7 +158,7 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
                 msg = f"Set key `{given_key}` does not equal option key `{value_key}`"
                 raise ValueError(msg)
         else:
-            option = Option(key, value)
+            option = self.create_option(key, value)
 
         if given_key in self:  # Replace an existing option
             if isinstance(value, Option):
@@ -264,21 +264,32 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
             option: option name
             value: value, default None
         """
-        doc = self.document
-        option = doc.optionxform(option)
+        option = self.document.optionxform(option)
         if option not in self.options():
-            syntax_opts = getattr(doc, "syntax_options", {})
-            kwargs_ = {
-                "space_around_delimiters": syntax_opts.get("space_around_delimiters"),
-                "delimiter": next(iter(syntax_opts.get("delimiters", [])), None),
-            }
-            kwargs = {k: v for k, v in kwargs_.items() if v is not None}
-            self[option] = Option(option, **kwargs)
+            self[option] = self.create_option(option)
         if not isinstance(value, Iterable) or isinstance(value, str):
             self[option].value = value
         else:
             self[option].set_values(value)
         return self
+
+    def create_option(self, key: str, value: Optional[str] = None) -> "Option":
+        """Creates an option with kwargs that respect syntax options given to
+        the parent ConfigUpdater object (e.g. ``space_around_delimiters``).
+
+        Warning:
+            This is a low level API, not intended for public use.
+            Prefer :meth:`set` or :meth:`__setitem__`.
+        """
+        syntax_opts = getattr(self._container, "syntax_options", {})
+        kwargs_: dict = {
+            "value": value,
+            "container": self,
+            "space_around_delimiters": syntax_opts.get("space_around_delimiters"),
+            "delimiter": next(iter(syntax_opts.get("delimiters", [])), None),
+        }
+        kwargs = {k: v for k, v in kwargs_.items() if v is not None}
+        return Option(key, **kwargs)
 
     @overload
     def get(self, key: str) -> Optional["Option"]:
