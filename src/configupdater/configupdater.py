@@ -175,7 +175,8 @@ class ConfigUpdater(Document):
         return self
 
     def validate_format(self, **kwargs):
-        """Validate INI/CFG representation by parsing it with
+        """Given the current state of the ``ConfigUpdater`` object (e.g. after
+        modifications), validate its INI/CFG textual representation by parsing it with
         :class:`~configparser.ConfigParser`.
 
         The ConfigParser object is instead with the same arguments as the original
