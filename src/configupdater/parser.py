@@ -42,15 +42,16 @@ from configparser import (
     NoSectionError,
     ParsingError,
 )
+from types import MappingProxyType as ReadOnlyMapping
 from typing import Callable, Optional, Tuple, Type, TypeVar, Union, cast, overload
 
 if sys.version_info[:2] >= (3, 9):  # pragma: no cover
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Mapping
 
     List = list
     Dict = dict
 else:  # pragma: no cover
-    from typing import Iterable, List, Dict
+    from typing import Iterable, List, Dict, Mapping
 
 from .block import Comment, Space
 from .document import Document
@@ -213,6 +214,10 @@ class Parser:
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}: {self._get_args()!r}>"
+
+    @property
+    def syntax_options(self) -> Mapping:
+        return ReadOnlyMapping(self._get_args())
 
     @overload
     def read(self, filename: str, encoding: Optional[str] = None) -> Document:

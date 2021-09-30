@@ -328,7 +328,7 @@ def test_remove_option():
 
 
 def test_set_option():
-    updater = ConfigUpdater()
+    updater = ConfigUpdater(allow_no_value=True)
     updater.read_string(test1_cfg_in)
     updater.set("default", "key", "1")
     assert updater["default"]["key"].value == "1"
@@ -358,7 +358,7 @@ def test_set_option():
 
 
 def test_section_set_option():
-    updater = ConfigUpdater()
+    updater = ConfigUpdater(allow_no_value=True)
     updater.read_string(test1_cfg_in)
     default_sec = updater["default"]
     default_sec.set("key", "1")
@@ -427,12 +427,12 @@ def test_handle_error():
 
 
 def test_validate_format(setup_cfg_path):
-    updater = ConfigUpdater(allow_no_value=False)
+    updater = ConfigUpdater(allow_no_value=True)
     updater.read(setup_cfg_path)
-    updater.validate_format()
+    updater.validate_format(allow_no_value=False)
     updater.set("metadata", "author")
     with pytest.raises(ParsingError):
-        updater.validate_format()
+        updater.validate_format(allow_no_value=False)
 
 
 def test_validate_format_propagates_kwargs(setup_cfg_path):
@@ -479,7 +479,7 @@ key2
 
 
 def test_add_before_after_option():
-    updater = ConfigUpdater()
+    updater = ConfigUpdater(allow_no_value=True)
     updater.read_string(test4_cfg_in)
     with pytest.raises(ValueError):
         updater["section"].add_before.option("key0", 0)

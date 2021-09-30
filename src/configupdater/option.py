@@ -11,6 +11,7 @@ When editing configuration files with ConfigUpdater, a handy way of setting a mu
 :meth:`~Option.set_values` method.
 """
 import sys
+import warnings
 from typing import TYPE_CHECKING, Optional, TypeVar, Union, cast
 
 if sys.version_info[:2] >= (3, 9):  # pragma: no cover
@@ -18,16 +19,27 @@ if sys.version_info[:2] >= (3, 9):  # pragma: no cover
 
     List = list
     Dict = dict
-else:
-    from typing import Iterable, List  # pragma: no cover
+else:  # pragma: no cover
+    from typing import Iterable, List
 
 if TYPE_CHECKING:
     from .section import Section
+    from .document import Document
 
 from .block import Block
 
 Value = Union["Option", str]
 T = TypeVar("T", bound="Option")
+
+
+class NoneValueDisallowed(SyntaxWarning):
+    """Cannot represent <{option} = None>, it will be converted to <{option} = ''>.
+    Please use ``allow_no_value=True`` with ``ConfigUpdater``.
+    """
+
+    @classmethod
+    def warn(cls, option):
+        warnings.warn(cls.__doc__.format(option=option), cls, stacklevel=2)
 
 
 class Option(Block):
@@ -85,15 +97,25 @@ class Option(Block):
     def __str__(self) -> str:
         if not self.updated:
             return super().__str__()
-        if self._value is None:
-            return "{}{}".format(self._key, "\n")
-        if self._space_around_delimiters:
+
+        document = self._document()
+        opts = getattr(document, "syntax_options", None) or {}
+        value = self._value
+
+        if value is None:
+            if document is None or opts.get("allow_no_value"):
+                return f"{self._key}\n"
+            NoneValueDisallowed.warn(self._key)
+            value = ""
+
+        space = self._space_around_delimiters or opts.get("space_around_delimiters")
+        if space:
             # no space is needed if we use multi-line arguments
-            suffix = "" if str(self._value).startswith("\n") else " "
-            delim = " {}{}".format(self._delimiter, suffix)
+            suffix = "" if str(value).startswith("\n") else " "
+            delim = f" {self._delimiter}{suffix}"
         else:
             delim = self._delimiter
-        return "{}{}{}{}".format(self._key, delim, self._value, "\n")
+        return f"{self._key}{delim}{value}\n"
 
     def __repr__(self) -> str:
         return f"<Option: {self._key} = {self.value!r}>"
@@ -108,6 +130,11 @@ class Option(Block):
             delimiter=self._delimiter,
             space_around_delimiters=self._space_around_delimiters,
         )
+
+    def _document(self) -> Optional["Document"]:
+        if self._container is None:
+            return None
+        return self._container._container  # type: ignore
 
     @property
     def section(self) -> "Section":
@@ -160,7 +187,7 @@ class Option(Block):
         self._updated = True
         self._multiline_value_joined = True
         self._values = cast(List[Optional[str]], values)
-        if separator == "\n":
+        if "\n" in separator:
             values = [""] + values
             separator = separator + indent
         self._value = separator.join(values)
