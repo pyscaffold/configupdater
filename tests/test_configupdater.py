@@ -15,6 +15,7 @@ from configupdater import (
     DuplicateSectionError,
     MissingSectionHeaderError,
     NoConfigFileReadError,
+    NoneValueDisallowed,
     NoOptionError,
     NoSectionError,
     NotAttachedError,
@@ -61,6 +62,25 @@ def test_update_no_cfg():
     updater = ConfigUpdater()
     with pytest.raises(NoConfigFileReadError):
         updater.update_file()
+
+
+def test_update_file_issue_68(tmp_path):
+    # allow_no_value = False
+    file = tmp_path / "file.cfg"
+    file.write_text("[section]")
+    cfg = ConfigUpdater(allow_no_value=False).read_file(open(file))
+    cfg.set("section", "option")
+    with pytest.warns(NoneValueDisallowed):
+        # A warning is issued, but the method will not fail
+        cfg.update_file()
+    assert file.read_text().strip() == "[section]\noption ="
+
+    # allow_no_value = True
+    file.write_text("[section]")
+    cfg = ConfigUpdater(allow_no_value=True).read_file(open(file))
+    cfg.set("section", "option")
+    cfg.update_file()
+    assert file.read_text().strip() == "[section]\noption"
 
 
 def test_str(setup_cfg_path, setup_cfg):
