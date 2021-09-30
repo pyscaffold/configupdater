@@ -157,7 +157,7 @@ class ConfigUpdater(Document):
             validate (Boolean): validate format before writing
         """
         if validate:
-            self.validate_format(**self._parser_opts)
+            self.validate_format()
         fp.write(str(self))
 
     def update_file(self: T, validate: bool = True) -> T:
@@ -169,7 +169,18 @@ class ConfigUpdater(Document):
         if self._filename is None:
             raise NoConfigFileReadError()
         if validate:  # validate BEFORE opening the file!
-            self.validate_format(**self._parser_opts)
+            self.validate_format()
         with open(self._filename, "w") as fb:
             self.write(fb, validate=False)
         return self
+
+    def validate_format(self, **kwargs):
+        """Validate INI/CFG representation by parsing it with
+        :class:`~configparser.ConfigParser`.
+
+        The ConfigParser object is instead with the same arguments as the original
+        ConfigUpdater object, but the ``kwargs`` can be used to overwrite them.
+
+        See :method:`configupdater.Document.validate_format`.
+        """
+        return super().validate_format(**{**self._parser_opts, **kwargs})

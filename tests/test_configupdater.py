@@ -434,6 +434,15 @@ def test_validate_format(setup_cfg_path):
         updater.validate_format()
 
 
+def test_validate_format_propagates_kwargs(setup_cfg_path):
+    updater = ConfigUpdater(allow_no_value=True)
+    updater.read(setup_cfg_path)
+    updater.set("pyscaffold", "namespace")
+    assert updater["pyscaffold"]["namespace"].value is None
+    assert str(updater["pyscaffold"]["namespace"]) == "namespace\n"  # no `=` sign
+    assert updater.validate_format() is True
+
+
 test3_cfg_in = """
 [section]
 key = 1

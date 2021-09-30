@@ -91,10 +91,17 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
 
         Args:
             kwargs: are passed to :class:`configparser.ConfigParser`
+
+        Raises:
+            configparser.ParsingError: if syntax errors are found
+
+        Returns:
+            ``True`` when no error is found
         """
         kwargs.pop("space_around_delimiters", None)
         parser = ConfigParser(**kwargs)
         parser.read_string(str(self))
+        return True
 
     def iter_sections(self) -> Iterator[Section]:
         """Iterate only over section blocks"""
