@@ -21,7 +21,7 @@ else:  # pragma: no cover
 
 from .block import AlreadyAttachedError, Comment, NotAttachedError, Space
 from .document import Document
-from .option import Option
+from .option import NoneValueDisallowed, Option
 from .parser import Parser
 from .section import Section
 
@@ -33,6 +33,7 @@ __all__ = [
     "Space",
     "Parser",
     "NoConfigFileReadError",
+    "NoneValueDisallowed",
     "NotAttachedError",
     "AlreadyAttachedError",
 ]
