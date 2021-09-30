@@ -181,6 +181,6 @@ class ConfigUpdater(Document):
         The ConfigParser object is instead with the same arguments as the original
         ConfigUpdater object, but the ``kwargs`` can be used to overwrite them.
 
-        See :method:`configupdater.Document.validate_format`.
+        See :meth:`~configupdater.document.Document.validate_format`.
         """
         return super().validate_format(**{**self._parser_opts, **kwargs})
