@@ -4,6 +4,8 @@ from textwrap import dedent
 import pytest
 
 from configupdater.block import NotAttachedError
+from configupdater.configupdater import ConfigUpdater
+from configupdater.option import NoneValueDisallowed, Option
 from configupdater.parser import Parser
 
 
@@ -30,3 +32,28 @@ def test_deepcopy():
     clone.value = ""
     assert str(clone) != str(option)
     assert str(doc) == dedent(example)
+
+
+def test_str_for_none_value():
+    assert str(Option("namespace")) == "namespace\n"  # orphan option
+
+    cfg = ConfigUpdater(allow_no_value=True).read_string("[pyscaffold]")
+    cfg.set("pyscaffold", "namespace")
+    assert str(cfg["pyscaffold"]["namespace"]) == "namespace\n"
+
+    cfg = ConfigUpdater(allow_no_value=False).read_string("[pyscaffold]")
+    cfg.set("pyscaffold", "namespace")
+    with pytest.warns(NoneValueDisallowed):
+        assert str(cfg["pyscaffold"]["namespace"]) == "namespace = \n"
+
+    opts = {"allow_no_value": False, "space_around_delimiters": False}
+    cfg = ConfigUpdater(**opts).read_string("[pyscaffold]")
+    cfg.set("pyscaffold", "namespace")
+    with pytest.warns(NoneValueDisallowed):
+        assert str(cfg["pyscaffold"]["namespace"]) == "namespace=\n"
+
+
+def test_str_for_set_values():
+    opt = Option("opt")
+    opt.set_values("1234", separator=", ")
+    assert str(opt) == "opt = 1, 2, 3, 4\n"

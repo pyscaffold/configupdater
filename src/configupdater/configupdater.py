@@ -8,15 +8,16 @@ content.
 """
 import sys
 from configparser import Error
+from types import MappingProxyType as ReadOnlyMapping
 from typing import Optional, TextIO, Tuple, TypeVar
 
 if sys.version_info[:2] >= (3, 9):  # pragma: no cover
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Mapping
 
     List = list
     Dict = dict
 else:  # pragma: no cover
-    from typing import Iterable
+    from typing import Iterable, Mapping
 
 from .block import AlreadyAttachedError, Comment, NotAttachedError, Space
 from .document import Document
@@ -97,18 +98,24 @@ class ConfigUpdater(Document):
             "empty_lines_in_values": empty_lines_in_values,
             "space_around_delimiters": space_around_delimiters,
         }
+        self._syntax_options = ReadOnlyMapping(self._parser_opts)
         self._filename: Optional[str] = None
         super().__init__()
 
     def _instantiate_copy(self: T) -> T:
         """Will be called by ``Container.__deepcopy__``"""
         clone = self.__class__(**self._parser_opts)
+        clone.optionxform = self.optionxform  # type: ignore[assignment]
         clone._filename = self._filename
         return clone
 
     def _parser(self, **kwargs):
         opts = {"optionxform": self.optionxform, **self._parser_opts, **kwargs}
         return Parser(**opts)
+
+    @property
+    def syntax_options(self) -> Mapping:
+        return self._syntax_options
 
     def read(self: T, filename: str, encoding: Optional[str] = None) -> T:
         """Read and parse a filename.

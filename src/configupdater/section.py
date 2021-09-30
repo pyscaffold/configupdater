@@ -264,9 +264,16 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
             option: option name
             value: value, default None
         """
-        option = self.document.optionxform(option)
+        doc = self.document
+        option = doc.optionxform(option)
         if option not in self.options():
-            self[option] = Option(option)
+            syntax_opts = getattr(doc, "syntax_options", {})
+            kwargs_ = {
+                "space_around_delimiters": syntax_opts.get("space_around_delimiters"),
+                "delimiter": next(iter(syntax_opts.get("delimiters", [])), None),
+            }
+            kwargs = {k: v for k, v in kwargs_.items() if v is not None}
+            self[option] = Option(option, **kwargs)
         if not isinstance(value, Iterable) or isinstance(value, str):
             self[option].value = value
         else:
