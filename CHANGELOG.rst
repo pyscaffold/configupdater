@@ -6,6 +6,7 @@ Version 3.0.1
 =============
 
 - Fix error when parsing unindented comments in multi-line values, issue #73
+- Fix invalid string produced when `allow_no_value = False`, issue #68
 
 Version 3.0
 ===========
