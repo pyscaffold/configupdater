@@ -360,7 +360,7 @@ class Parser:
         # that is an error or not.
         last_option = last_section.last_block
         # handle special case auf unindented comment in multi-line value
-        if isinstance(last_option, (Comment,)):
+        if isinstance(last_option, Comment):
             last_option, comment = (
                 cast(Option, last_option.previous_block),
                 last_option.detach(),
@@ -368,7 +368,7 @@ class Parser:
             # move lines from comment to last option to keep it.
             for comment_line in comment.lines:
                 last_option.add_line(comment_line)
-        if not isinstance(last_option, (Option, Space, Comment)):  # pragma: no cover
+        if not isinstance(last_option, (Option, Space)):  # pragma: no cover
             msg = f"{last_option!r} should be Option or Space"
             raise InconsistentStateError(msg, self._fpname, self._lineno, line)
         last_option.add_line(line)
