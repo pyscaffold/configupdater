@@ -359,19 +359,18 @@ class Parser:
         # So for now we can add parts of option values to Space nodes, than we check if
         # that is an error or not.
         last_option = last_section.last_block
-        if not isinstance(last_option, (Option, Space)):  # pragma: no cover
-            # handle special case auf unindented comment in multi-line value
-            if isinstance(last_option, (Comment,)):
-                last_option, comment = (
-                    cast(Option, last_option.previous_block),
-                    last_option.detach(),
-                )
-                # move lines from comment to last option to keep it.
-                for comment_line in comment.lines:
-                    last_option.add_line(comment_line)
-            else:
-                msg = f"{last_option!r} should be Option or Space"
-                raise InconsistentStateError(msg, self._fpname, self._lineno, line)
+        # handle special case auf unindented comment in multi-line value
+        if isinstance(last_option, (Comment,)):
+            last_option, comment = (
+                cast(Option, last_option.previous_block),
+                last_option.detach(),
+            )
+            # move lines from comment to last option to keep it.
+            for comment_line in comment.lines:
+                last_option.add_line(comment_line)
+        if not isinstance(last_option, (Option, Space, Comment)):  # pragma: no cover
+            msg = f"{last_option!r} should be Option or Space"
+            raise InconsistentStateError(msg, self._fpname, self._lineno, line)
         last_option.add_line(line)
 
     def _add_space(self, line: str):
