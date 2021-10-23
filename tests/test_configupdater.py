@@ -1,3 +1,4 @@
+import configparser
 import copy
 import os.path
 from configparser import ConfigParser
@@ -1258,3 +1259,42 @@ def test_setitem_detached_option():
     option1 = source1["section1"]["option1"].detach()
     target["section0"]["option1"] = option1
     assert target["section0"]["option1"].value == "1"
+
+
+def test_comments_in_multiline_values():
+    indented_case = """\
+    [header]
+    install_requires =
+        importlib-metadata; python_version<"3.8"
+        #Adding some comments here that are perfectly valid.
+        some-other-dependency
+    """
+    unindented_case = """\
+    [header]
+    install_requires =
+        importlib-metadata; python_version<"3.8"
+    #Adding some comments here that are perfectly valid.
+        some-other-dependency
+    """
+    error_case = """\
+    [header]
+    install_requires =
+        importlib-metadata; python_version<"3.8"
+    #Adding some comments here that are perfectly valid.
+    some-other-dependency
+    """
+    parser = ConfigParser()
+    updater = ConfigUpdater()
+
+    parser.read_string(dedent(indented_case))
+    updater.read_string(dedent(indented_case))
+    assert str(updater) == dedent(indented_case)
+
+    parser.read_string(dedent(unindented_case))
+    updater.read_string(dedent(unindented_case))
+    assert str(updater) == dedent(unindented_case)
+
+    with pytest.raises(configparser.ParsingError):
+        parser.read_string(dedent(error_case))
+    with pytest.raises(ParsingError):
+        updater.read_string(dedent(error_case))
