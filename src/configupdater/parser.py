@@ -366,7 +366,6 @@ class Parser:
                 # move lines from comment to last option to keep it.
                 for comment_line in comment.lines:
                     last_option.add_line(comment_line)
-                del comment
             else:
                 msg = f"{last_option!r} should be Option or Space"
                 raise InconsistentStateError(msg, self._fpname, self._lineno, line)
