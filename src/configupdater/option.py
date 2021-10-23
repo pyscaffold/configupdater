@@ -106,7 +106,7 @@ class Option(Block):
             if document is None or opts.get("allow_no_value"):
                 return f"{self._key}\n"
             NoneValueDisallowed.warn(self._key)
-            value = ""
+            return ""
 
         space = self._space_around_delimiters or opts.get("space_around_delimiters")
         if space:
