@@ -1276,15 +1276,15 @@ def test_comments_in_multiline_values():
     #Adding some comments here that are perfectly valid.
         some-other-dependency
     """
-    error_case = """\
+    error_case_if_no_value = """\
     [header]
     install_requires =
         importlib-metadata; python_version<"3.8"
     #Adding some comments here that are perfectly valid.
     some-other-dependency
     """
-    parser = ConfigParser()
-    updater = ConfigUpdater()
+    parser = ConfigParser(allow_no_value=False)
+    updater = ConfigUpdater(allow_no_value=False)
 
     parser.read_string(dedent(indented_case))
     updater.read_string(dedent(indented_case))
@@ -1295,6 +1295,21 @@ def test_comments_in_multiline_values():
     assert str(updater) == dedent(unindented_case)
 
     with pytest.raises(configparser.ParsingError):
-        parser.read_string(dedent(error_case))
+        parser.read_string(dedent(error_case_if_no_value))
     with pytest.raises(ParsingError):
-        updater.read_string(dedent(error_case))
+        updater.read_string(dedent(error_case_if_no_value))
+
+    parser = ConfigParser(allow_no_value=True)
+    updater = ConfigUpdater(allow_no_value=True)
+
+    parser.read_string(dedent(indented_case))
+    updater.read_string(dedent(indented_case))
+    assert str(updater) == dedent(indented_case)
+
+    parser.read_string(dedent(unindented_case))
+    updater.read_string(dedent(unindented_case))
+    assert str(updater) == dedent(unindented_case)
+
+    parser.read_string(dedent(error_case_if_no_value))
+    updater.read_string(dedent(error_case_if_no_value))
+    assert str(updater) == dedent(error_case_if_no_value)
