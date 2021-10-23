@@ -362,7 +362,10 @@ class Parser:
         if not isinstance(last_option, (Option, Space)):  # pragma: no cover
             # handle special case auf unindented comment in multi-line value
             if isinstance(last_option, (Comment,)):
-                last_option, comment = last_option.previous_block, last_option.detach()
+                last_option, comment = (
+                    cast(Option, last_option.previous_block),
+                    last_option.detach(),
+                )
                 # move lines from comment to last option to keep it.
                 for comment_line in comment.lines:
                     last_option.add_line(comment_line)
