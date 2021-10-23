@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 3.0.1
+=============
+
+- Fix error when parsing unindented comments in multi-line values, issue #73
+
 Version 3.0
 ===========
 
