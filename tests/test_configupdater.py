@@ -73,7 +73,7 @@ def test_update_file_issue_68(tmp_path):
     with pytest.warns(NoneValueDisallowed):
         # A warning is issued, but the method will not fail
         cfg.update_file()
-    assert file.read_text().strip() == "[section]\noption ="
+    assert file.read_text().strip() == "[section]"
 
     # allow_no_value = True
     file.write_text("[section]")

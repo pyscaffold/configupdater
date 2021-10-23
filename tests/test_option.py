@@ -44,13 +44,7 @@ def test_str_for_none_value():
     cfg = ConfigUpdater(allow_no_value=False).read_string("[pyscaffold]")
     cfg.set("pyscaffold", "namespace")
     with pytest.warns(NoneValueDisallowed):
-        assert str(cfg["pyscaffold"]["namespace"]) == "namespace = \n"
-
-    opts = {"allow_no_value": False, "space_around_delimiters": False}
-    cfg = ConfigUpdater(**opts).read_string("[pyscaffold]")
-    cfg.set("pyscaffold", "namespace")
-    with pytest.warns(NoneValueDisallowed):
-        assert str(cfg["pyscaffold"]["namespace"]) == "namespace=\n"
+        assert str(cfg["pyscaffold"]["namespace"]) == ""
 
 
 def test_str_for_set_values():
