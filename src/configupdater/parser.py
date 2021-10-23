@@ -359,7 +359,7 @@ class Parser:
         # So for now we can add parts of option values to Space nodes, than we check if
         # that is an error or not.
         last_option = last_section.last_block
-        # handle special case auf unindented comment in multi-line value
+        # handle special case of unindented comment in multi-line value
         if isinstance(last_option, Comment):
             last_option, comment = (
                 cast(Option, last_option.previous_block),
