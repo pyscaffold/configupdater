@@ -73,6 +73,11 @@ T = TypeVar("T")
 E = TypeVar("E", bound=Exception)
 D = TypeVar("D", bound=Document)
 
+if sys.version_info[:2] >= (3, 7):  # pragma: no cover
+    PathLike = Union[str, bytes, os.PathLike]
+else:  # pragma: no cover
+    PathLike = Union[str, os.PathLike]
+
 ConfigContent = Union["Section", "Comment", "Space"]
 
 
@@ -220,15 +225,15 @@ class Parser:
         return ReadOnlyMapping(self._get_args())
 
     @overload
-    def read(self, filename: str, encoding: Optional[str] = None) -> Document:
+    def read(self, filename: PathLike, encoding: Optional[str] = None) -> Document:
         ...
 
     @overload
-    def read(self, filename: str, encoding: str, into: D) -> D:
+    def read(self, filename: PathLike, encoding: str, into: D) -> D:
         ...
 
     @overload
-    def read(self, filename: str, *, into: D, encoding: Optional[str] = None) -> D:
+    def read(self, filename: PathLike, *, into: D, encoding: Optional[str] = None) -> D:
         ...
 
     def read(self, filename, encoding=None, into=None):
@@ -241,7 +246,7 @@ class Parser:
         """
         document = Document() if into is None else into
         with open(filename, encoding=encoding) as fp:
-            self._read(fp, filename, document)
+            self._read(fp, str(filename), document)
         self._filename = os.path.abspath(filename)
         return document
 
