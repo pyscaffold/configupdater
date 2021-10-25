@@ -22,7 +22,7 @@ else:  # pragma: no cover
 from .block import AlreadyAttachedError, Comment, NotAttachedError, Space
 from .document import Document
 from .option import NoneValueDisallowed, Option
-from .parser import Parser
+from .parser import Parser, PathLike
 from .section import Section
 
 __all__ = [
@@ -100,7 +100,7 @@ class ConfigUpdater(Document):
             "space_around_delimiters": space_around_delimiters,
         }
         self._syntax_options = ReadOnlyMapping(self._parser_opts)
-        self._filename: Optional[str] = None
+        self._filename: Optional[PathLike] = None
         super().__init__()
 
     def _instantiate_copy(self: T) -> T:
@@ -118,7 +118,7 @@ class ConfigUpdater(Document):
     def syntax_options(self) -> Mapping:
         return self._syntax_options
 
-    def read(self: T, filename: str, encoding: Optional[str] = None) -> T:
+    def read(self: T, filename: PathLike, encoding: Optional[str] = None) -> T:
         """Read and parse a filename.
 
         Args:
