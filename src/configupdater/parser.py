@@ -342,7 +342,7 @@ class Parser:
         new_section.raw_comment = raw_comment
         self._document.append(new_section)
 
-    def _add_option(self, key: str, vi: str, value: str, line: str):
+    def _add_option(self, key: str, vi: str, value: Optional[str], line: str):
         if not isinstance(self._last_block, Section):  # pragma: no cover
             msg = f"{self._last_block!r} should be Section"
             raise InconsistentStateError(msg, self._fpname, self._lineno, line)
@@ -412,7 +412,7 @@ class Parser:
         """
         self._document = into
         elements_added: set = set()
-        cursect: Optional[Dict[str, List[str]]] = None  # None, or a dictionary
+        cursect: Optional[Dict[str, List[str]]] = None  # None or dict
         sectname: Optional[str] = None
         optname: Optional[str] = None
         lineno = 0
@@ -516,7 +516,7 @@ class Parser:
                             cursect[optname] = [optval]
                         else:
                             # valueless option handling
-                            cursect[optname] = None
+                            cursect[optname] = []
                         self._add_option(optname, vi, optval, line)  # HOOK
                     # handle indented comment
                     elif (
