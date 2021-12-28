@@ -187,7 +187,9 @@ class Parser:
         self._dict = dict  # no reason to let the user change this
         # keeping _sections to keep code aligned with ConfigParser but
         # _document takes the actual role instead. Only use self._document!
-        self._sections: Dict[str, Dict[str, List[str]]] = self._dict()
+        self._sections: Dict[
+            str, Optional[Dict[str, Optional[List[str]]]]
+        ] = self._dict()
         self._delimiters: Tuple[str, ...] = tuple(delimiters)
         if delimiters == ("=", ":"):
             self._optcre = self.OPTCRE_NV if allow_no_value else self.OPTCRE
@@ -412,7 +414,7 @@ class Parser:
         """
         self._document = into
         elements_added: set = set()
-        cursect: Optional[Dict[str, List[str]]] = None  # None or dict
+        cursect: Optional[Dict[str, Optional[List[str]]]] = None  # None or dict
         sectname: Optional[str] = None
         optname: Optional[str] = None
         lineno = 0
@@ -455,7 +457,8 @@ class Parser:
                         and optname
                         and cursect[optname] is not None
                     ):
-                        cursect[optname].append("")  # newlines added at join
+                        # newlines added at join
+                        cast(List, cursect[optname]).append("")
                         if line.strip():
                             self._add_option_line(line)  # HOOK
                 else:
@@ -468,7 +471,7 @@ class Parser:
             first_nonspace = self.NONSPACECRE.search(line)
             cur_indent_level = first_nonspace.start() if first_nonspace else 0
             if cursect is not None and optname and cur_indent_level > indent_level:
-                cursect[optname].append(value)
+                cast(List, cursect[optname]).append(value)
                 self._add_option_line(line)  # HOOK
             # a section header or option header?
             else:
@@ -516,7 +519,7 @@ class Parser:
                             cursect[optname] = [optval]
                         else:
                             # valueless option handling
-                            cursect[optname] = []
+                            cursect[optname] = None
                         self._add_option(optname, vi, optval, line)  # HOOK
                     # handle indented comment
                     elif (
