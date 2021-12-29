@@ -516,7 +516,7 @@ class Parser:
                             cursect[optname] = [optval]
                         else:
                             # valueless option handling
-                            cursect[optname] = []
+                            cursect[optname] = []  # None in Configparser
                         self._add_option(optname, vi, optval, line)  # HOOK
                     # handle indented comment
                     elif (
