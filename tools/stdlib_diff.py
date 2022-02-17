@@ -131,8 +131,6 @@ def format_patch(source: CodeInfo, target: CodeInfo, numlines=3) -> Iterator[str
 
 def line_range(start, stop, offset):
     length = stop - start
-    if not length:
-        return f"{offset + start},0"  # Start empty chunk in the previous line
     return f"{offset + start},{length}"  # Lines are counted from 1
 
 
