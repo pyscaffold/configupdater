@@ -50,11 +50,7 @@ def diff_all(numlines: int) -> str:
     )
 
 
-def diff_class(
-    orig_cls: Type,
-    changed_cls: Type,
-    numlines: int,
-) -> Iterator[str]:
+def diff_class(orig_cls: Type, changed_cls: Type, numlines: int) -> Iterator[str]:
     diff_fragments = (
         diff_member(name, orig_cls, changed_cls, numlines)
         for name, _ in getmembers(changed_cls)
@@ -65,10 +61,7 @@ def diff_class(
 
 
 def diff_member(
-    name: str,
-    orig_cls: Type,
-    changed_cls: Type,
-    numlines: int,
+    name: str, orig_cls: Type, changed_cls: Type, numlines: int
 ) -> Iterator[str]:
     orig = getattr(orig_cls, name, None)
     changed = getattr(changed_cls, name, None)
