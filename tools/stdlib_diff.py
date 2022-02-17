@@ -22,7 +22,7 @@ from configparser import ConfigParser, SectionProxy
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from inspect import getmembers, getsourcefile, getsourcelines
-from typing import Iterator, Sequence, Type
+from typing import Iterator, Optional, Sequence, Type
 
 try:
     import configupdater  # noqa
@@ -42,26 +42,22 @@ COMPARISONS = [
 
 
 def diff_all(numlines: int) -> str:
-    return "".join(
-        patch
-        for (target, orig) in COMPARISONS
-        for patch in diff_class(orig, target, numlines)
-    )
+    patches = (diff_class(orig, target, numlines) for (target, orig) in COMPARISONS)
+    return "\n\n".join(patches)
 
 
-def diff_class(orig_cls: Type, changed_cls: Type, numlines: int) -> Iterator[str]:
+def diff_class(orig_cls: Type, changed_cls: Type, numlines: int) -> str:
     diff_fragments = (
         diff_member(name, orig_cls, changed_cls, numlines)
         for name, _ in getmembers(changed_cls)
         if name != "__init__" and name in changed_cls.__dict__
     )
-    for patch in diff_fragments:
-        yield from patch
+    return "\n".join(d for d in diff_fragments if d)
 
 
 def diff_member(
     name: str, orig_cls: Type, changed_cls: Type, numlines: int
-) -> Iterator[str]:
+) -> Optional[str]:
     orig = getattr(orig_cls, name, None)
     changed = getattr(changed_cls, name, None)
 
@@ -82,8 +78,7 @@ def diff_member(
     if orig_code.file.endswith("collections_abc.py"):
         return None
 
-    yield from format_patch(orig_code, changed_code, numlines)
-    yield "\n"
+    return "".join(format_patch(orig_code, changed_code, numlines))
 
 
 @dataclass
@@ -125,8 +120,6 @@ def format_patch(source: CodeInfo, target: CodeInfo, numlines=3) -> Iterator[str
             if tag in {"replace", "insert"}:
                 for line in target.lines[j1:j2]:
                     yield "+" + line
-
-        yield "\n"
 
 
 def line_range(start, stop, offset):
