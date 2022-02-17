@@ -150,7 +150,10 @@ def relativise_path(path: str) -> str:
 
 
 def main():
-    cli = argparse.ArgumentParser(usage=__doc__)
+    cli = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     cli.add_argument(
         "-l",
         "--lines",
