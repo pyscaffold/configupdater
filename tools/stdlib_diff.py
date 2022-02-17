@@ -22,11 +22,10 @@ from configparser import ConfigParser, SectionProxy
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from inspect import getmembers, getsourcefile, getsourcelines
-from itertools import chain
-from typing import Optional, Sequence, Type, Iterator
+from typing import Iterator, Sequence, Type
 
 try:
-    import configupdater
+    import configupdater  # noqa
 except ImportError:
     repo = os.path.dirname(os.path.dirname(__file__))
     sys.path.append(os.path.join(repo, "src"))
