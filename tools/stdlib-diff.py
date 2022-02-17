@@ -1,11 +1,35 @@
+"""Simple command line utility to help finding the differences between
+ConfigUpdater and ConfigParser.
+
+The output of this script is similar to the output produced by
+`git format-patch`. This means that programs like `delta` or `bat`
+can be used to add some format highlighting to the output. Examples:
+
+    %(prog)s | delta --side-by-side
+    %(prog)s | bat -l diff
+
+Alternatively https://github.com/megatops/PatchViewer can also be used.
+
+[delta]: https://github.com/dandavison/delta
+[bat]: https://github.com/sharkdp/bat
+[PathViewer]:  https://github.com/megatops/PatchViewer
+"""
+
 import argparse
+import os.path
 import sys
 from configparser import ConfigParser, SectionProxy
-from difflib import HtmlDiff
-from inspect import getsourcelines, getsourcefile, getmembers
-from typing import Collection, Optional, Type
+from dataclasses import dataclass
+from difflib import SequenceMatcher
+from inspect import getmembers, getsourcefile, getsourcelines
+from itertools import chain
+from typing import Optional, Sequence, Type, Iterator
 
-from bs4 import BeautifulSoup
+try:
+    import configupdater
+except ImportError:
+    repo = os.path.dirname(os.path.dirname(__file__))
+    sys.path.append(os.path.join(repo, "src"))
 
 from configupdater import ConfigUpdater, Parser, Section
 from configupdater.document import Document
@@ -18,19 +42,34 @@ COMPARISONS = [
 ]
 
 
-def meta_info(obj):
-    path = getsourcefile(obj)
-    src, start = getsourcelines(obj)
-    return src, path, start
+def diff_all(numlines: int) -> str:
+    return "".join(
+        patch
+        for (target, orig) in COMPARISONS
+        for patch in diff_class(orig, target, numlines)
+    )
+
+
+def diff_class(
+    orig_cls: Type,
+    changed_cls: Type,
+    numlines: int,
+) -> Iterator[str]:
+    diff_fragments = (
+        diff_member(name, orig_cls, changed_cls, numlines)
+        for name, _ in getmembers(changed_cls)
+        if name != "__init__" and name in changed_cls.__dict__
+    )
+    for patch in diff_fragments:
+        yield from patch
 
 
 def diff_member(
     name: str,
     orig_cls: Type,
     changed_cls: Type,
-    context: bool,
     numlines: int,
-) -> Optional[str]:
+) -> Iterator[str]:
     orig = getattr(orig_cls, name, None)
     changed = getattr(changed_cls, name, None)
 
@@ -42,73 +81,73 @@ def diff_member(
         return None
 
     try:
-        orig_src, orig_file, orig_line = meta_info(orig)
-        changed_src, changed_file, changed_line = meta_info(changed)
+        orig_code = CodeInfo.inspect(orig)
+        changed_code = CodeInfo.inspect(changed)
     except TypeError:
         # buitins will fail if inspected
         return None
 
-    diff_table = HtmlDiff(tabsize=4, charjunk=lambda _: False).make_table(
-        orig_src,
-        changed_src,
-        fromdesc=f"{orig_file}:{orig_line}",
-        todesc=f"{changed_file}:{changed_line}",
-        context=context,
-        numlines=numlines,
-    )
-
-    mod_name = changed_cls.__module__
-    qual_name = changed_cls.__qualname__
-
-    return f"""
-    <section id="{name}">
-        <header>
-            <h2><pre>{mod_name}:{qual_name}.{name}<pre></h2>
-        </header>
-
-        {diff_table}
-    </section>
-    """
+    yield from format_patch(orig_code, changed_code, numlines)
+    yield '\n'
 
 
-def diff(
-    orig_cls: Type,
-    changed_cls: Type,
-    context: bool,
-    numlines: int,
-) -> str:
-    diff_fragments = (
-        diff_member(name, orig_cls, changed_cls, context, numlines)
-        for name, _ in getmembers(changed_cls)
-        if name != "__init__" and name in changed_cls.__dict__
-    )
-    return "\n".join(d for d in diff_fragments if d)
+@dataclass
+class CodeInfo:
+    lines: Sequence[str]
+    file: str
+    starting_line: int
+
+    @classmethod
+    def inspect(cls, obj):
+        path = getsourcefile(obj)
+        src, start = getsourcelines(obj)
+        return cls(src, path, start)
 
 
-def diff_all(context: bool, numlines: int) -> str:
-    content_str = (
-        "\n".join(
-            diff(orig, target, context, numlines) for (target, orig) in COMPARISONS
-        )
-        .encode("utf-8", "xmlcharrefreplace")
-        .decode("utf-8")
-    )
+def format_patch(source: CodeInfo, target: CodeInfo, numlines=3) -> Iterator[str]:
+    """Variation of :obj:`difflib.unified_diff` that considers line offsets."""
+    started = False
+    matcher = SequenceMatcher(None, source.lines, target.lines)
+    for group in matcher.get_grouped_opcodes(numlines):
+        if not started:
+            started = True
+            yield f"--- {relativise_path(source.file)}\n"
+            yield f"+++ {relativise_path(target.file)}\n"
 
-    content = BeautifulSoup(f"<main>{content_str}<main>", "html.parser").main
-    page = BeautifulSoup(HtmlDiff(tabsize=4).make_file("", ""), "html.parser")
-    page.find("table").replace_with(content)
-    return page.prettify()
+        first, last = group[0], group[-1]
+        source_range = line_range(first[1], last[2], source.starting_line)
+        target_range = line_range(first[3], last[4], target.starting_line)
+        yield f"@@ -{source_range} +{target_range} @@\n"
+
+        for tag, i1, i2, j1, j2 in group:
+            if tag == "equal":
+                for line in source.lines[i1:i2]:
+                    yield " " + line
+                continue
+            if tag in {"replace", "delete"}:
+                for line in source.lines[i1:i2]:
+                    yield "-" + line
+            if tag in {"replace", "insert"}:
+                for line in target.lines[j1:j2]:
+                    yield "+" + line
+
+        yield "\n"
+
+
+def line_range(start, stop, offset):
+    length = stop - start
+    if not length:
+        return f"{offset + start},0"  # Start empty chunk in the previous line
+    return f"{offset + start},{length}"  # Lines are counted from 1
+
+
+def relativise_path(path: str) -> str:
+    relative = os.path.relpath(path)
+    return relative if len(path) > len(relative) else path
 
 
 def main():
-    cli = argparse.ArgumentParser()
-    cli.add_argument(
-        "--no-context",
-        action="store_false",
-        dest="context",
-        default=True,
-        help="Produce a full diff",
-    )
+    cli = argparse.ArgumentParser(usage=__doc__)
     cli.add_argument(
         "-l",
         "--lines",
@@ -121,7 +160,7 @@ def main():
     cli.add_argument("-o", "--output", type=argparse.FileType("w"), default=sys.stdout)
     opts = cli.parse_args()
     with opts.output as f:
-        f.write(diff_all(opts.context, opts.numlines))
+        f.write(diff_all(opts.numlines))
 
 
 __name__ == "__main__" and main()
