@@ -87,8 +87,11 @@ def diff_member(
         # buitins will fail if inspected
         return None
 
+    if orig_code.file.endswith("collections_abc.py"):
+        return None
+
     yield from format_patch(orig_code, changed_code, numlines)
-    yield '\n'
+    yield "\n"
 
 
 @dataclass
