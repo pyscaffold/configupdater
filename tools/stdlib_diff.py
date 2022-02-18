@@ -14,6 +14,7 @@ Alternatively https://github.com/megatops/PatchViewer can also be used.
 [bat]: https://github.com/sharkdp/bat
 [PathViewer]:  https://github.com/megatops/PatchViewer
 """
+from __future__ import annotations
 
 import argparse
 import os.path
@@ -68,15 +69,8 @@ def diff_member(
         # Not a method
         return None
 
-    try:
-        orig_code = CodeInfo.inspect(orig)
-        changed_code = CodeInfo.inspect(changed)
-    except TypeError:
-        # buitins will fail if inspected
-        return None
-
-    if orig_code.file.endswith("collections_abc.py"):
-        return None
+    orig_code = CodeInfo.inspect(orig)
+    changed_code = CodeInfo.inspect(changed)
 
     return "".join(format_patch(orig_code, changed_code, numlines))
 
@@ -88,9 +82,14 @@ class CodeInfo:
     starting_line: int
 
     @classmethod
-    def inspect(cls, obj):
-        path = getsourcefile(obj)
-        src, start = getsourcelines(obj)
+    def inspect(cls, obj) -> "CodeInfo":
+        path = "<builtin>"
+        try:
+            path = getsourcefile(obj) or "<extension>"
+            src, start = getsourcelines(obj)
+        except TypeError:
+            src = [f"# {path} ::: {obj}\n"]
+            start = 0
         return cls(src, path, start)
 
 
@@ -152,4 +151,5 @@ def main():
         f.write(diff_all(opts.numlines))
 
 
-__name__ == "__main__" and main()
+if __name__ == "__main__":
+    main()
