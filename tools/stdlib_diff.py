@@ -71,8 +71,12 @@ def diff_member(
 
     orig_code = CodeInfo.inspect(orig)
     changed_code = CodeInfo.inspect(changed)
+    title = (
+        f"{orig_cls.__module__}:{orig_cls.__qualname__}.{name} | "
+        f"{changed_cls.__module__}:{changed_cls.__qualname__}.{name}"
+    )
 
-    return "".join(format_patch(orig_code, changed_code, numlines))
+    return "".join(format_patch(orig_code, changed_code, numlines, title))
 
 
 @dataclass
@@ -93,7 +97,9 @@ class CodeInfo:
         return cls(src, path, start)
 
 
-def format_patch(source: CodeInfo, target: CodeInfo, numlines=3) -> Iterator[str]:
+def format_patch(
+    source: CodeInfo, target: CodeInfo, numlines: int = 3, title: str = ""
+) -> Iterator[str]:
     """Variation of :obj:`difflib.unified_diff` that considers line offsets."""
     started = False
     matcher = SequenceMatcher(None, source.lines, target.lines)
@@ -106,7 +112,7 @@ def format_patch(source: CodeInfo, target: CodeInfo, numlines=3) -> Iterator[str
         first, last = group[0], group[-1]
         source_range = line_range(first[1], last[2], source.starting_line)
         target_range = line_range(first[3], last[4], target.starting_line)
-        yield f"@@ -{source_range} +{target_range} @@\n"
+        yield f"@@ -{source_range} +{target_range} @@ {title}".strip() + "\n"
 
         for tag, i1, i2, j1, j2 in group:
             if tag == "equal":
