@@ -174,7 +174,7 @@ coverage_task:
     - test (Linux - Anaconda)
     - test (OS X)
   pip_install_script:
-    pip install --user --upgrade coverage coveralls pre-commit
+    pip install --user --upgrade coverage coveralls covdefaults pre-commit
   precommit_script:
     - pre-commit install
     - pre-commit run --all-files
