@@ -1,10 +1,13 @@
 # .coveragerc to control coverage.py
 [run]
-branch = True
 source = configupdater
 # omit = bad_file.py
+plugins = covdefaults
 
 [paths]
 source =
     src/
     */site-packages/
+
+[report]
+fail_under = 90
