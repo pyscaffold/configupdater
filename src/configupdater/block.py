@@ -7,6 +7,7 @@ configuration file, e.g. comments, sections, options and even sequences of white
 import sys
 from abc import ABC
 from copy import deepcopy
+from textwrap import dedent
 from typing import TYPE_CHECKING, Optional, TypeVar, Union, cast
 
 if sys.version_info[:2] >= (3, 9):  # pragma: no cover
@@ -34,18 +35,42 @@ class NotAttachedError(Exception):
     """{block} is not attached to a container yet. Try to insert it first."""
 
     def __init__(self, block: Union[str, "Block"] = "The block"):
-        msg = cast(str, self.__class__.__doc__).format(block=_short_repr(block))
+        doc = dedent(self.__class__.__doc__)
+        msg = cast(str, doc).format(block=_short_repr(block))
         super().__init__(msg)
 
 
 class AlreadyAttachedError(Exception):
-    """{block} has been already attached to a container.
+    """
+    {block} has been already attached to a container.
     Try to remove it first using ``detach`` or create a copy using stdlib's
     ``copy.deepcopy``.
     """
 
     def __init__(self, block: Union[str, "Block"] = "The block"):
-        msg = cast(str, self.__class__.__doc__).format(block=_short_repr(block))
+        doc = dedent(self.__class__.__doc__)
+        msg = cast(str, doc).format(block=_short_repr(block))
+        super().__init__(msg)
+
+
+class ModifyMultilineValueError(Exception):
+    """
+    {block} is a multi-line value that cannot be modified directly.
+    Use the ``set_values`` or ``append`` method for modification.
+    """
+
+    def __init__(self, block: Union[str, "Block"] = "The block"):
+        doc = dedent(self.__class__.__doc__)
+        msg = cast(str, doc).format(block=_short_repr(block))
+        super().__init__(msg)
+
+
+class NoMultilineValueError(Exception):
+    """{block} is not multi-line value, which is needed for appending."""
+
+    def __init__(self, block: Union[str, "Block"] = "The block"):
+        doc = dedent(self.__class__.__doc__)
+        msg = cast(str, doc).format(block=_short_repr(block))
         super().__init__(msg)
 
 

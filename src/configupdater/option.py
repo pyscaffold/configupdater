@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from .section import Section
     from .document import Document
 
-from .block import Block
+from .block import Block, ModifyMultilineValueError, NoMultilineValueError
 
 Value = Union["Option", str]
 T = TypeVar("T", bound="Option")
@@ -87,6 +87,9 @@ class Option(Block):
         """
         super().add_line(line)
         self.add_value(line.strip())
+
+    def _value_is_multiline(self) -> bool:
+        return len(self._values) > 1
 
     def _join_multiline_value(self):
         if not self._multiline_value_joined and not self._value_is_none:
@@ -170,10 +173,20 @@ class Option(Block):
 
     @value.setter
     def value(self, value: str):
+        if self._value_is_multiline():
+            raise ModifyMultilineValueError(self)
         self._updated = True
         self._multiline_value_joined = True
         self._value = value
         self._values = [value]
+
+    def append(self, value: str) -> "Option":
+        if not self._value_is_multiline():
+            raise NoMultilineValueError(self)
+        new_values = self.value.strip().split("\n")
+        new_values.append(value)
+        self.set_values(new_values)
+        return self
 
     def set_values(self, values: Iterable[str], separator="\n", indent=4 * " "):
         """Sets the value to a given list of options, e.g. multi-line values

@@ -19,7 +19,14 @@ if sys.version_info[:2] >= (3, 9):  # pragma: no cover
 else:  # pragma: no cover
     from typing import Iterable, Mapping
 
-from .block import AlreadyAttachedError, Comment, NotAttachedError, Space
+from .block import (
+    AlreadyAttachedError,
+    Comment,
+    ModifyMultilineValueError,
+    NoMultilineValueError,
+    NotAttachedError,
+    Space,
+)
 from .document import Document
 from .option import NoneValueDisallowed, Option
 from .parser import Parser, PathLike
@@ -32,10 +39,12 @@ __all__ = [
     "Comment",
     "Space",
     "Parser",
+    "ModifyMultilineValueError",
     "NoConfigFileReadError",
     "NoneValueDisallowed",
     "NotAttachedError",
     "AlreadyAttachedError",
+    "NoMultilineValueError",
 ]
 
 T = TypeVar("T", bound="ConfigUpdater")
