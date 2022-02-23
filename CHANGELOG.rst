@@ -2,11 +2,17 @@
 Changelog
 =========
 
+Version 3.1
+===========
+
+- Prevent modifying multi-line values directly with ``value``, issue #87]
+- Added ``append`` method to edit multi-line values
+
 Version 3.0.1
 =============
 
 - Fix error when parsing unindented comments in multi-line values, issue #73
-- Fix invalid string produced when `allow_no_value = False`, issue #68
+- Fix invalid string produced when ``allow_no_value = False``, issue #68
 
 Version 3.0
 ===========
