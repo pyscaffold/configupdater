@@ -183,7 +183,7 @@ class Option(Block):
     def append(self, value: str) -> "Option":
         if not self._value_is_multiline():
             raise NoMultilineValueError(self)
-        new_values = self.value.strip().split("\n")
+        new_values = cast(str, self.value).strip().split("\n")
         new_values.append(value)
         self.set_values(new_values)
         return self
