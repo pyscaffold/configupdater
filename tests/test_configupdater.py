@@ -1338,8 +1338,7 @@ def test_comments_in_multiline_values():
 
 
 def test_modify_multiline_value():
-    ml_value = dedent(
-        """\
+    ml_value = """\
     [metadata]
     classifiers =
         Development Status :: 3 - Alpha
@@ -1351,24 +1350,22 @@ def test_modify_multiline_value():
         Programming Language :: Python :: Implementation :: PyPy
         License :: OSI Approved :: MIT License
     """
-    )
+    ml_value = dedent(ml_value)
     updater = ConfigUpdater()
     updater.read_string(ml_value)
 
     with pytest.raises(ModifyMultilineValueError):
         updater["metadata"]["classifiers"].value = "new_value"
 
-    new_classifiers = updater["metadata"]["classifiers"].value.strip().split("\n") + [
-        "Topic :: Utilities"
-    ]
+    new_classifiers = updater["metadata"]["classifiers"].value.strip().split("\n")
+    new_classifiers += ["Topic :: Utilities"]
     updater["metadata"]["classifiers"].set_values(new_classifiers)
     ml_value += "    Topic :: Utilities\n"
     assert str(updater) == ml_value
 
 
 def test_append_to_multline_value():
-    cfg = dedent(
-        """\
+    cfg = """\
     [metadata]
     classifiers =
         Development Status :: 3 - Alpha
@@ -1380,7 +1377,7 @@ def test_append_to_multline_value():
         Programming Language :: Python :: Implementation :: PyPy
         License :: OSI Approved :: MIT License
     """
-    )
+    cfg = dedent(cfg)
     updater = ConfigUpdater()
     updater.read_string(cfg)
     updater["metadata"]["classifiers"].append("Topic :: Utilities")
@@ -1389,12 +1386,11 @@ def test_append_to_multline_value():
 
 
 def test_append_to_no_multline_value():
-    cfg = dedent(
-        """\
+    cfg = """\
     [main]
     key = value
     """
-    )
+    cfg = dedent(cfg)
     updater = ConfigUpdater()
     updater.read_string(cfg)
     with pytest.raises(NoMultilineValueError):
