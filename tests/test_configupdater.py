@@ -14,7 +14,9 @@ from configupdater import (
     DuplicateOptionError,
     DuplicateSectionError,
     MissingSectionHeaderError,
+    ModifyMultilineValueError,
     NoConfigFileReadError,
+    NoMultilineValueError,
     NoneValueDisallowed,
     NoOptionError,
     NoSectionError,
@@ -1333,3 +1335,67 @@ def test_comments_in_multiline_values():
     parser.read_string(dedent(error_case_if_no_value))
     updater.read_string(dedent(error_case_if_no_value))
     assert str(updater) == dedent(error_case_if_no_value)
+
+
+def test_modify_multiline_value():
+    ml_value = dedent(
+        """\
+    [metadata]
+    classifiers =
+        Development Status :: 3 - Alpha
+        #Development Status :: 4 - Beta
+        #Development Status :: 5 - Production/Stable
+        Programming Language :: Python :: 3 :: Only
+        Programming Language :: Python :: 3
+        Programming Language :: Python :: Implementation :: CPython
+        Programming Language :: Python :: Implementation :: PyPy
+        License :: OSI Approved :: MIT License
+    """
+    )
+    updater = ConfigUpdater()
+    updater.read_string(ml_value)
+
+    with pytest.raises(ModifyMultilineValueError):
+        updater["metadata"]["classifiers"].value = "new_value"
+
+    new_classifiers = updater["metadata"]["classifiers"].value.strip().split("\n") + [
+        "Topic :: Utilities"
+    ]
+    updater["metadata"]["classifiers"].set_values(new_classifiers)
+    ml_value += "    Topic :: Utilities\n"
+    assert str(updater) == ml_value
+
+
+def test_append_to_multline_value():
+    cfg = dedent(
+        """\
+    [metadata]
+    classifiers =
+        Development Status :: 3 - Alpha
+        #Development Status :: 4 - Beta
+        #Development Status :: 5 - Production/Stable
+        Programming Language :: Python :: 3 :: Only
+        Programming Language :: Python :: 3
+        Programming Language :: Python :: Implementation :: CPython
+        Programming Language :: Python :: Implementation :: PyPy
+        License :: OSI Approved :: MIT License
+    """
+    )
+    updater = ConfigUpdater()
+    updater.read_string(cfg)
+    updater["metadata"]["classifiers"].append("Topic :: Utilities")
+    cfg += "    Topic :: Utilities\n"
+    assert str(updater) == cfg
+
+
+def test_append_to_no_multline_value():
+    cfg = dedent(
+        """\
+    [main]
+    key = value
+    """
+    )
+    updater = ConfigUpdater()
+    updater.read_string(cfg)
+    with pytest.raises(NoMultilineValueError):
+        updater["main"]["key"].append("new_value")
