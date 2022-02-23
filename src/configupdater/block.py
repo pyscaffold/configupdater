@@ -35,8 +35,8 @@ class NotAttachedError(Exception):
     """{block} is not attached to a container yet. Try to insert it first."""
 
     def __init__(self, block: Union[str, "Block"] = "The block"):
-        doc = dedent(self.__class__.__doc__)
-        msg = cast(str, doc).format(block=_short_repr(block))
+        doc = dedent(cast(str, self.__class__.__doc__))
+        msg = doc.format(block=_short_repr(block))
         super().__init__(msg)
 
 
@@ -48,8 +48,8 @@ class AlreadyAttachedError(Exception):
     """
 
     def __init__(self, block: Union[str, "Block"] = "The block"):
-        doc = dedent(self.__class__.__doc__)
-        msg = cast(str, doc).format(block=_short_repr(block))
+        doc = dedent(cast(str, self.__class__.__doc__))
+        msg = doc.format(block=_short_repr(block))
         super().__init__(msg)
 
 
@@ -60,8 +60,8 @@ class ModifyMultilineValueError(Exception):
     """
 
     def __init__(self, block: Union[str, "Block"] = "The block"):
-        doc = dedent(self.__class__.__doc__)
-        msg = cast(str, doc).format(block=_short_repr(block))
+        doc = dedent(cast(str, self.__class__.__doc__))
+        msg = doc.format(block=_short_repr(block))
         super().__init__(msg)
 
 
@@ -69,8 +69,8 @@ class NoMultilineValueError(Exception):
     """{block} is not multi-line value, which is needed for appending."""
 
     def __init__(self, block: Union[str, "Block"] = "The block"):
-        doc = dedent(self.__class__.__doc__)
-        msg = cast(str, doc).format(block=_short_repr(block))
+        doc = dedent(cast(str, self.__class__.__doc__))
+        msg = doc.format(block=_short_repr(block))
         super().__init__(msg)
 
 
