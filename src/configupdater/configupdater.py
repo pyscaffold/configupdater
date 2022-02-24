@@ -23,7 +23,6 @@ from .block import (
     AlreadyAttachedError,
     Comment,
     ModifyMultilineValueError,
-    NoMultilineValueError,
     NotAttachedError,
     Space,
 )
@@ -44,7 +43,6 @@ __all__ = [
     "NoneValueDisallowed",
     "NotAttachedError",
     "AlreadyAttachedError",
-    "NoMultilineValueError",
 ]
 
 T = TypeVar("T", bound="ConfigUpdater")

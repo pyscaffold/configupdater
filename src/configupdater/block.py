@@ -65,15 +65,6 @@ class ModifyMultilineValueError(Exception):
         super().__init__(msg)
 
 
-class NoMultilineValueError(Exception):
-    """{block} is not multi-line value, which is needed for appending."""
-
-    def __init__(self, block: Union[str, "Block"] = "The block"):
-        doc = dedent(cast(str, self.__class__.__doc__))
-        msg = doc.format(block=_short_repr(block))
-        super().__init__(msg)
-
-
 class Block(ABC):
     """Abstract Block type holding lines
 
