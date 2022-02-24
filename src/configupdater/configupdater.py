@@ -21,8 +21,8 @@ else:  # pragma: no cover
 
 from .block import (
     AlreadyAttachedError,
+    AssignMultilineValueError,
     Comment,
-    ModifyMultilineValueError,
     NotAttachedError,
     Space,
 )
@@ -38,7 +38,7 @@ __all__ = [
     "Comment",
     "Space",
     "Parser",
-    "ModifyMultilineValueError",
+    "AssignMultilineValueError",
     "NoConfigFileReadError",
     "NoneValueDisallowed",
     "NotAttachedError",

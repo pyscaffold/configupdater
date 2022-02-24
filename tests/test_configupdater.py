@@ -9,12 +9,12 @@ import pytest
 
 from configupdater import (
     AlreadyAttachedError,
+    AssignMultilineValueError,
     Comment,
     ConfigUpdater,
     DuplicateOptionError,
     DuplicateSectionError,
     MissingSectionHeaderError,
-    ModifyMultilineValueError,
     NoConfigFileReadError,
     NoneValueDisallowed,
     NoOptionError,
@@ -1353,14 +1353,22 @@ def test_modify_multiline_value():
     updater = ConfigUpdater()
     updater.read_string(ml_value)
 
-    with pytest.raises(ModifyMultilineValueError):
-        updater["metadata"]["classifiers"].value = "new_value"
+    with pytest.raises(AssignMultilineValueError):
+        updater["metadata"]["classifiers"].value += "License :: OSI Approved :: BSD"
 
     new_classifiers = updater["metadata"]["classifiers"].value.strip().split("\n")
     new_classifiers += ["Topic :: Utilities"]
     updater["metadata"]["classifiers"].set_values(new_classifiers)
     ml_value += "    Topic :: Utilities\n"
     assert str(updater) == ml_value
+
+    updater["metadata"]["classifiers"].value = "new_value"
+    updater["metadata"]["classifiers"].value += "_and_more"
+    expected = """\
+    [metadata]
+    classifiers = new_value_and_more
+    """
+    assert str(updater) == dedent(expected)
 
 
 def test_append_to_multi_line_value():
