@@ -6,7 +6,8 @@ Version 3.1
 ===========
 
 - Prevent modifying multi-line values directly with ``value``, issue #87]
-- Added ``append`` method to edit multi-line values
+- Added ``append`` method to ``Option`` for editing multi-line values
+- Added ``to_list`` method to ``Option`` to handle multi-line values more easily
 
 Version 3.0.1
 =============

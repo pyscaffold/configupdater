@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from .section import Section
     from .document import Document
 
-from .block import Block, ModifyMultilineValueError, NoMultilineValueError
+from .block import Block, ModifyMultilineValueError
 
 Value = Union["Option", str]
 T = TypeVar("T", bound="Option")
@@ -180,12 +180,37 @@ class Option(Block):
         self._value = value
         self._values = [value]
 
-    def append(self, value: str) -> "Option":
-        if not self._value_is_multiline():
-            raise NoMultilineValueError(self)
-        new_values = cast(str, self.value).strip().split("\n")
+    def as_list(self, separator="\n") -> List[str]:
+        """Returns the (multi-line/element) value as a list
+
+        Empty list if value is None, single-element list for a one-element
+        value and an element for each line in a multi-element value.
+
+        Args:
+            separator (str): separator for values, default: line separator
+        """
+        if self._value_is_none:
+            return []
+        elif self._value_is_multiline():
+            return [v.strip() for v in cast(str, self.value).strip().split(separator)]
+        else:
+            return [cast(str, self.value)]
+
+    def append(self, value: str, **kwargs) -> "Option":
+        """Append a value to a mult-line value
+
+        Args:
+            value (str): value
+            kwargs: keyword arguments for `set_values`
+        """
+        sep = kwargs.get("separator", None)
+        if sep is None:
+            new_values = self.as_list()
+        else:
+            new_values = self.as_list(separator=sep)
+
         new_values.append(value)
-        self.set_values(new_values)
+        self.set_values(new_values, **kwargs)
         return self
 
     def set_values(self, values: Iterable[str], separator="\n", indent=4 * " "):

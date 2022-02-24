@@ -16,7 +16,6 @@ from configupdater import (
     MissingSectionHeaderError,
     ModifyMultilineValueError,
     NoConfigFileReadError,
-    NoMultilineValueError,
     NoneValueDisallowed,
     NoOptionError,
     NoSectionError,
@@ -1386,12 +1385,47 @@ def test_append_to_multline_value():
 
 
 def test_append_to_no_multline_value():
-    cfg = """\
+    cfg_in = """\
     [main]
-    key = value
+    key = value1
+    """
+    cfg_out = """\
+    [main]
+    key =
+        value1
+        new_value
+    """
+    cfg_in, cfg_out = dedent(cfg_in), dedent(cfg_out)
+    updater = ConfigUpdater()
+    updater.read_string(cfg_in)
+    updater["main"]["key"].append("new_value")
+
+    target = ConfigUpdater()
+    target.read_string(cfg_out)
+    assert str(updater) == str(target)
+
+    updater["main"]["key"].append("new_value2")
+    cfg_out += "    new_value2\n"
+    assert str(updater) == cfg_out
+
+
+def test_as_list():
+    cfg = """\
+    [metadata]
+    no_value
+    single_value = 1
+    classifiers =
+        Development Status :: 3 - Alpha
+        #Development Status :: 4 - Beta
     """
     cfg = dedent(cfg)
-    updater = ConfigUpdater()
+    updater = ConfigUpdater(allow_no_value=True)
     updater.read_string(cfg)
-    with pytest.raises(NoMultilineValueError):
-        updater["main"]["key"].append("new_value")
+
+    meta = updater["metadata"]
+    assert meta["no_value"].as_list() == []
+    assert meta["single_value"].as_list() == ["1"]
+    assert meta["classifiers"].as_list() == [
+        "Development Status :: 3 - Alpha",
+        "#Development Status :: 4 - Beta",
+    ]
