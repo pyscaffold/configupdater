@@ -12,7 +12,7 @@ When editing configuration files with ConfigUpdater, a handy way of setting a mu
 """
 import sys
 import warnings
-from typing import TYPE_CHECKING, Optional, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union, cast
 
 if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     from collections.abc import Iterable
@@ -26,10 +26,17 @@ if TYPE_CHECKING:
     from .section import Section
     from .document import Document
 
-from .block import Block, ModifyMultilineValueError
+from .block import AssignMultilineValueError, Block
 
 Value = Union["Option", str]
 T = TypeVar("T", bound="Option")
+
+
+def is_multi_line(value: Any) -> bool:
+    if isinstance(value, str):
+        return "\n" in value
+    else:
+        return False
 
 
 class NoneValueDisallowed(SyntaxWarning):
@@ -72,7 +79,7 @@ class Option(Block):
         if line:
             super().add_line(line)
         if value is not None:
-            self.value = value
+            self._set_value(value)
 
     def add_value(self, value: Optional[str]):
         """PRIVATE: this function is not part of the public API of Option.
@@ -87,9 +94,6 @@ class Option(Block):
         """
         super().add_line(line)
         self.add_value(line.strip())
-
-    def _value_is_multiline(self) -> bool:
-        return len(self._values) > 1
 
     def _join_multiline_value(self):
         if not self._multiline_value_joined and not self._value_is_none:
@@ -173,8 +177,11 @@ class Option(Block):
 
     @value.setter
     def value(self, value: str):
-        if self._value_is_multiline():
-            raise ModifyMultilineValueError(self)
+        if is_multi_line(value):
+            raise AssignMultilineValueError(self)
+        self._set_value(value)
+
+    def _set_value(self, value: str):
         self._updated = True
         self._multiline_value_joined = True
         self._value = value
