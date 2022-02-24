@@ -1363,7 +1363,7 @@ def test_modify_multiline_value():
     assert str(updater) == ml_value
 
 
-def test_append_to_multline_value():
+def test_append_to_multi_line_value():
     cfg = """\
     [metadata]
     classifiers =
@@ -1384,7 +1384,26 @@ def test_append_to_multline_value():
     assert str(updater) == cfg
 
 
-def test_append_to_no_multline_value():
+def test_append_to_comma_separated_value():
+    cfg = """\
+    [metadata]
+    classifiers = terminal, developers
+    """
+    cfg = dedent(cfg)
+    updater = ConfigUpdater()
+    updater.read_string(cfg)
+    option = updater["metadata"]["classifiers"]
+    option.append("gui", separator=", ")
+
+    cfg_out = """\
+    [metadata]
+    classifiers = terminal, developers, gui
+    """
+    cfg_out = dedent(cfg_out)
+    assert str(updater) == cfg_out
+
+
+def test_append_to_no_multi_line_value():
     cfg_in = """\
     [main]
     key = value1
@@ -1409,7 +1428,7 @@ def test_append_to_no_multline_value():
     assert str(updater) == cfg_out
 
 
-def test_as_list():
+def test_as_list_multi_line():
     cfg = """\
     [metadata]
     no_value
@@ -1429,3 +1448,15 @@ def test_as_list():
         "Development Status :: 3 - Alpha",
         "#Development Status :: 4 - Beta",
     ]
+
+
+def test_as_list_comma_separated():
+    cfg = """\
+    [metadata]
+    classifiers = terminal, developers
+    """
+    cfg = dedent(cfg)
+    updater = ConfigUpdater()
+    updater.read_string(cfg)
+    option = updater["metadata"]["classifiers"]
+    assert option.as_list(",") == ["terminal", "developers"]
