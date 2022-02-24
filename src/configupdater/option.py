@@ -191,10 +191,8 @@ class Option(Block):
         """
         if self._value_is_none:
             return []
-        elif self._value_is_multiline():
-            return [v.strip() for v in cast(str, self.value).strip().split(separator)]
         else:
-            return [cast(str, self.value)]
+            return [v.strip() for v in cast(str, self.value).strip().split(separator)]
 
     def append(self, value: str, **kwargs) -> "Option":
         """Append a value to a mult-line value
