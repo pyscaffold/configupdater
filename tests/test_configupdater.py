@@ -1468,3 +1468,27 @@ def test_as_list_comma_separated():
     updater.read_string(cfg)
     option = updater["metadata"]["classifiers"]
     assert option.as_list(",") == ["terminal", "developers"]
+
+
+def test_indented_section():
+    cfg = """\
+    [section0]
+
+        [section1]
+            key = value
+    """
+
+    updater = ConfigUpdater()
+    updater.read_string(dedent(cfg))
+
+    assert str(updater) == dedent(cfg)
+
+
+def test_section_without_end_of_line():
+    cfg = """\
+    [section]"""
+
+    updater = ConfigUpdater()
+    updater.read_string(dedent(cfg))
+
+    assert str(updater) == dedent(cfg)

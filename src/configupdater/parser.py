@@ -337,9 +337,10 @@ class Parser:
             self._update_curr_block(Comment).add_line(line)
 
     def _add_section(self, sectname: str, raw_comment: str, line: str):
-        new_section = Section(sectname, container=self._document)
+        new_section = Section(
+            sectname, container=self._document, raw_comment=raw_comment
+        )
         new_section.add_line(line)
-        new_section.raw_comment = raw_comment
         self._document.append(new_section)
 
     def _add_option(self, key: str, vi: str, value: Optional[str], line: str):
