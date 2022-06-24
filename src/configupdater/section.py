@@ -44,10 +44,12 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
         updated (bool): indicates name change or a new section
     """
 
-    def __init__(self, name: str, container: Optional["Document"] = None):
+    def __init__(
+        self, name: str, container: Optional["Document"] = None, raw_comment: str = ""
+    ):
         self._container: Optional["Document"] = container
         self._name = name
-        self._raw_comment = ""
+        self._raw_comment = raw_comment
         self._structure: List[Content] = []
         self._updated = False
         super().__init__(container=container)
@@ -112,6 +114,8 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
     def __str__(self) -> str:
         if not self.updated:
             s = super().__str__()
+            if self._structure and not s.endswith("\n"):
+                s += "\n"
         else:
             s = "[{}]{}\n".format(self._name, self.raw_comment)
         for entry in self._structure:
