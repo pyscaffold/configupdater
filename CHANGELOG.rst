@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 3.1.1
+=============
+
+- Preserve indentation of section when there are comments, issue #92
+
 Version 3.1
 ===========
 
