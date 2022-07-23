@@ -16,6 +16,9 @@
 .. image:: https://pepy.tech/badge/configupdater/month
     :alt: Monthly Downloads
     :target: https://pepy.tech/project/configupdater
+.. image:: https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=ff69b4
+    :alt: Sponsor me
+    :target: https://github.com/sponsors/FlorianWilhelm
 
 |
 
