@@ -5,7 +5,6 @@ The :class:`Block` is the parent class of everything that can be nested inside a
 configuration file, e.g. comments, sections, options and even sequences of white space.
 """
 import sys
-from abc import ABC
 from copy import deepcopy
 from inspect import cleandoc
 from typing import TYPE_CHECKING, Optional, TypeVar, Union, cast
@@ -64,7 +63,7 @@ class AssignMultilineValueError(Exception):
         super().__init__(msg)
 
 
-class Block(ABC):
+class Block:
     """Abstract Block type holding lines
 
     Block objects hold original lines from the configuration file and hold
