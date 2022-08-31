@@ -5,7 +5,6 @@ The :class:`Container` is the parent class of everything that can contain config
 blocks, e.g. a section or the entire file itself.
 """
 import sys
-from abc import ABC
 from copy import deepcopy
 from textwrap import indent
 from typing import TYPE_CHECKING, Generic, Optional, TypeVar
@@ -24,7 +23,7 @@ T = TypeVar("T", bound="Block")
 C = TypeVar("C", bound="Container")
 
 
-class Container(ABC, Generic[T]):
+class Container(Generic[T]):
     """Abstract Mixin Class describing a container that holds blocks of type ``T``"""
 
     def __init__(self):
