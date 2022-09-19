@@ -17,8 +17,8 @@ repos:
   - id: mixed-line-ending
     args: ['--fix=auto']  # replace 'auto' with 'lf' to enforce Linux/Mac line endings or 'crlf' for Windows
 
-- repo: https://github.com/myint/autoflake.git
-  rev: v1.5.3
+- repo: https://github.com/PyCQA/autoflake
+  rev: v1.6.0
   hooks:
   - id: autoflake
     args: [
