@@ -1,4 +1,4 @@
-"""Parser for configuration files (normally ``*.cfg/*.ini``)
+"""Parser for configuration files, named normally ``*.cfg/*.ini``
 
 A configuration file consists of sections, lead by a "[section]" header,
 and followed by "name: value" entries, with continuations and such in
