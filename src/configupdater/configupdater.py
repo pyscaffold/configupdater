@@ -202,7 +202,7 @@ class ConfigUpdater(Document):
         return super().validate_format(**{**self._parser_opts, **kwargs})
 
 
-if False:
+if __name__ == "WILL_NOT_HAPPEN":
     # introduce no-ops to make Sphinx happy, issue #90
     _ = type(Option) is Option
     _ = type(Section) is Section
