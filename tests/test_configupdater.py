@@ -27,7 +27,7 @@ from configupdater import (
 )
 
 
-def test_reade_write_no_changes(setup_cfg_path, setup_cfg):
+def test_read_write_no_changes(setup_cfg_path, setup_cfg):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
     assert str(updater) == setup_cfg
