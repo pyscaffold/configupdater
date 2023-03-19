@@ -200,3 +200,9 @@ class ConfigUpdater(Document):
         See :meth:`~configupdater.document.Document.validate_format`.
         """
         return super().validate_format(**{**self._parser_opts, **kwargs})
+
+
+if False:
+    # introduce no-ops to make Sphinx happy, issue #90
+    _ = type(Option) is Option
+    _ = type(Section) is Section
