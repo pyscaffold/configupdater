@@ -176,4 +176,4 @@ For more examples on how the API of ConfigUpdater works it's best to take a look
 `unit tests`_ and read the references.
 
 
-.. _`unit tests`: https://github.com/pyscaffold/configupdater/blob/master/tests/test_configupdater.py
+.. _`unit tests`: https://github.com/pyscaffold/configupdater/blob/main/tests/test_configupdater.py

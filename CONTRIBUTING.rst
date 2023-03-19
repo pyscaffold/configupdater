@@ -55,7 +55,7 @@ Clone the repository
 
     git checkout -b my-feature
 
-   and start making changes. Never work on the master branch!
+   and start making changes. Never work on the main branch!
 
 #. Start your work on this branch. When you’re done editing, do::
 

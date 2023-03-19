@@ -42,7 +42,7 @@ Following features are **deliberately not** implemented:
 .. _ConfigUpdater: https://configupdater.readthedocs.io/
 .. _PyScaffold: https://pyscaffold.org/
 .. _module reference: https://configupdater.readthedocs.io/en/latest/api/configupdater.html#configupdater.configupdater.ConfigUpdater
-.. _unit tests: https://github.com/pyscaffold/configupdater/blob/master/tests/test_configupdater.py
+.. _unit tests: https://github.com/pyscaffold/configupdater/blob/main/tests/test_configupdater.py
 
 
 

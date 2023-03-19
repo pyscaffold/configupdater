@@ -1,10 +1,10 @@
-.. image:: https://api.cirrus-ci.com/github/pyscaffold/configupdater.svg?branch=master
+.. image:: https://api.cirrus-ci.com/github/pyscaffold/configupdater.svg?branch=main
     :alt: Built Status
     :target: https://cirrus-ci.com/github/pyscaffold/configupdater
 .. image:: https://readthedocs.org/projects/pyscaffold/badge/?version=latest
     :alt: ReadTheDocs
     :target: https://configupdater.readthedocs.io/
-.. image:: https://img.shields.io/coveralls/github/pyscaffold/configupdater/master.svg
+.. image:: https://img.shields.io/coveralls/github/pyscaffold/configupdater/main.svg
     :alt: Coveralls
     :target: https://coveralls.io/r/pyscaffold/configupdater
 .. image:: https://img.shields.io/pypi/v/configupdater.svg
@@ -244,4 +244,4 @@ ConfigUpdater is mainly developed for `PyScaffold`_.
 .. _ConfigUpdater: https://configupdater.readthedocs.io/
 .. _PyScaffold: https://pyscaffold.org/
 .. _module reference: https://configupdater.readthedocs.io/en/latest/api/configupdater.html#configupdater.configupdater.ConfigUpdater
-.. _unit tests: https://github.com/pyscaffold/configupdater/blob/master/tests/test_configupdater.py
+.. _unit tests: https://github.com/pyscaffold/configupdater/blob/main/tests/test_configupdater.py
