@@ -326,7 +326,6 @@ class Parser:
             return self._last_block
         else:
             new_block = block_type(container=self._document)
-            # ^  the type checker is forgetting ConfigUpdater <: Container[T]
             self._document.append(new_block)
             return new_block
 
@@ -543,7 +542,7 @@ class Parser:
     ) -> Union[ParsingError, E]:
         e = exc or ParsingError(fpname)
         if hasattr(e, "append"):
-            e.append(lineno, repr(line))  # type: ignore[union-attr]
+            e.append(lineno, repr(line))
             # ^  the typechecker cannot handle hasattr
         return e
 

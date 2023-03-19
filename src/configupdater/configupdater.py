@@ -113,7 +113,7 @@ class ConfigUpdater(Document):
     def _instantiate_copy(self: T) -> T:
         """Will be called by ``Container.__deepcopy__``"""
         clone = self.__class__(**self._parser_opts)
-        clone.optionxform = self.optionxform  # type: ignore[assignment]
+        clone.optionxform = self.optionxform  # type: ignore[method-assign]
         clone._filename = self._filename
         return clone
 
@@ -150,7 +150,7 @@ class ConfigUpdater(Document):
         """
         self.clear()
         if hasattr(f, "name"):
-            self._filename = f.name  # type: ignore[attr-defined]
+            self._filename = f.name
         return self._parser().read_file(f, source, self)
 
     def read_string(self: T, string: str, source="<string>") -> T:
