@@ -247,7 +247,7 @@ class Option(Block):
             values (iterable): sequence of values
             separator (str): separator for values, default: line separator
             indent (optional str): indentation in case of line separator.
-                If prepend_newline is True 4 whitespaces by default, otherwise
+                If prepend_newline is `True` 4 whitespaces by default, otherwise
                 determine automatically if `None`.
             prepend_newline (bool): start with a new line or not, resp.
         """
@@ -262,7 +262,7 @@ class Option(Block):
             else:
                 indent = self.value_start_idx() * " "
 
-        # The most common default cause of multilines values prepended by a new line
+        # The most common case of multiline values being preceded by a new line
         if prepend_newline and "\n" in separator:
             values = [""] + values
             separator = separator + indent
