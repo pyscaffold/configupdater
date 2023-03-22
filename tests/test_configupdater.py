@@ -1492,3 +1492,86 @@ def test_section_without_end_of_line():
     updater.read_string(dedent(cfg))
 
     assert str(updater) == dedent(cfg)
+
+
+def test_set_values_for_existing_multiline_value():
+    cfg_newline = """\
+    [section]
+    options =
+        option1
+        option2_typo
+    """
+    exp_cfg_newline = """\
+    [section]
+    options =
+        option1
+        option2
+    """
+    cfg_no_newline = """\
+    [section]
+    options = option1
+              option2_typo
+    """
+    exp_cfg_no_newline = """\
+    [section]
+    options = option1
+              option2
+    """
+    cfg_newline_comment = """\
+    [section]
+    options = # comment
+        option1 # comment
+        option2_typo
+    """
+    exp_cfg_newline_comment = """\
+    [section]
+    options =
+        # comment
+        option1 # comment
+        option2
+    """
+    cfg_no_newline_comment = """\
+    [section]
+    options = option1 # comment
+              option2_typo
+    """
+    exp_cfg_no_newline_comment = """\
+    [section]
+    options = option1 # comment
+              option2
+    """
+
+    def test_no_change_but_option2_fixed(cfg, exp_cfg, prepend_newline):
+        updater = ConfigUpdater()
+        updater.read_string(dedent(cfg))
+        options = updater["section"]["options"].as_list()
+        options[-1] = "option2"  # fix typo
+        updater["section"]["options"].set_values(
+            options, prepend_newline=prepend_newline
+        )
+
+        assert str(updater) == dedent(exp_cfg)
+
+    test_no_change_but_option2_fixed(cfg_newline, exp_cfg_newline, True)
+    test_no_change_but_option2_fixed(cfg_no_newline, exp_cfg_no_newline, False)
+    test_no_change_but_option2_fixed(cfg_newline_comment, exp_cfg_newline_comment, True)
+    test_no_change_but_option2_fixed(
+        cfg_no_newline_comment, exp_cfg_no_newline_comment, False
+    )
+    test_no_change_but_option2_fixed(cfg_newline, exp_cfg_no_newline, False)
+    test_no_change_but_option2_fixed(cfg_no_newline, exp_cfg_newline, True)
+
+    cfg_single_value_at_first = """\
+    [section]
+    options = option1
+    """
+    exp_cfg_single_value_at_first = """\
+    [section]
+    options =
+        option1
+        option2
+    """
+    updater = ConfigUpdater()
+    updater.read_string(dedent(cfg_single_value_at_first))
+    updater["section"]["options"].append("option2")
+    assert str(updater) == dedent(exp_cfg_single_value_at_first)

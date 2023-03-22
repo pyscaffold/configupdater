@@ -33,6 +33,7 @@ T = TypeVar("T", bound="Option")
 
 
 def is_multi_line(value: Any) -> bool:
+    """Checks if a given value has multiple lines"""
     if isinstance(value, str):
         return "\n" in value
     else:
@@ -101,6 +102,27 @@ class Option(Block):
             self._value = "\n".join(self._values).rstrip()
             self._multiline_value_joined = True
 
+    def _get_delim(self, determine_suffix=True) -> str:
+        document = self._document()
+        opts = getattr(document, "syntax_options", None) or {}
+        value = self._value
+        space = self._space_around_delimiters or opts.get("space_around_delimiters")
+        if space:
+            if determine_suffix:
+                # no space is needed if we use multi-line arguments
+                suffix = "" if str(value).startswith("\n") else " "
+            else:
+                suffix = " "
+            delim = f" {self._delimiter}{suffix}"
+        else:
+            delim = self._delimiter
+        return delim
+
+    def value_start_idx(self) -> int:
+        """Index where the value of the option starts, good for indentation"""
+        delim = self._get_delim(determine_suffix=False)
+        return len(f"{self._key}{delim}")
+
     def __str__(self) -> str:
         if not self.updated:
             return super().__str__()
@@ -115,13 +137,7 @@ class Option(Block):
             NoneValueDisallowed.warn(self._key)
             return ""
 
-        space = self._space_around_delimiters or opts.get("space_around_delimiters")
-        if space:
-            # no space is needed if we use multi-line arguments
-            suffix = "" if str(value).startswith("\n") else " "
-            delim = f" {self._delimiter}{suffix}"
-        else:
-            delim = self._delimiter
+        delim = self._get_delim()
         return f"{self._key}{delim}{value}\n"
 
     def __repr__(self) -> str:
@@ -218,19 +234,39 @@ class Option(Block):
         self.set_values(new_values, **kwargs)
         return self
 
-    def set_values(self, values: Iterable[str], separator="\n", indent=4 * " "):
+    def set_values(
+        self,
+        values: Iterable[str],
+        separator="\n",
+        indent: Optional[str] = None,
+        prepend_newline=True,
+    ):
         """Sets the value to a given list of options, e.g. multi-line values
 
         Args:
             values (iterable): sequence of values
             separator (str): separator for values, default: line separator
-            indent (str): indentation depth in case of line separator
+            indent (optional str): indentation in case of line separator.
+                If prepend_newline is True 4 whitespaces by default, otherwise
+                determine automatically if `None`.
+            prepend_newline (bool): start with a new line or not, resp.
         """
         values = list(values).copy()
         self._updated = True
         self._multiline_value_joined = True
         self._values = cast(List[Optional[str]], values)
-        if "\n" in separator:
+
+        if indent is None:
+            if prepend_newline:
+                indent = 4 * " "
+            else:
+                indent = self.value_start_idx() * " "
+
+        # The most common default cause of multilines values prepended by a new line
+        if prepend_newline and "\n" in separator:
             values = [""] + values
             separator = separator + indent
+        elif "\n" in separator:
+            separator = separator + indent
+
         self._value = separator.join(values)
