@@ -1575,3 +1575,17 @@ def test_set_values_for_existing_multiline_value():
     updater.read_string(dedent(cfg_single_value_at_first))
     updater["section"]["options"].append("option2")
     assert str(updater) == dedent(exp_cfg_single_value_at_first)
+
+    exp_cfg_no_newline_indent2 = """\
+    [section]
+    options = option1
+      option2
+    """
+    updater = ConfigUpdater()
+    updater.read_string(dedent(cfg_no_newline))
+    options = updater["section"]["options"].as_list()
+    options[-1] = "option2"  # fix typo
+    updater["section"]["options"].set_values(
+        options, prepend_newline=False, indent=2 * " "
+    )
+    assert str(updater) == dedent(exp_cfg_no_newline_indent2)
