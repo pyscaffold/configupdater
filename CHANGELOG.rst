@@ -2,6 +2,11 @@
 Changelog
 =========
 
+Version 3.2
+===========
+
+- Option ``prepend_newline`` in ``set_values`` to optionally avoid new lines, issue #104
+
 Version 3.1.1
 =============
 
