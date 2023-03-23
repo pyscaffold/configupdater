@@ -27,13 +27,14 @@ from .block import (
     Space,
 )
 from .document import Document
-from .option import NoneValueDisallowed
+from .option import NoneValueDisallowed, Option
 from .parser import Parser, PathLike
 from .section import Section
 
 __all__ = [
     "ConfigUpdater",
     "Section",
+    "Option",
     "Comment",
     "Space",
     "Parser",
