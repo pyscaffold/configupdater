@@ -35,22 +35,11 @@ Following features are **deliberately not** implemented:
 -   passing key/value-pairs with `default` argument,
 -   non-strict mode allowing duplicate sections and keys.
 
-::: note
-::: title
-Note
-:::
+!!! note
+    ConfigUpdater is mainly developed for [PyScaffold](https://pyscaffold.org/).
 
-ConfigUpdater is mainly developed for
-[PyScaffold](https://pyscaffold.org/).
-:::
 
-# Contents
 
-::: {.toctree maxdepth="2"}
-Usage & Examples \<usage\> Contributions & Help \<contributing\> License
-\<license\> Authors \<authors\> Changelog \<changelog\> Module Reference
-\<api/modules\>
-:::
 
 # Indices and tables
 

@@ -1,4 +1,4 @@
-"""Core of the fluent API used by **ConfigUpdater** to make editing configuration files
+"""Core of the fluent API used by ConfigUpdater to make editing configuration files
 easier.
 """
 from configparser import DuplicateOptionError, DuplicateSectionError
@@ -47,7 +47,7 @@ class BlockBuilder:
         """Creates a section block
 
         Args:
-            section (str or :class:`Section`): name of section or object
+            section: name of section or object
 
         Returns:
             self for chaining
@@ -88,12 +88,12 @@ class BlockBuilder:
             space.add_line("\n")
         return self._insert(space)
 
-    def option(self: T, key, value: Optional[str] = None, **kwargs) -> T:
+    def option(self: T, key: str, value: Optional[str] = None, **kwargs) -> T:
         """Creates a new option inside a section
 
         Args:
-            key (str): key of the option
-            value (str or None): value of the option
+            key: key of the option
+            value: value of the option
             **kwargs: are passed to the constructor of :class:`Option`
 
         Returns:
