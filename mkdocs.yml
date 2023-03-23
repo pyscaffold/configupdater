@@ -28,8 +28,8 @@ site_dir: site
 theme:
   name: material
   language: en
-  favicon: assets/images/favicon.svg
-  logo: assets/images/icon.svg
+  favicon: gfx/favicon.ico
+  logo: gfx/icon.svg
   icon:
     repo: fontawesome/brands/github-alt
   font:
@@ -58,7 +58,7 @@ theme:
     - navigation.instant
 
 watch:
-- src/pytanis
+- src/configupdater
 
 # Extensions
 plugins:
@@ -159,7 +159,7 @@ extra:
     provider: mike
   social:
     - icon: fontawesome/brands/github-alt
-      link: https://github.com/FlorianWilhelm/pytanis
+      link: https://github.com/pyscaffold/configupdater
 #    - icon: fontawesome/solid/blog
 #      link: https://....
 #    - icon: fontawesome/brands/twitter
