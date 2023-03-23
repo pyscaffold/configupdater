@@ -37,12 +37,3 @@ Following features are **deliberately not** implemented:
 
 !!! note
     ConfigUpdater is mainly developed for [PyScaffold](https://pyscaffold.org/).
-
-
-
-
-# Indices and tables
-
--   `genindex`{.interpreted-text role="ref"}
--   `modindex`{.interpreted-text role="ref"}
--   `search`{.interpreted-text role="ref"}
