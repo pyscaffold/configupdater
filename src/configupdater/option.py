@@ -259,9 +259,10 @@ class Option(Block):
                 indent = self.value_start_idx() * " "
 
         # The most common case of multiline values being preceded by a new line
-        if prepend_newline:
+        if prepend_newline and "\n" in separator:
             values = [""] + values
-        if "\n" in separator:
+            separator = separator + indent
+        elif "\n" in separator:
             separator = separator + indent
 
         self._value = separator.join(values)
