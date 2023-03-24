@@ -37,12 +37,7 @@ Value = Union["Option", str]
 
 
 class Section(Block, Container[Content], MutableMapping[str, "Option"]):
-    """Section block holding options
-
-    Attributes:
-        name (str): name of the section
-        updated (bool): indicates name change or a new section
-    """
+    """Section block holding options"""
 
     def __init__(
         self, name: str, container: Optional["Document"] = None, raw_comment: str = ""
@@ -240,6 +235,7 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
 
     @property
     def name(self) -> str:
+        """Name of the section"""
         return self._name
 
     @name.setter
