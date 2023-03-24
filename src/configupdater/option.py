@@ -107,15 +107,11 @@ class Option(Block):
         opts = getattr(document, "syntax_options", None) or {}
         value = self._value
         space = self._space_around_delimiters or opts.get("space_around_delimiters")
-        if space:
-            if determine_suffix:
-                # no space is needed if we use multi-line arguments
-                suffix = "" if str(value).startswith("\n") else " "
-            else:
-                suffix = " "
-            delim = f" {self._delimiter}{suffix}"
+        if determine_suffix and str(value).startswith("\n"):
+            suffix = ""  # no space is needed if we use multi-line arguments
         else:
-            delim = self._delimiter
+            suffix = " "
+        delim = f" {self._delimiter}{suffix}" if space else self._delimiter
         return delim
 
     def value_start_idx(self) -> int:
