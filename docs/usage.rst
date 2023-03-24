@@ -30,7 +30,7 @@ to write the changed configuration file to another destination. Before actually 
 ConfigUpdater will automatically check that the updated configuration file is still valid by
 parsing it with the help of ConfigParser.
 
-Many of ConfigParser's methods still exists and it's best to look them up in the :doc:`module reference <api/configupdater>`.
+Many of ConfigParser's methods still exists and it's best to look them up in the :doc:`API reference <api>`.
 Let's look at some examples.
 
 Adding and removing options
