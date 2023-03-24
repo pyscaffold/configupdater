@@ -15,6 +15,10 @@ except PackageNotFoundError:  # pragma: no cover
 finally:
     del version, PackageNotFoundError
 
+from . import configupdater, parser
+
 # import everything and rely on __ALL__
 from .configupdater import *  # noqa
 from .parser import *  # noqa
+
+__all__ = list(set(configupdater.__all__ + parser.__all__))
