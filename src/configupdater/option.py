@@ -51,13 +51,7 @@ class NoneValueDisallowed(SyntaxWarning):
 
 
 class Option(Block):
-    """Option block holding a key/value pair.
-
-    Attributes:
-        key (str): name of the key
-        value (str): stored value
-        updated (bool): indicates name change or a new section
-    """
+    """Option block holding a key/value pair."""
 
     def __init__(
         self,
@@ -184,6 +178,7 @@ class Option(Block):
 
     @property
     def value(self) -> Optional[str]:
+        """Value associated with the given option."""
         self._join_multiline_value()
         return self._value
 
