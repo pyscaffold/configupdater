@@ -161,14 +161,15 @@ before ``metadata`` with a comment and two new lines to separate it from ``metad
     updater = ConfigUpdater()
     updater.read_string(cfg)
     (updater["metadata"].add_before
-                        .comment("Some specific project options")
                         .section("options")
+                        .comment("Some specific project options")
                         .space(2))
 
 As expected, this results in::
 
-    # Some specific project options
     [options]
+    # Some specific project options
+
 
     [metadata]
     author = Ada Lovelace
