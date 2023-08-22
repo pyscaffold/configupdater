@@ -13,7 +13,7 @@
 .. image:: https://img.shields.io/conda/vn/conda-forge/configupdater.svg
     :alt: Conda-Forge
     :target: https://anaconda.org/conda-forge/configupdater
-.. image:: https://pepy.tech/badge/configupdater/month
+.. image:: https://static.pepy.tech/badge/configupdater/month
     :alt: Monthly Downloads
     :target: https://pepy.tech/project/configupdater
 .. image:: https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=ff69b4
