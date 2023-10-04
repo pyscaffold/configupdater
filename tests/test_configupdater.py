@@ -1589,3 +1589,16 @@ def test_set_values_for_existing_multiline_value():
         options, prepend_newline=False, indent=2 * " "
     )
     assert str(updater) == dedent(exp_cfg_no_newline_indent2)
+
+
+def test_parsing_of_brackets_in_section_names():
+    cfg = """\
+    [ ]
+    [[]]
+    [][]
+    []#]#
+    """
+    cfg = dedent(cfg)
+    updater = ConfigUpdater()
+    updater.read_string(cfg)
+    assert updater.sections() == [" ", "[]", "][", "]#"]

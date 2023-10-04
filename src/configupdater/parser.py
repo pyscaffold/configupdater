@@ -117,7 +117,7 @@ class Parser:
     # Regular expressions for parsing section headers and options
     _SECT_TMPL: str = r"""
         \[                                 # [
-        (?P<header>[^]]+)                  # very permissive!
+        (?P<header>.+)                     # very permissive!
         \]                                 # ]
         (?P<raw_comment>.*)                # match any suffix
         """
