@@ -1602,3 +1602,17 @@ def test_parsing_of_brackets_in_section_names():
     updater = ConfigUpdater()
     updater.read_string(cfg)
     assert updater.sections() == [" ", "[]", "][", "]#"]
+
+
+def test_parsing_of_brackets_in_section_names_comments():
+    cfg = """\
+    [section-A] # comment telling that this section is related to [section-B]
+    foo = bar
+
+    [section-B] ; comment telling that this section is related to [section-A]
+    bar = foo
+    """
+    cfg = dedent(cfg)
+    updater = ConfigUpdater(inline_comment_prefixes=("#", ";"))
+    updater.read_string(cfg)
+    assert updater.sections() == ["section-A", "section-B"]
