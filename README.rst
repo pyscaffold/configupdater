@@ -244,5 +244,5 @@ ConfigUpdater is mainly developed for `PyScaffold`_.
 .. _ConfigParser: https://docs.python.org/3/library/configparser.html
 .. _ConfigUpdater: https://configupdater.readthedocs.io/
 .. _PyScaffold: https://pyscaffold.org/
-.. _module reference: https://configupdater.readthedocs.io/en/latest/api/configupdater.html#configupdater.configupdater.ConfigUpdater
+.. _module reference: https://configupdater.readthedocs.io/en/latest/api.html#configupdater.configupdater.ConfigUpdater
 .. _unit tests: https://github.com/pyscaffold/configupdater/blob/main/tests/test_configupdater.py
