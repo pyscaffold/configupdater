@@ -299,11 +299,18 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
     def get(self, key: str, default: T) -> Union["Option", T]:
         ...
 
-    def get(self, key, default=None):
+    @overload
+    def get(self, key: str, default: T, returnOption: bool) -> Optional["Option"]:
+        ...
+
+    def get(self, key, default=None, returnOption=False):
         """This method works similarly to :meth:`dict.get`, and allows you
         to retrieve an option object by its key.
         """
-        return next((o for o in self.iter_options() if o.key == key), default)
+        return next(
+            (o for o in self.iter_options() if o.key == key),
+            Option(key, default) if returnOption else default,
+        )
 
     # The following is a pragmatic violation of Liskov substitution principle
     # For some reason MutableMapping.items return a Set-like object

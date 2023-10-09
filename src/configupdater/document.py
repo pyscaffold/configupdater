@@ -229,7 +229,13 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
     def get(self, section: str, option: str, fallback: T) -> Union[Option, T]:  # noqa
         ...
 
-    def get(self, section, option, fallback=_UNSET):  # noqa
+    @overload
+    def get(
+        self, section: str, option: str, fallback: T, returnOption: bool
+    ) -> Option:  # noqa
+        ...
+
+    def get(self, section, option, fallback=_UNSET, returnOption=False):  # noqa
         """Gets an option value for a given section.
 
         Warning:
@@ -249,6 +255,8 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
             option (str): option name
             fallback: if the key is not found and fallback is provided, it will
                 be returned. ``None`` is a valid fallback value.
+            returnOption (bool): if set to ``True``, the return value will be
+            of type :clas:`Option` even if the ``fallback`` value is used.
 
         Raises:
             :class:`NoSectionError`: if ``section`` cannot be found
@@ -263,7 +271,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
             raise NoSectionError(section) from None
 
         option = self.optionxform(option)
-        value = section_obj.get(option, fallback)
+        value = section_obj.get(option, fallback, returnOption)
         # ^  we checked section_obj against _UNSET, so we are sure about its type
 
         if value is _UNSET:
@@ -279,12 +287,21 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
     def get_section(self, name: str, default: T) -> Union[Section, T]:
         ...
 
-    def get_section(self, name, default=None):
+    @overload
+    def get_section(
+        self, name: str, default: T, returnSection: bool
+    ) -> Optional[Section]:
+        ...
+
+    def get_section(self, name, default=None, returnSection=False):
         """This method works similarly to :meth:`dict.get`, and allows you
         to retrieve an entire section by its name, or provide a ``default`` value in
         case it cannot be found.
         """
-        return next((s for s in self.iter_sections() if s.name == name), default)
+        return next(
+            (s for s in self.iter_sections() if s.name == name),
+            Section(default) if returnSection else default,
+        )
 
     # The following is a pragmatic violation of Liskov substitution principle
     # For some reason MutableMapping.items return a Set-like object
