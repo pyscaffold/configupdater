@@ -2,7 +2,7 @@ exclude: '^docs/conf.py'
 
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.4.0
+  rev: v4.5.0
   hooks:
   - id: trailing-whitespace
   - id: check-added-large-files
@@ -18,7 +18,7 @@ repos:
     args: ['--fix=auto']  # replace 'auto' with 'lf' to enforce Linux/Mac line endings or 'crlf' for Windows
 
 - repo: https://github.com/PyCQA/autoflake
-  rev: v2.1.1
+  rev: v2.2.1
   hooks:
   - id: autoflake
     args: [
@@ -33,19 +33,19 @@ repos:
   - id: isort
 
 - repo: https://github.com/psf/black
-  rev: 23.3.0
+  rev: 23.10.0
   hooks:
   - id: black
     language_version: python3
 
 - repo: https://github.com/asottile/blacken-docs
-  rev: 1.13.0
+  rev: 1.16.0
   hooks:
   - id: blacken-docs
     additional_dependencies: [black]
 
 - repo: https://github.com/PyCQA/flake8
-  rev: 6.0.0
+  rev: 6.1.0
   hooks:
   - id: flake8
     additional_dependencies: [flake8-bugbear]
