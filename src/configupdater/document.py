@@ -230,7 +230,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         ...
 
     def get(self, section, option, fallback=_UNSET):  # noqa
-        """Gets an option value for a given section.
+        """Gets an option object for a given section or a fallback value.
 
         Warning:
             Please notice this method works differently from what is expected of
@@ -247,8 +247,20 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         Args:
             section (str): section name
             option (str): option name
-            fallback: if the key is not found and fallback is provided, it will
-                be returned. ``None`` is a valid fallback value.
+            fallback (T): if the key is not found and fallback is provided, the
+              ``fallback`` value will be returned. ``None`` is a valid fallback value.
+
+        .. attention::
+            When ``option`` is not present, the ``fallback`` value itself is
+            returned. If you want instead to obtain a new ``Option`` object
+            with a default value associated with it, you can try the following::
+
+                configupdater.get("section", "option", fallback=Option("name", value))
+
+            ... which roughly corresponds to::
+
+                configupdater["section"].get("option", Option("name", value))
+
 
         Raises:
             :class:`NoSectionError`: if ``section`` cannot be found
@@ -256,7 +268,8 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
                 was given
 
         Returns:
-            :class:`Option`: Option object holding key/value pair
+            :class:`Option` object holding key/value pair when it exists.  Otherwise,
+            the value passed via the ``fallback`` argument itself (type ``T``).
         """
         section_obj = self.get_section(section, _UNSET)
         if section_obj is _UNSET:
