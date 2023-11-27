@@ -6,6 +6,7 @@ Version 3.2
 ===========
 
 - Option ``prepend_newline`` in ``set_values`` to optionally avoid new lines, issue #104
+- Fix square brackets not parsed in section names, issue #122
 
 Version 3.1.1
 =============
