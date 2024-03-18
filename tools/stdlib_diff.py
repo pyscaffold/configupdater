@@ -14,6 +14,7 @@ Alternatively https://github.com/megatops/PatchViewer can also be used.
 [bat]: https://github.com/sharkdp/bat
 [PathViewer]:  https://github.com/megatops/PatchViewer
 """
+
 from __future__ import annotations
 
 import argparse

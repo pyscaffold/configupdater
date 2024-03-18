@@ -4,6 +4,7 @@ how to access and modify the sections of the configurations.
 Differently from :mod:`configparser`, the different aspects of the ConfigUpdater API are
 split between several modules.
 """
+
 import sys
 from configparser import (
     ConfigParser,
@@ -222,8 +223,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
     # but ConfigParser overwrites it and uses the function to offer a different
     # functionality
     @overload  # type: ignore[override]
-    def get(self, section: str, option: str) -> Option:
-        ...
+    def get(self, section: str, option: str) -> Option: ...
 
     @overload
     def get(self, section: str, option: str, fallback: T) -> Union[Option, T]:  # noqa
@@ -285,12 +285,10 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         return value
 
     @overload
-    def get_section(self, name: str) -> Optional[Section]:
-        ...
+    def get_section(self, name: str) -> Optional[Section]: ...
 
     @overload
-    def get_section(self, name: str, default: T) -> Union[Section, T]:
-        ...
+    def get_section(self, name: str, default: T) -> Union[Section, T]: ...
 
     def get_section(self, name, default=None):
         """This method works similarly to :meth:`dict.get`, and allows you
@@ -303,8 +301,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
     # For some reason MutableMapping.items return a Set-like object
     # but we want to preserve ordering
     @overload  # type: ignore[override]
-    def items(self) -> List[Tuple[str, Section]]:
-        ...
+    def items(self) -> List[Tuple[str, Section]]: ...
 
     @overload
     def items(self, section: str) -> List[Tuple[str, Option]]:  # noqa

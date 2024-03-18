@@ -4,6 +4,7 @@ the class hierarchy in **ConfigUpdater**.
 The :class:`Container` is the parent class of everything that can contain configuration
 blocks, e.g. a section or the entire file itself.
 """
+
 import sys
 from copy import deepcopy
 from textwrap import indent

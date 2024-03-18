@@ -6,6 +6,7 @@ To complete the API, this module adds file handling functions, so that you can r
 configuration file from the disk, change it to your liking and save the updated
 content.
 """
+
 import sys
 from configparser import Error
 from types import MappingProxyType as ReadOnlyMapping
