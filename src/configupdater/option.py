@@ -10,6 +10,7 @@ When editing configuration files with ConfigUpdater, a handy way of setting a mu
 (or comma separated value) for an specific option is to use the
 :meth:`~Option.set_values` method.
 """
+
 import sys
 import warnings
 from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union, cast

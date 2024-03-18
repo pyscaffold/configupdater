@@ -4,6 +4,7 @@ the class hierarchy in **ConfigUpdater**.
 The :class:`Block` is the parent class of everything that can be nested inside a
 configuration file, e.g. comments, sections, options and even sequences of white space.
 """
+
 import sys
 from copy import deepcopy
 from inspect import cleandoc

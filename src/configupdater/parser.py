@@ -225,16 +225,15 @@ class Parser:
         return ReadOnlyMapping(self._get_args())
 
     @overload
-    def read(self, filename: PathLike, encoding: Optional[str] = None) -> Document:
-        ...
+    def read(self, filename: PathLike, encoding: Optional[str] = None) -> Document: ...
 
     @overload
-    def read(self, filename: PathLike, encoding: str, into: D) -> D:
-        ...
+    def read(self, filename: PathLike, encoding: str, into: D) -> D: ...
 
     @overload
-    def read(self, filename: PathLike, *, into: D, encoding: Optional[str] = None) -> D:
-        ...
+    def read(
+        self, filename: PathLike, *, into: D, encoding: Optional[str] = None
+    ) -> D: ...
 
     def read(self, filename, encoding=None, into=None):
         """Read and parse a filename.
@@ -251,18 +250,15 @@ class Parser:
         return document
 
     @overload
-    def read_file(self, f: Iterable[str], source: Optional[str]) -> Document:
-        ...
+    def read_file(self, f: Iterable[str], source: Optional[str]) -> Document: ...
 
     @overload
-    def read_file(self, f: Iterable[str], source: Optional[str], into: D) -> D:
-        ...
+    def read_file(self, f: Iterable[str], source: Optional[str], into: D) -> D: ...
 
     @overload
     def read_file(
         self, f: Iterable[str], *, into: D, source: Optional[str] = None
-    ) -> D:
-        ...
+    ) -> D: ...
 
     def read_file(self, f, source=None, into=None):
         """Like read() but the argument must be a file-like object.
@@ -289,16 +285,13 @@ class Parser:
         return document
 
     @overload
-    def read_string(self, string: str, source: str = "<string>") -> Document:
-        ...
+    def read_string(self, string: str, source: str = "<string>") -> Document: ...
 
     @overload
-    def read_string(self, string: str, source: str, into: D) -> D:
-        ...
+    def read_string(self, string: str, source: str, into: D) -> D: ...
 
     @overload
-    def read_string(self, string: str, *, into: D, source: str = "<string>") -> D:
-        ...
+    def read_string(self, string: str, *, into: D, source: str = "<string>") -> D: ...
 
     def read_string(self, string, source="<string>", into=None):
         """Read configuration from a given string.
