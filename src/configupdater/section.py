@@ -10,6 +10,7 @@ Note:
     :meth:`ConfigParser API <configparser.ConfigParser.set>` and do not correspond to
     the more usual :meth:`~collections.abc.Mapping.get` method of *dict-like* objects.
 """
+
 import sys
 from typing import TYPE_CHECKING, Optional, Tuple, TypeVar, Union, cast, overload
 
@@ -292,12 +293,10 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
         return Option(key, **kwargs)
 
     @overload
-    def get(self, key: str) -> Optional["Option"]:
-        ...
+    def get(self, key: str) -> Optional["Option"]: ...
 
     @overload
-    def get(self, key: str, default: T) -> Union["Option", T]:
-        ...
+    def get(self, key: str, default: T) -> Union["Option", T]: ...
 
     def get(self, key, default=None):
         """This method works similarly to :meth:`dict.get`, and allows you
