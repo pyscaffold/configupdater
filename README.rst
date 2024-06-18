@@ -1,35 +1,12 @@
-.. image:: https://api.cirrus-ci.com/github/pyscaffold/configupdater.svg?branch=main
-    :alt: Built Status
-    :target: https://cirrus-ci.com/github/pyscaffold/configupdater
-.. image:: https://readthedocs.org/projects/pyscaffold/badge/?version=latest
-    :alt: ReadTheDocs
-    :target: https://configupdater.readthedocs.io/
-.. image:: https://img.shields.io/coveralls/github/pyscaffold/configupdater/main.svg
-    :alt: Coveralls
-    :target: https://coveralls.io/r/pyscaffold/configupdater
-.. image:: https://img.shields.io/pypi/v/configupdater.svg
-    :alt: PyPI-Server
-    :target: https://pypi.org/project/configupdater/
-.. image:: https://img.shields.io/conda/vn/conda-forge/configupdater.svg
-    :alt: Conda-Forge
-    :target: https://anaconda.org/conda-forge/configupdater
-.. image:: https://static.pepy.tech/badge/configupdater/month
-    :alt: Monthly Downloads
-    :target: https://pepy.tech/project/configupdater
-.. image:: https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=ff69b4
-    :alt: Sponsor me
-    :target: https://github.com/sponsors/FlorianWilhelm
+[![Built Status](https://api.cirrus-ci.com/github/pyscaffold/configupdater.svg?branch=main)]()
+[![ReadTheDocs](https://readthedocs.org/projects/pyscaffold/badge/?version=latest)](https://configupdater.readthedocs.io/)
+[![Coveralls](https://img.shields.io/coveralls/github/pyscaffold/configupdater/main.svg)](https://coveralls.io/r/pyscaffold/configupdater)
+[![PyPI-Server](https://img.shields.io/pypi/v/configupdater.svg)](https://pypi.org/project/configupdater/)
+[![Conda-Forge](https://img.shields.io/conda/vn/conda-forge/configupdater.svg)](https://anaconda.org/conda-forge/configupdater)
+[![Monthly Downloads](https://static.pepy.tech/badge/configupdater/month)](https://pepy.tech/project/configupdater)
+[![Sponsor me](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=ff69b4)](https://github.com/sponsors/FlorianWilhelm)
 
-|
-
-.. image:: https://configupdater.readthedocs.io/en/latest/_images/banner-640x323.png
-    :height: 323px
-    :width: 640px
-    :scale: 60 %
-    :alt: Config Updater
-    :align: center
-
-|
+![Config Updater](https://configupdater.readthedocs.io/en/latest/_images/banner-640x323.png)
 
 The sole purpose of `ConfigUpdater`_ is to easily update an INI config file
 with no changes to the original file except the intended ones. This means
