@@ -34,7 +34,7 @@ Then activate the environment ``configupdater`` with::
 Clone the repository
 --------------------
 
-#. `Create a Gitub account`_  if you do not already have one.
+#. `Create a Github account`_  if you do not already have one.
 #. Fork the `project repository`_: click on the *Fork* button near the top of the
    page. This creates a copy of the code under your account on the GitHub server.
 #. Clone this copy to your local disk::
@@ -85,6 +85,6 @@ Clone the repository
 .. _Git: https://git-scm.com/
 .. _Miniconda: https://docs.conda.io/en/latest/miniconda.html
 .. _issue tracker: https://github.com/pyscaffold/configupdater/issues
-.. _Create a Gitub account: https://github.com/join
+.. _Create a Github account: https://github.com/join
 .. _creating a PR: https://help.github.com/articles/creating-a-pull-request/
 .. _flake8: https://flake8.pycqa.org/

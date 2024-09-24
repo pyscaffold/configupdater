@@ -165,7 +165,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
             key (str): name of section
 
         Returns:
-            bool: wether the section exists
+            bool: whether the section exists
         """
         return next((True for s in self.iter_sections() if s.name == key), False)
 

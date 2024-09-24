@@ -745,7 +745,7 @@ def test_eq(setup_cfg_path):
 
 test12_cfg_in = """
 [section]
-opiton = 42
+option = 42
 """
 
 
@@ -758,7 +758,7 @@ option = 42
 def test_rename_option_key():
     updater = ConfigUpdater()
     updater.read_string(test12_cfg_in)
-    updater["section"]["opiton"].key = "option"
+    updater["section"]["option"].key = "option"
 
 
 test13_cfg_in = """
@@ -809,37 +809,37 @@ def test_read_file_with_string():
 
 test15_cfg_in = """
 [section]
-OptionA = 2
+Option = 2
 """
 
 
 def test_read_mixed_case_options():
     updater = ConfigUpdater()
     updater.read_string(test15_cfg_in)
-    assert updater.has_option("section", "OptionA")
-    assert updater.has_option("section", "optiona")
-    assert updater["section"]["OptionA"].value == "2"
-    assert updater["section"]["optiona"].value == "2"
+    assert updater.has_option("section", "Option")
+    assert updater.has_option("section", "option")
+    assert updater["section"]["Option"].value == "2"
+    assert updater["section"]["option"].value == "2"
 
 
 test16_cfg_in = """
 [section]
-OptionA = 2
+Option1 = 2
 """
 
 
 test16_cfg_out = """
 [section]
-OptionA = 4
-OptionB = 6
+Option1 = 4
+Option2 = 6
 """
 
 
 def test_update_mixed_case_options():
     updater = ConfigUpdater()
     updater.read_string(test16_cfg_in)
-    updater["section"]["optiona"].value = "4"
-    updater["section"]["OptionB"] = "6"
+    updater["section"]["option1"].value = "4"
+    updater["section"]["Option2"] = "6"
     assert str(updater) == test16_cfg_out
 
 
