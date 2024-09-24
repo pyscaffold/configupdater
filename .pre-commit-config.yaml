@@ -21,5 +21,22 @@ repos:
   rev: 'v0.4.5'  # make sure this is consistent with with pyproject.toml
   hooks:
     - id: ruff
+      args: [ --fix ]
     - id: ruff-format
-      args: [--check]
+
+- repo: https://github.com/asottile/pyupgrade
+  rev: v3.17.0
+  hooks:
+  - id: pyupgrade
+    args: ['--py38-plus']
+
+- repo: https://github.com/asottile/blacken-docs
+  rev: 1.18.0
+  hooks:
+  - id: blacken-docs
+    additional_dependencies: [black]
+
+- repo: https://github.com/codespell-project/codespell
+  rev: v2.3.0
+  hooks:
+  - id: codespell
