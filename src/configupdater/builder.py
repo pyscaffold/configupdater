@@ -39,7 +39,7 @@ class BlockBuilder:
 
         comment = Comment(self._container)
         if not text.startswith(comment_prefix):
-            text = "{} {}".format(comment_prefix, text)
+            text = f"{comment_prefix} {text}"
         if not text.endswith("\n"):
             text = "{}{}".format(text, "\n")
         return self._insert(comment.add_line(text))

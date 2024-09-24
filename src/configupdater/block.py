@@ -178,7 +178,7 @@ class Block:
 
     def has_container(self) -> bool:
         """Checks if this block has a container attached"""
-        return not (self._container is None)
+        return self._container is not None
 
     def attach(self: B, container: "Container") -> B:
         """PRIVATE: Don't use this as a user!
