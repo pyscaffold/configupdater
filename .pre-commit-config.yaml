@@ -21,7 +21,7 @@ repos:
   rev: 'v0.4.5'  # make sure this is consistent with with pyproject.toml
   hooks:
     - id: ruff
-      args: [ --fix ]
+      args: [--fix]
     - id: ruff-format
 
 - repo: https://github.com/asottile/pyupgrade
@@ -40,3 +40,4 @@ repos:
   rev: v2.3.0
   hooks:
   - id: codespell
+    args: [-w]
