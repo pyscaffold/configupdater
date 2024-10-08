@@ -24,7 +24,7 @@ from configparser import ConfigParser, SectionProxy
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from inspect import getmembers, getsourcefile, getsourcelines
-from typing import Iterator, Optional, Sequence, Type
+from typing import Iterator, Sequence
 
 try:
     import configupdater  # noqa
@@ -48,7 +48,7 @@ def diff_all(numlines: int) -> str:
     return "\n\n".join(patches)
 
 
-def diff_class(orig_cls: Type, changed_cls: Type, numlines: int) -> str:
+def diff_class(orig_cls: type, changed_cls: type, numlines: int) -> str:
     diff_fragments = (
         diff_member(name, orig_cls, changed_cls, numlines)
         for name, _ in getmembers(changed_cls)
@@ -58,8 +58,8 @@ def diff_class(orig_cls: Type, changed_cls: Type, numlines: int) -> str:
 
 
 def diff_member(
-    name: str, orig_cls: Type, changed_cls: Type, numlines: int
-) -> Optional[str]:
+    name: str, orig_cls: type, changed_cls: type, numlines: int
+) -> str | None:
     orig = getattr(orig_cls, name, None)
     changed = getattr(changed_cls, name, None)
 
@@ -87,7 +87,7 @@ class CodeInfo:
     starting_line: int
 
     @classmethod
-    def inspect(cls, obj) -> "CodeInfo":
+    def inspect(cls, obj) -> CodeInfo:
         path = "<builtin>"
         try:
             path = getsourcefile(obj) or "<extension>"

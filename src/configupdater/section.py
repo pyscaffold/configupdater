@@ -113,7 +113,7 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
             if self._structure and not s.endswith("\n"):
                 s += "\n"
         else:
-            s = "[{}]{}\n".format(self._name, self.raw_comment)
+            s = f"[{self._name}]{self.raw_comment}\n"
         for entry in self._structure:
             s += str(entry)
         return s
