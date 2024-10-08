@@ -27,8 +27,10 @@ C = TypeVar("C", bound="Container")
 class Container(Generic[T]):
     """Abstract Mixin Class describing a container that holds blocks of type ``T``"""
 
+    _structure: List[T]
+
     def __init__(self):
-        self._structure: List[T] = []
+        self._structure = []
 
     def _repr_blocks(self) -> str:
         blocks = "\n".join(repr(block) for block in self._structure)
