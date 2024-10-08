@@ -72,11 +72,10 @@ build_task:
   clone_script: *clone
   <<: *task-template
   install_script: pip install tox pre-commit
-  check_script:
-    - pre-commit run --all-files --show-diff-on-failure --color always
   build_script:
     - tox -e clean,build
     - tar czf dist.tar.gz dist
+  check_script: tox --installpkg dist/*.whl -e lint,typecheck
   upload_artifacts:
     path: dist.tar.gz
 

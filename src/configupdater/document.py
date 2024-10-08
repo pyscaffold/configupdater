@@ -31,7 +31,7 @@ from .section import Section
 # Used in parser getters to indicate the default behaviour when a specific
 # option is not found it to raise an exception. Created to enable 'None' as
 # a valid fallback value.
-_UniqueValues = Enum("UniqueValues", "_UNSET")
+_UniqueValues = Enum("_UniqueValues", "_UNSET")
 _UNSET = _UniqueValues._UNSET
 
 T = TypeVar("T")
