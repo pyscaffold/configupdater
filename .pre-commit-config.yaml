@@ -25,13 +25,13 @@ repos:
     - id: ruff-format
 
 - repo: https://github.com/asottile/pyupgrade
-  rev: v3.17.0
+  rev: v3.18.0
   hooks:
   - id: pyupgrade
     args: ['--py38-plus']
 
 - repo: https://github.com/asottile/blacken-docs
-  rev: 1.18.0
+  rev: 1.19.0
   hooks:
   - id: blacken-docs
     additional_dependencies: [black]
