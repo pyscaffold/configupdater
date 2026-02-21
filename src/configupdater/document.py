@@ -202,6 +202,13 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         if self.has_section(section_obj.name):
             raise DuplicateSectionError(section_obj.name)
 
+        # Ensure a newline before the new section if the last block
+        # doesn't end with one (e.g. file without trailing newline)
+        if self._structure and not str(self._structure[-1]).endswith("\n"):
+            space = Space(container=self)
+            space.add_line("\n")
+            self._structure.append(space)
+
         section_obj.attach(self)
         self._structure.append(section_obj)
 

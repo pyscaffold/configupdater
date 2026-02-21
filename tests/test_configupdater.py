@@ -625,6 +625,15 @@ def test_add_section():
         updater.add_section(updater["section2"]["key1"])
 
 
+def test_add_section_no_trailing_newline():
+    updater = ConfigUpdater()
+    updater.read_string("[section1]\noption1 = value1\noption2 = value2")
+    updater.add_section("section2")
+    result = str(updater)
+    assert "value2\n[section2]" in result
+    assert "value2[section2]" not in result
+
+
 test6_cfg_out_overwritten = """
 [section0]
 key0 = 42
