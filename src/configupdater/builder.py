@@ -3,7 +3,9 @@ easier.
 """
 
 from configparser import DuplicateOptionError, DuplicateSectionError
-from typing import TYPE_CHECKING, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, TypeVar, Union
+
+from typing_extensions import Self
 
 if TYPE_CHECKING:
     from .block import Block
@@ -20,12 +22,12 @@ class BlockBuilder:
         self._container = container
         self._idx = idx
 
-    def _insert(self: T, block: "Block") -> T:
+    def _insert(self, block: "Block") -> Self:
         self._container.structure.insert(self._idx, block)
         self._idx += 1
         return self
 
-    def comment(self: T, text: str, comment_prefix="#") -> T:
+    def comment(self, text: str, comment_prefix="#") -> Self:
         """Creates a comment block
 
         Args:
@@ -44,7 +46,7 @@ class BlockBuilder:
             text = "{}{}".format(text, "\n")
         return self._insert(comment.add_line(text))
 
-    def section(self: T, section: Union[str, "Section"]) -> T:
+    def section(self, section: Union[str, "Section"]) -> Self:
         """Creates a section block
 
         Args:
@@ -73,7 +75,7 @@ class BlockBuilder:
         section.attach(container)
         return self._insert(section)
 
-    def space(self: T, newlines: int = 1) -> T:
+    def space(self, newlines: int = 1) -> Self:
         """Creates a vertical space of newlines
 
         Args:
@@ -89,7 +91,7 @@ class BlockBuilder:
             space.add_line("\n")
         return self._insert(space)
 
-    def option(self: T, key, value: Optional[str] = None, **kwargs) -> T:
+    def option(self, key, value: str | None = None, **kwargs) -> Self:
         """Creates a new option inside a section
 
         Args:

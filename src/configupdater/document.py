@@ -13,7 +13,7 @@ from configparser import (
     NoSectionError,
 )
 from enum import Enum
-from typing import Optional, Tuple, TypeVar, Union, overload
+from typing import Tuple, TypeVar, Union, overload
 
 if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     from collections.abc import Iterable, Iterator, MutableMapping
@@ -21,7 +21,10 @@ if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     List = list
     Dict = dict
 else:  # pragma: no cover
-    from typing import Dict, Iterable, Iterator, List, MutableMapping
+    from collections.abc import Iterable, Iterator, MutableMapping
+    from typing import List
+
+from typing_extensions import Self
 
 from .block import Comment, Space
 from .container import Container
@@ -108,7 +111,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         """Iterate only over section blocks"""
         return (block for block in self._structure if isinstance(block, Section))
 
-    def section_blocks(self) -> List[Section]:
+    def section_blocks(self) -> list[Section]:
         """Returns all section blocks
 
         Returns:
@@ -116,7 +119,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         """
         return list(self.iter_sections())
 
-    def sections(self) -> List[str]:
+    def sections(self) -> list[str]:
         """Return a list of section names
 
         Returns:
@@ -182,7 +185,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
             block.detach()
         self._structure.clear()
 
-    def add_section(self, section: Union[str, Section]):
+    def add_section(self, section: str | Section):
         """Create a new section in the configuration.
 
         Raise DuplicateSectionError if a section by the specified name
@@ -212,7 +215,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         section_obj.attach(self)
         self._structure.append(section_obj)
 
-    def options(self, section: str) -> List[str]:
+    def options(self, section: str) -> list[str]:
         """Returns list of configuration options for the named section.
 
         Args:
@@ -236,7 +239,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
     def get(self, section: str, option: str, fallback: T) -> Union[Option, T]:  # noqa
         ...
 
-    def get(self, section, option, fallback=_UNSET):  # noqa
+    def get(self, section, option, fallback=_UNSET):
         """Gets an option object for a given section or a fallback value.
 
         Warning:
@@ -292,10 +295,10 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         return value
 
     @overload
-    def get_section(self, name: str) -> Optional[Section]: ...
+    def get_section(self, name: str) -> Section | None: ...
 
     @overload
-    def get_section(self, name: str, default: T) -> Union[Section, T]: ...
+    def get_section(self, name: str, default: T) -> Section | T: ...
 
     def get_section(self, name, default=None):
         """This method works similarly to :meth:`dict.get`, and allows you
@@ -308,13 +311,13 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
     # For some reason MutableMapping.items return a Set-like object
     # but we want to preserve ordering
     @overload  # type: ignore[override]
-    def items(self) -> List[Tuple[str, Section]]: ...
+    def items(self) -> list[tuple[str, Section]]: ...
 
     @overload
     def items(self, section: str) -> List[Tuple[str, Option]]:  # noqa
         ...
 
-    def items(self, section=_UNSET):  # noqa
+    def items(self, section=_UNSET):
         """Return a list of (name, value) tuples for options or sections.
 
         If section is given, return a list of tuples with (name, value) for
@@ -347,11 +350,11 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         return key in self.get_section(section, {})
 
     def set(
-        self: D,
+        self,
         section: str,
         option: str,
-        value: Union[None, str, Iterable[str]] = None,
-    ) -> D:
+        value: None | str | Iterable[str] = None,
+    ) -> Self:
         """Set an option.
 
         Args:
@@ -403,7 +406,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         except StopIteration:
             return False
 
-    def to_dict(self) -> Dict[str, Dict[str, Optional[str]]]:
+    def to_dict(self) -> dict[str, dict[str, str | None]]:
         """Transform to dictionary
 
         Returns:
