@@ -34,6 +34,7 @@ import io
 import os
 import re
 import sys
+from collections.abc import Callable
 from configparser import (
     DuplicateOptionError,
     DuplicateSectionError,
@@ -43,7 +44,7 @@ from configparser import (
     ParsingError,
 )
 from types import MappingProxyType as ReadOnlyMapping
-from typing import Callable, Optional, Tuple, Type, TypeVar, Union, cast, overload
+from typing import TypeVar, Union, cast, overload
 
 if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     from collections.abc import Iterable, Mapping
@@ -51,7 +52,7 @@ if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     List = list
     Dict = dict
 else:  # pragma: no cover
-    from typing import Iterable, List, Dict, Mapping
+    from collections.abc import Iterable, Mapping
 
 from .block import Comment, Space
 from .document import Document
@@ -59,14 +60,14 @@ from .option import Option
 from .section import Section
 
 __all__ = [
-    "NoSectionError",
     "DuplicateOptionError",
     "DuplicateSectionError",
-    "NoOptionError",
-    "ParsingError",
-    "MissingSectionHeaderError",
     "InconsistentStateError",
+    "MissingSectionHeaderError",
+    "NoOptionError",
+    "NoSectionError",
     "Parser",
+    "ParsingError",
 ]
 
 T = TypeVar("T")
@@ -152,9 +153,9 @@ class Parser:
         self,
         allow_no_value=False,
         *,
-        delimiters: Tuple[str, ...] = ("=", ":"),
-        comment_prefixes: Tuple[str, ...] = ("#", ";"),
-        inline_comment_prefixes: Optional[Tuple[str, ...]] = None,
+        delimiters: tuple[str, ...] = ("=", ":"),
+        comment_prefixes: tuple[str, ...] = ("#", ";"),
+        inline_comment_prefixes: tuple[str, ...] | None = None,
         strict: bool = True,
         empty_lines_in_values: bool = True,
         space_around_delimiters: bool = True,
@@ -181,14 +182,14 @@ class Parser:
         self._lineno = -1
         self._fpname = "<???>"
 
-        self._filename: Optional[str] = None
+        self._filename: str | None = None
         self._space_around_delimiters: bool = space_around_delimiters
 
         self._dict = dict  # no reason to let the user change this
         # keeping _sections to keep code aligned with ConfigParser but
         # _document takes the actual role instead. Only use self._document!
-        self._sections: Dict[str, Dict[str, List[str]]] = self._dict()
-        self._delimiters: Tuple[str, ...] = tuple(delimiters)
+        self._sections: dict[str, dict[str, list[str]]] = self._dict()
+        self._delimiters: tuple[str, ...] = tuple(delimiters)
         if delimiters == ("=", ":"):
             self._optcre = self.OPTCRE_NV if allow_no_value else self.OPTCRE
         else:
@@ -197,8 +198,8 @@ class Parser:
                 self._optcre = re.compile(self._OPT_NV_TMPL.format(delim=d), re.VERBOSE)
             else:
                 self._optcre = re.compile(self._OPT_TMPL.format(delim=d), re.VERBOSE)
-        self._comment_prefixes: Tuple[str, ...] = tuple(comment_prefixes or ())
-        self._inline_comment_prefixes: Tuple[str, ...] = tuple(
+        self._comment_prefixes: tuple[str, ...] = tuple(comment_prefixes or ())
+        self._inline_comment_prefixes: tuple[str, ...] = tuple(
             inline_comment_prefixes or ()
         )
         self._strict = strict
@@ -225,14 +226,14 @@ class Parser:
         return ReadOnlyMapping(self._get_args())
 
     @overload
-    def read(self, filename: PathLike, encoding: Optional[str] = None) -> Document: ...
+    def read(self, filename: PathLike, encoding: str | None = None) -> Document: ...
 
     @overload
     def read(self, filename: PathLike, encoding: str, into: D) -> D: ...
 
     @overload
     def read(
-        self, filename: PathLike, *, into: D, encoding: Optional[str] = None
+        self, filename: PathLike, *, into: D, encoding: str | None = None
     ) -> D: ...
 
     def read(self, filename, encoding=None, into=None):
@@ -250,14 +251,14 @@ class Parser:
         return document
 
     @overload
-    def read_file(self, f: Iterable[str], source: Optional[str]) -> Document: ...
+    def read_file(self, f: Iterable[str], source: str | None) -> Document: ...
 
     @overload
-    def read_file(self, f: Iterable[str], source: Optional[str], into: D) -> D: ...
+    def read_file(self, f: Iterable[str], source: str | None, into: D) -> D: ...
 
     @overload
     def read_file(
-        self, f: Iterable[str], *, into: D, source: Optional[str] = None
+        self, f: Iterable[str], *, into: D, source: str | None = None
     ) -> D: ...
 
     def read_file(self, f, source=None, into=None):
@@ -312,9 +313,7 @@ class Parser:
     def _last_block(self):
         return self._document.last_block
 
-    def _update_curr_block(
-        self, block_type: Type[Union[Comment, Space]]
-    ) -> Union[Comment, Space]:
+    def _update_curr_block(self, block_type: type[Comment | Space]) -> Comment | Space:
         if isinstance(self._last_block, block_type):
             return self._last_block
         else:
@@ -335,7 +334,7 @@ class Parser:
         new_section.add_line(line)
         self._document.append(new_section)
 
-    def _add_option(self, key: str, vi: str, value: Optional[str], line: str):
+    def _add_option(self, key: str, vi: str, value: str | None, line: str):
         if not isinstance(self._last_block, Section):  # pragma: no cover
             msg = f"{self._last_block!r} should be Section"
             raise InconsistentStateError(msg, self._fpname, self._lineno, line)
@@ -405,16 +404,16 @@ class Parser:
         """
         self._document = into
         elements_added: set = set()
-        cursect: Optional[Dict[str, List[str]]] = None  # None or dict
-        sectname: Optional[str] = None
-        optname: Optional[str] = None
+        cursect: dict[str, list[str]] | None = None  # None or dict
+        sectname: str | None = None
+        optname: str | None = None
         lineno = 0
         indent_level = 0
-        e: Optional[Exception] = None  # None, or an exception
+        e: Exception | None = None  # None, or an exception
         self._fpname = fpname
         for lineno, line in enumerate(fp, start=1):
             self._lineno = lineno
-            comment_start: Optional[int] = sys.maxsize
+            comment_start: int | None = sys.maxsize
             # strip inline comments
             inline_prefixes = {p: -1 for p in self._inline_comment_prefixes}
             while comment_start == sys.maxsize and inline_prefixes:
@@ -531,8 +530,8 @@ class Parser:
             self._check_values_with_blank_lines()
 
     def _handle_error(
-        self, exc: Optional[E], fpname: str, lineno: int, line: str
-    ) -> Union[ParsingError, E]:
+        self, exc: E | None, fpname: str, lineno: int, line: str
+    ) -> ParsingError | E:
         e = exc or ParsingError(fpname)
         if hasattr(e, "append"):
             e.append(lineno, repr(line))
