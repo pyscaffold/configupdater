@@ -339,6 +339,9 @@ class Parser:
         if not isinstance(self._last_block, Section):  # pragma: no cover
             msg = f"{self._last_block!r} should be Section"
             raise InconsistentStateError(msg, self._fpname, self._lineno, line)
+        # A no-value option needs a delimiter if a value is assigned later.
+        if vi is None and self._delimiters:
+            vi = self._delimiters[0]
         entry = Option(
             key,
             value=None,
