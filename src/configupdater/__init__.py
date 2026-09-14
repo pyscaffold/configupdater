@@ -18,7 +18,7 @@ finally:
 from . import configupdater, parser
 
 # import everything and rely on __ALL__
-from .configupdater import *  # noqa
-from .parser import *  # noqa
+from .configupdater import *
+from .parser import *
 
 __all__ = list(set(configupdater.__all__ + parser.__all__))
