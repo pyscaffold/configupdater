@@ -10,10 +10,12 @@ from copy import deepcopy
 from inspect import cleandoc
 from typing import TYPE_CHECKING, Optional, TypeVar, Union, cast
 
+from typing_extensions import Self
+
 if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     List = list
 else:  # pragma: no cover
-    from typing import List
+    pass
 
 if TYPE_CHECKING:
     from .builder import BlockBuilder
@@ -76,7 +78,7 @@ class Block:
 
     def __init__(self, container: Optional["Container"] = None):
         self._container = container
-        self._lines: List[str] = []
+        self._lines: list[str] = []
         self._updated = False
 
     def __str__(self) -> str:
@@ -91,19 +93,19 @@ class Block:
         else:
             return False
 
-    def __deepcopy__(self: B, memo: dict) -> B:
+    def __deepcopy__(self, memo: dict) -> Self:
         clone = self._instantiate_copy()
         clone._lines = deepcopy(self._lines, memo)
         clone._updated = self._updated
         memo[id(self)] = clone
         return clone
 
-    def _instantiate_copy(self: B) -> B:
+    def _instantiate_copy(self) -> Self:
         """Auxiliary method that allows subclasses calling ``__deepcopy__``"""
         return self.__class__(container=None)  # allow overwrite for different init args
         # ^  A fresh copy should always be made detached from any container
 
-    def add_line(self: B, line: str) -> B:
+    def add_line(self, line: str) -> Self:
         """PRIVATE: this function is not part of the public API of Block.
         It is only used internally by other classes of the package during parsing.
 
@@ -116,7 +118,7 @@ class Block:
         return self
 
     @property
-    def lines(self) -> List[str]:
+    def lines(self) -> list[str]:
         return self._lines
 
     @property
@@ -127,7 +129,7 @@ class Block:
         return self._container
 
     @property
-    def container_idx(self: B) -> int:
+    def container_idx(self) -> int:
         """Index of the block within its container"""
         return self.container.structure.index(self)
 
@@ -170,7 +172,7 @@ class Block:
         else:
             return None
 
-    def detach(self: B) -> B:
+    def detach(self) -> Self:
         """Remove and return this block from container"""
         self.container._remove_block(self.container_idx)
         self._container = None
@@ -180,7 +182,7 @@ class Block:
         """Checks if this block has a container attached"""
         return self._container is not None
 
-    def attach(self: B, container: "Container") -> B:
+    def attach(self, container: "Container") -> Self:
         """PRIVATE: Don't use this as a user!
 
         Rather use `add_*` or the bracket notation

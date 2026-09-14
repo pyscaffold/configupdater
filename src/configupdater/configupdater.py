@@ -10,7 +10,7 @@ content.
 import sys
 from configparser import Error
 from types import MappingProxyType as ReadOnlyMapping
-from typing import Optional, TextIO, Tuple, TypeVar
+from typing import TextIO, TypeVar
 
 if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     from collections.abc import Iterable, Mapping
@@ -18,7 +18,9 @@ if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     List = list
     Dict = dict
 else:  # pragma: no cover
-    from typing import Iterable, Mapping
+    from collections.abc import Iterable, Mapping
+
+from typing_extensions import Self
 
 from .block import (
     AlreadyAttachedError,
@@ -33,17 +35,17 @@ from .parser import Parser, PathLike
 from .section import Section
 
 __all__ = [
-    "ConfigUpdater",
-    "Section",
-    "Option",
-    "Comment",
-    "Space",
-    "Parser",
+    "AlreadyAttachedError",
     "AssignMultilineValueError",
+    "Comment",
+    "ConfigUpdater",
     "NoConfigFileReadError",
     "NoneValueDisallowed",
     "NotAttachedError",
-    "AlreadyAttachedError",
+    "Option",
+    "Parser",
+    "Section",
+    "Space",
 ]
 
 T = TypeVar("T", bound="ConfigUpdater")
@@ -91,9 +93,9 @@ class ConfigUpdater(Document):
         self,
         allow_no_value=False,
         *,
-        delimiters: Tuple[str, ...] = ("=", ":"),
-        comment_prefixes: Tuple[str, ...] = ("#", ";"),
-        inline_comment_prefixes: Optional[Tuple[str, ...]] = None,
+        delimiters: tuple[str, ...] = ("=", ":"),
+        comment_prefixes: tuple[str, ...] = ("#", ";"),
+        inline_comment_prefixes: tuple[str, ...] | None = None,
         strict: bool = True,
         empty_lines_in_values: bool = True,
         space_around_delimiters: bool = True,
@@ -108,10 +110,10 @@ class ConfigUpdater(Document):
             "space_around_delimiters": space_around_delimiters,
         }
         self._syntax_options = ReadOnlyMapping(self._parser_opts)
-        self._filename: Optional[PathLike] = None
+        self._filename: PathLike | None = None
         super().__init__()
 
-    def _instantiate_copy(self: T) -> T:
+    def _instantiate_copy(self) -> Self:
         """Will be called by ``Container.__deepcopy__``"""
         clone = self.__class__(**self._parser_opts)
         clone.optionxform = self.optionxform  # type: ignore[method-assign]
@@ -126,7 +128,7 @@ class ConfigUpdater(Document):
     def syntax_options(self) -> Mapping:
         return self._syntax_options
 
-    def read(self: T, filename: PathLike, encoding: Optional[str] = None) -> T:
+    def read(self, filename: PathLike, encoding: str | None = None) -> Self:
         """Read and parse a filename.
 
         Args:
@@ -137,7 +139,7 @@ class ConfigUpdater(Document):
         self._filename = filename
         return self._parser().read(filename, encoding, self)
 
-    def read_file(self: T, f: Iterable[str], source: Optional[str] = None) -> T:
+    def read_file(self, f: Iterable[str], source: str | None = None) -> Self:
         """Like read() but the argument must be a file-like object.
 
         The ``f`` argument must be iterable, returning one line at a time.
@@ -154,7 +156,7 @@ class ConfigUpdater(Document):
             self._filename = f.name
         return self._parser().read_file(f, source, self)
 
-    def read_string(self: T, string: str, source="<string>") -> T:
+    def read_string(self, string: str, source="<string>") -> Self:
         """Read configuration from a given string.
 
         Args:
@@ -176,7 +178,7 @@ class ConfigUpdater(Document):
             self.validate_format()
         fp.write(str(self))
 
-    def update_file(self: T, validate: bool = True) -> T:
+    def update_file(self, validate: bool = True) -> Self:
         """Update the read-in configuration file.
 
         Args:

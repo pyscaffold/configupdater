@@ -21,11 +21,13 @@ if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     List = list
     Dict = dict
 else:  # pragma: no cover
-    from typing import Iterable, List
+    from collections.abc import Iterable
 
 if TYPE_CHECKING:
-    from .section import Section
     from .document import Document
+    from .section import Section
+
+from typing_extensions import Self
 
 from .block import AssignMultilineValueError, Block
 
@@ -57,18 +59,18 @@ class Option(Block):
     def __init__(
         self,
         key: str,
-        value: Optional[str] = None,
+        value: str | None = None,
         container: Optional["Section"] = None,
         delimiter: str = "=",
         space_around_delimiters: bool = True,
-        line: Optional[str] = None,
+        line: str | None = None,
     ):
         super().__init__(container=container)
         self._key = key
-        self._values: List[Optional[str]] = [] if value is None else [value]
+        self._values: list[str | None] = [] if value is None else [value]
         self._value_is_none = value is None
         self._delimiter = delimiter
-        self._value: Optional[str] = None  # will be filled after join_multiline_value
+        self._value: str | None = None  # will be filled after join_multiline_value
         self._updated = False
         self._multiline_value_joined = False
         self._space_around_delimiters = space_around_delimiters
@@ -77,7 +79,7 @@ class Option(Block):
         if value is not None:
             self._set_value(value)
 
-    def add_value(self, value: Optional[str]):
+    def add_value(self, value: str | None):
         """PRIVATE: this function is not part of the public API of Option.
         It is only used internally by other classes of the package during parsing.
         """
@@ -134,7 +136,7 @@ class Option(Block):
     def __repr__(self) -> str:
         return f"<Option: {self._key} = {self.value!r}>"
 
-    def _instantiate_copy(self: T) -> T:
+    def _instantiate_copy(self) -> Self:
         """Will be called by :meth:`Block.__deepcopy__`"""
         self._join_multiline_value()
         return self.__class__(
@@ -178,7 +180,7 @@ class Option(Block):
         return self._key
 
     @property
-    def value(self) -> Optional[str]:
+    def value(self) -> str | None:
         """Value associated with the given option."""
         self._join_multiline_value()
         return self._value
@@ -195,7 +197,7 @@ class Option(Block):
         self._value = value
         self._values = [value]
 
-    def as_list(self, separator="\n") -> List[str]:
+    def as_list(self, separator="\n") -> list[str]:
         """Returns the (multi-line/element) value as a list
 
         Empty list if value is None, single-element list for a one-element
@@ -230,7 +232,7 @@ class Option(Block):
         self,
         values: Iterable[str],
         separator="\n",
-        indent: Optional[str] = None,
+        indent: str | None = None,
         prepend_newline=True,
     ):
         """Sets the value to a given list of options, e.g. multi-line values
@@ -246,7 +248,7 @@ class Option(Block):
         values = list(values).copy()
         self._updated = True
         self._multiline_value_joined = True
-        self._values = cast(List[Optional[str]], values)
+        self._values = cast(list[str | None], values)
 
         if indent is None:
             if prepend_newline:
