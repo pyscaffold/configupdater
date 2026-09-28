@@ -12,7 +12,7 @@ Note:
 """
 
 import sys
-from typing import TYPE_CHECKING, Optional, Tuple, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, Optional, TypeVar, Union, cast, overload
 
 if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     from collections.abc import Iterable, Iterator, MutableMapping
@@ -20,10 +20,12 @@ if sys.version_info[:2] >= (3, 9):  # pragma: no cover
     List = list
     Dict = dict
 else:  # pragma: no cover
-    from typing import Dict, Iterable, Iterator, List, MutableMapping
+    from collections.abc import Iterable, Iterator, MutableMapping
 
 if TYPE_CHECKING:
     from .document import Document
+
+from typing_extensions import Self
 
 from .block import Block, Comment, Space
 from .builder import BlockBuilder
@@ -43,10 +45,10 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
     def __init__(
         self, name: str, container: Optional["Document"] = None, raw_comment: str = ""
     ):
-        self._container: Optional["Document"] = container
+        self._container: Document | None = container
         self._name = name
         self._raw_comment = raw_comment
-        self._structure: List[Content] = []
+        self._structure: list[Content] = []
         self._updated = False
         super().__init__(container=container)
 
@@ -54,7 +56,7 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
     def document(self) -> "Document":
         return cast("Document", self.container)
 
-    def add_option(self: S, entry: "Option") -> S:
+    def add_option(self, entry: "Option") -> Self:
         """Add an Option object to the section
 
         Used during initial parsing mainly
@@ -66,7 +68,7 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
         self._structure.append(entry)
         return self
 
-    def add_comment(self: S, line: str) -> S:
+    def add_comment(self, line: str) -> Self:
         """Add a Comment object to the section
 
         Used during initial parsing mainly
@@ -83,7 +85,7 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
         comment.add_line(line)
         return self
 
-    def add_space(self: S, line: str) -> S:
+    def add_space(self, line: str) -> Self:
         """Add a Space object to the section
 
         Used during initial parsing mainly
@@ -121,14 +123,14 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
     def __repr__(self) -> str:
         return f"<Section: {self.name!r} {super()._repr_blocks()}>"
 
-    def _instantiate_copy(self: S) -> S:
+    def _instantiate_copy(self) -> Self:
         """Will be called by :meth:`Block.__deepcopy__`"""
         clone = self.__class__(self._name, container=None)
         # ^  A fresh copy should always be made detached from any container
         clone._raw_comment = self._raw_comment
         return clone
 
-    def __deepcopy__(self: S, memo: dict) -> S:
+    def __deepcopy__(self, memo: dict) -> Self:
         clone = Block.__deepcopy__(self, memo)  # specific due to multi-inheritance
         return clone._copy_structure(self._structure, memo)
 
@@ -139,7 +141,7 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
         except StopIteration as ex:
             raise KeyError(f"No option `{key}` found", {"key": key}) from ex
 
-    def __setitem__(self, key: str, value: Optional[Value] = None):
+    def __setitem__(self, key: str, value: Value | None = None):
         """Set the value of an option.
 
         Please notice that this method used
@@ -208,7 +210,7 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
         """Iterate only over option blocks"""
         return (entry for entry in self.iter_blocks() if isinstance(entry, Option))
 
-    def option_blocks(self) -> List["Option"]:
+    def option_blocks(self) -> list["Option"]:
         """Returns option blocks
 
         Returns:
@@ -216,7 +218,7 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
         """
         return list(self.iter_options())
 
-    def options(self) -> List[str]:
+    def options(self) -> list[str]:
         """Returns option names
 
         Returns:
@@ -226,7 +228,7 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
 
     has_option = __contains__
 
-    def to_dict(self) -> Dict[str, Optional[str]]:
+    def to_dict(self) -> dict[str, str | None]:
         """Transform to dictionary
 
         Returns:
@@ -258,7 +260,7 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
         self._raw_comment = value
         self._updated = True
 
-    def set(self: S, option: str, value: Union[None, str, Iterable[str]] = None) -> S:
+    def set(self, option: str, value: None | str | Iterable[str] = None) -> Self:
         """Set an option for chaining.
 
         Args:
@@ -274,7 +276,7 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
             self[option].set_values(value)
         return self
 
-    def create_option(self, key: str, value: Optional[str] = None) -> "Option":
+    def create_option(self, key: str, value: str | None = None) -> "Option":
         """Creates an option with kwargs that respect syntax options given to
         the parent ConfigUpdater object (e.g. ``space_around_delimiters``).
 
@@ -307,7 +309,7 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
     # The following is a pragmatic violation of Liskov substitution principle
     # For some reason MutableMapping.items return a Set-like object
     # but we want to preserve ordering
-    def items(self) -> List[Tuple[str, "Option"]]:  # type: ignore[override]
+    def items(self) -> list[tuple[str, "Option"]]:  # type: ignore[override]
         """Return a list of (name, option) tuples for each option in
         this section.
 
