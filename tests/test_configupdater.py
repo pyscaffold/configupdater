@@ -1625,3 +1625,60 @@ def test_parsing_of_brackets_in_section_names_comments():
     updater = ConfigUpdater(inline_comment_prefixes=("#", ";"))
     updater.read_string(cfg)
     assert updater.sections() == ["section-A", "section-B"]
+
+
+@pytest.mark.parametrize("container_kind", ["document", "section"])
+@pytest.mark.parametrize("block_kind", ["space", "comment"])
+@pytest.mark.parametrize("operation", ["navigate", "detach", "before", "after"])
+def test_edit_equal_blocks_by_identity(container_kind, block_kind, operation):
+    updater = ConfigUpdater()
+    if container_kind == "document":
+        for name in ["a", "b", "c"]:
+            updater.add_section(name)
+        container = updater
+    else:
+        updater.read_string("[section]\na = 1\nb = 2\nc = 3\n")
+        container = updater["section"]
+    left, middle, right = (container[name] for name in ["a", "b", "c"])
+    for anchor in [middle, right]:
+        if block_kind == "space":
+            anchor.add_before.space()
+        else:
+            anchor.add_before.comment("same comment")
+    first, second = container.structure[1], container.structure[3]
+    assert first is not second
+    assert first == second
+
+    if operation == "navigate":
+        assert second.container_idx == 3
+        assert second.previous_block is middle
+        assert second.next_block is right
+        expected = [left, first, middle, second, right]
+    elif operation == "detach":
+        assert second.detach() is second
+        assert not second.has_container()
+        expected = [left, first, middle, right]
+    else:
+        builder = second.add_before if operation == "before" else second.add_after
+        builder.comment("marker")
+        marker = next(b for b in container.structure if str(b) == "# marker\n")
+        expected = [left, first, middle]
+        expected += [marker, second] if operation == "before" else [second, marker]
+        expected.append(right)
+
+    assert len(container.structure) == len(expected)
+    assert all(
+        actual is wanted for actual, wanted in zip(container.structure, expected)
+    )
+    assert all(block.container is container for block in container.structure)
+    parser = ConfigParser()
+    parser.read_string(str(updater))
+    assert parser.sections() == updater.sections()
+
+
+@pytest.mark.parametrize("block_type", [Space, Comment])
+def test_container_idx_errors_for_missing_blocks(block_type):
+    with pytest.raises(NotAttachedError):
+        block_type().container_idx
+    with pytest.raises(ValueError):
+        block_type(container=ConfigUpdater()).container_idx
