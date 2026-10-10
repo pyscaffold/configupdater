@@ -54,6 +54,20 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
     def document(self) -> "Document":
         return cast("Document", self.container)
 
+    @property
+    def add_before_skip_comments(self) -> "BlockBuilder":
+        """Insert before this section and its preceding comment blocks.
+
+        Only consecutive comments in the document are skipped. A space or
+        another section stops the search; comments inside a previous section
+        are left in place. The existing :attr:`add_before` behavior is unchanged.
+        """
+        idx = self.container_idx
+        structure = self.container.structure
+        while idx > 0 and isinstance(structure[idx - 1], Comment):
+            idx -= 1
+        return self._builder(idx)
+
     def add_option(self: S, entry: "Option") -> S:
         """Add an Option object to the section
 
