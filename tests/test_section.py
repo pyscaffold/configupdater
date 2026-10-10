@@ -7,6 +7,73 @@ from configupdater.block import AlreadyAttachedError, NotAttachedError
 from configupdater.parser import Parser
 
 
+def test_add_before_skip_comments():
+    doc = Parser().read_string("[first]\na = 1\n")
+    doc["first"].add_after.space().comment("target comment").section("target")
+    doc["target"]["b"] = "2"
+
+    doc["target"].add_before_skip_comments.section("middle").space()
+    doc["middle"]["c"] = "3"
+
+    assert str(doc) == (
+        "[first]\na = 1\n\n[middle]\nc = 3\n\n" "# target comment\n[target]\nb = 2\n"
+    )
+    assert doc.sections() == ["first", "middle", "target"]
+    assert doc["middle"].container is doc
+
+
+def test_add_before_skip_comments_multiple_comment_blocks():
+    doc = Parser().read_string("[first]\n")
+    doc["first"].add_after.comment("one").comment("two").section("target")
+    comments = doc.structure[1:3]
+
+    doc["target"].add_before_skip_comments.section("middle")
+
+    assert str(doc) == "[first]\n[middle]\n# one\n# two\n[target]\n"
+    assert doc.structure[2] is comments[0]
+    assert doc.structure[3] is comments[1]
+
+
+def test_add_before_skip_comments_stops_at_space():
+    doc = Parser().read_string("[first]\n")
+    (
+        doc["first"]
+        .add_after.comment("earlier")
+        .space()
+        .comment("target comment")
+        .section("target")
+    )
+
+    doc["target"].add_before_skip_comments.section("middle")
+
+    assert str(doc) == ("[first]\n# earlier\n\n[middle]\n# target comment\n[target]\n")
+
+
+def test_add_before_skip_comments_leaves_previous_section_contents():
+    doc = Parser().read_string("[first]\na = 1\n# first comment\n[target]\nb = 2\n")
+    first = str(doc["first"])
+
+    doc["target"].add_before_skip_comments.section("middle")
+
+    assert str(doc) == "[first]\na = 1\n# first comment\n[middle]\n[target]\nb = 2\n"
+    assert str(doc["first"]) == first
+
+
+@pytest.mark.parametrize("prefix", ["", "# one\n# two\n"])
+def test_add_before_skip_comments_at_document_start(prefix):
+    doc = Parser().read_string(prefix + "[target]\n")
+
+    doc["target"].add_before_skip_comments.section("first")
+
+    assert str(doc) == "[first]\n" + prefix + "[target]\n"
+
+
+def test_add_before_skip_comments_detached_section():
+    section = Parser().read_string("[target]\n")["target"].detach()
+    with pytest.raises(NotAttachedError):
+        _ = section.add_before_skip_comments
+
+
 def test_set():
     example = """\
     [options.extras_require]
