@@ -20,11 +20,11 @@ from __future__ import annotations
 import argparse
 import os.path
 import sys
+from collections.abc import Iterator, Sequence
 from configparser import ConfigParser, SectionProxy
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from inspect import getmembers, getsourcefile, getsourcelines
-from typing import Iterator, Sequence
 
 try:
     import configupdater  # noqa
