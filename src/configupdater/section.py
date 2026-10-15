@@ -68,7 +68,7 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
             idx -= 1
         return self._builder(idx)
 
-    def add_option(self: S, entry: "Option") -> S:
+    def add_option(self, entry: "Option") -> Self:
         """Add an Option object to the section
 
         Used during initial parsing mainly

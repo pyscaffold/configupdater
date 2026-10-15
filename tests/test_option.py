@@ -1,5 +1,5 @@
-from copy import deepcopy
 from configparser import ConfigParser
+from copy import deepcopy
 from io import StringIO
 from textwrap import dedent
 
