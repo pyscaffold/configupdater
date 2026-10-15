@@ -172,6 +172,35 @@ configuration block keeps a reference to its container to allow easy document
 editing. When doing editions (such as adding or changing options and comments)
 based on a shallow copy, the results can be unreliable and unexpected.
 
+Keeping comments immediately before a section
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``add_before`` inserts directly before the section block. If you have added
+comments immediately before that section using the builder, they remain before
+the newly inserted block. To keep those comments next to the original section,
+use :attr:`~configupdater.section.Section.add_before_skip_comments` instead::
+
+    updater = ConfigUpdater()
+    updater.read_string("[first]\n")
+    (updater["first"].add_after
+                     .comment("Settings for the target section")
+                     .section("target"))
+    (updater["target"].add_before_skip_comments
+                      .section("middle")
+                      .space())
+
+This results in::
+
+    [first]
+    [middle]
+
+    # Settings for the target section
+    [target]
+
+Only consecutive comment blocks at the document level are skipped. Blank
+spaces stop the search, and comments inside a previous section are not moved.
+This does not change how the parser associates comments with sections.
+
 For more examples on how the API of ConfigUpdater works it's best to take a look into the
 `unit tests`_ and read the references.
 
