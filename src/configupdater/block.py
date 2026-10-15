@@ -129,7 +129,10 @@ class Block:
     @property
     def container_idx(self: B) -> int:
         """Index of the block within its container"""
-        return self.container.structure.index(self)
+        for idx, block in enumerate(self.container.structure):
+            if block is self:
+                return idx
+        raise ValueError(f"{self!r} is not in the container")
 
     @property
     def updated(self) -> bool:
