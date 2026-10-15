@@ -16,7 +16,7 @@ def test_add_before_skip_comments():
     doc["middle"]["c"] = "3"
 
     assert str(doc) == (
-        "[first]\na = 1\n\n[middle]\nc = 3\n\n" "# target comment\n[target]\nb = 2\n"
+        "[first]\na = 1\n\n[middle]\nc = 3\n\n# target comment\n[target]\nb = 2\n"
     )
     assert doc.sections() == ["first", "middle", "target"]
     assert doc["middle"].container is doc
