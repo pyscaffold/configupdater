@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(pytest *)",
+      "Bash(python -m pytest *)",
+      "Bash(tox -e default *)",
+      "Bash(tox -e typecheck *)",
+      "Bash(tox -e docs *)",
+      "Bash(tox -e doctests *)",
+      "Bash(uvx --python 3.12 --with tox-uv tox -e default *)",
+      "Bash(uvx --python 3.12 --with tox-uv tox -e typecheck *)",
+      "Bash(uvx --python 3.12 --with tox-uv tox -e docs *)",
+      "Bash(uvx --python 3.12 --with tox-uv tox -e doctests *)",
+      "Bash(uvx --python 3.12 --with tox-uv tox -e py312-diff *)",
+      "Bash(mypy *)",
+      "Bash(python -m mypy *)",
+      "Bash(ruff check *)",
+      "Bash(ruff format --check *)",
+      "Bash(ruff format --diff *)",
+      "Bash(pre-commit run *)",
+      "Bash(python -m tools.stdlib_diff *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git blame *)",
+      "Bash(git branch *)"
+    ],
+    "ask": [
+      "Bash(git push *)",
+      "Bash(git tag *)"
+    ],
+    "deny": [
+      "Bash(tox -e publish *)",
+      "Bash(uvx --python 3.12 --with tox-uv tox -e publish *)",
+      "Bash(twine upload *)",
+      "Bash(python -m twine upload *)"
+    ]
+  }
+}
