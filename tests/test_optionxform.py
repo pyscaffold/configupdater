@@ -67,6 +67,29 @@ def test_section_contains():
     assert "KEY" not in lowercase["section1"]
 
 
+def test_section_delitem_uses_optionxform():
+    config = ConfigUpdater()
+    config.read_string("[section]\nKey = Value\n")
+
+    section = config["section"]
+    del section["KEY"]
+
+    assert section.option_blocks() == []
+    assert str(config) == "[section]\n"
+    with pytest.raises(KeyError):
+        del section["MISSING"]
+
+
+def test_section_delitem_uses_custom_optionxform():
+    config = ConfigUpdater()
+    config.optionxform = lambda option: option.replace("_", "").lower()
+    config.read_string("[section]\nK_E_Y = Value\n")
+
+    del config["section"]["K_E_Y"]
+
+    assert config["section"].option_blocks() == []
+
+
 def test_section_setitem():
     cfg = ConfigUpdater()
     cfg.optionxform = str.upper
