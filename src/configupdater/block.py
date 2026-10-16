@@ -5,22 +5,17 @@ The :class:`Block` is the parent class of everything that can be nested inside a
 configuration file, e.g. comments, sections, options and even sequences of white space.
 """
 
-import sys
+from __future__ import annotations
+
 from copy import deepcopy
 from inspect import cleandoc
-from typing import TYPE_CHECKING, Optional, Self, TypeVar, Union, cast
-
-if sys.version_info[:2] >= (3, 9):  # pragma: no cover
-    List = list
-else:  # pragma: no cover
-    pass
+from typing import TYPE_CHECKING, Self, TypeVar, cast
 
 if TYPE_CHECKING:
     from .builder import BlockBuilder
     from .container import Container
 
 T = TypeVar("T")
-B = TypeVar("B", bound="Block")
 
 
 def _short_repr(block) -> str:
@@ -34,7 +29,7 @@ def _short_repr(block) -> str:
 class NotAttachedError(Exception):
     """{block} is not attached to a container yet. Try to insert it first."""
 
-    def __init__(self, block: Union[str, "Block"] = "The block"):
+    def __init__(self, block: str | Block = "The block"):
         doc = cleandoc(cast(str, self.__class__.__doc__))
         msg = doc.format(block=_short_repr(block))
         super().__init__(msg)
@@ -47,7 +42,7 @@ class AlreadyAttachedError(Exception):
     ``copy.deepcopy``.
     """
 
-    def __init__(self, block: Union[str, "Block"] = "The block"):
+    def __init__(self, block: str | Block = "The block"):
         doc = cleandoc(cast(str, self.__class__.__doc__))
         msg = doc.format(block=_short_repr(block))
         super().__init__(msg)
@@ -58,7 +53,7 @@ class AssignMultilineValueError(Exception):
     Use the ``set_values`` or ``append`` method to accomplish that.
     """
 
-    def __init__(self, block: Union[str, "Block"] = "The block"):
+    def __init__(self, block: str | Block = "The block"):
         doc = cleandoc(cast(str, self.__class__.__doc__))
         msg = doc.format(block=_short_repr(block))
         super().__init__(msg)
@@ -74,7 +69,7 @@ class Block:
     inside the container.
     """
 
-    def __init__(self, container: Optional["Container"] = None):
+    def __init__(self, container: Container | None = None):
         self._container = container
         self._lines: list[str] = []
         self._updated = False
@@ -120,7 +115,7 @@ class Block:
         return self._lines
 
     @property
-    def container(self) -> "Container":
+    def container(self) -> Container:
         """Container holding the block"""
         if self._container is None:
             raise NotAttachedError(self)
@@ -140,23 +135,23 @@ class Block:
         # if no lines were added, treat it as updated since we added it
         return self._updated or not self._lines
 
-    def _builder(self, idx: int) -> "BlockBuilder":
+    def _builder(self, idx: int) -> BlockBuilder:
         from .builder import BlockBuilder
 
         return BlockBuilder(self.container, idx)
 
     @property
-    def add_before(self) -> "BlockBuilder":
+    def add_before(self) -> BlockBuilder:
         """Block builder inserting a new block before the current block"""
         return self._builder(self.container_idx)
 
     @property
-    def add_after(self) -> "BlockBuilder":
+    def add_after(self) -> BlockBuilder:
         """Block builder inserting a new block after the current block"""
         return self._builder(self.container_idx + 1)
 
     @property
-    def next_block(self) -> Optional["Block"]:
+    def next_block(self) -> Block | None:
         """Next block in the current container"""
         idx = self.container_idx + 1
         if idx < len(self.container):
@@ -165,7 +160,7 @@ class Block:
             return None
 
     @property
-    def previous_block(self) -> Optional["Block"]:
+    def previous_block(self) -> Block | None:
         """Previous block in the current container"""
         idx = self.container_idx - 1
         if idx >= 0:
@@ -183,7 +178,7 @@ class Block:
         """Checks if this block has a container attached"""
         return self._container is not None
 
-    def attach(self, container: "Container") -> Self:
+    def attach(self, container: Container) -> Self:
         """PRIVATE: Don't use this as a user!
 
         Rather use `add_*` or the bracket notation

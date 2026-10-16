@@ -5,7 +5,9 @@ Differently from :mod:`configparser`, the different aspects of the ConfigUpdater
 split between several modules.
 """
 
-import sys
+from __future__ import annotations
+
+from collections.abc import Iterable, Iterator, MutableMapping
 from configparser import (
     ConfigParser,
     DuplicateSectionError,
@@ -13,16 +15,7 @@ from configparser import (
     NoSectionError,
 )
 from enum import Enum
-from typing import Self, Tuple, TypeVar, Union, overload
-
-if sys.version_info[:2] >= (3, 9):  # pragma: no cover
-    from collections.abc import Iterable, Iterator, MutableMapping
-
-    List = list
-    Dict = dict
-else:  # pragma: no cover
-    from collections.abc import Iterable, Iterator, MutableMapping
-    from typing import List
+from typing import Self, TypeVar, overload
 
 from .block import Comment, Space
 from .container import Container
@@ -36,10 +29,8 @@ _UniqueValues = Enum("_UniqueValues", "_UNSET")
 _UNSET = _UniqueValues._UNSET
 
 T = TypeVar("T")
-D = TypeVar("D", bound="Document")
 
-ConfigContent = Union["Section", "Comment", "Space"]
-Value = Union["Option", str]
+ConfigContent = Section | Comment | Space
 
 
 class Document(Container[ConfigContent], MutableMapping[str, Section]):
@@ -234,8 +225,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
     def get(self, section: str, option: str) -> Option: ...
 
     @overload
-    def get(self, section: str, option: str, fallback: T) -> Union[Option, T]:  # noqa
-        ...
+    def get(self, section: str, option: str, fallback: T) -> Option | T: ...
 
     def get(self, section, option, fallback=_UNSET):
         """Gets an option object for a given section or a fallback value.
@@ -312,8 +302,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
     def items(self) -> list[tuple[str, Section]]: ...
 
     @overload
-    def items(self, section: str) -> List[Tuple[str, Option]]:  # noqa
-        ...
+    def items(self, section: str) -> list[tuple[str, Option]]: ...
 
     def items(self, section=_UNSET):
         """Return a list of (name, value) tuples for options or sections.

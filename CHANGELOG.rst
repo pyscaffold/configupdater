@@ -2,6 +2,13 @@
 Changelog
 =========
 
+Version 4.0 (unreleased)
+========================
+
+- Drop support for Python < 3.11, the minimum supported version is now Python 3.11
+- Simplify type hints using Python 3.11 features (``typing.Self``, ``X | Y`` unions)
+  and remove compatibility code for older Python versions
+
 Version 3.2
 ===========
 

@@ -11,26 +11,17 @@ When editing configuration files with ConfigUpdater, a handy way of setting a mu
 :meth:`~Option.set_values` method.
 """
 
-import sys
+from __future__ import annotations
+
 import warnings
-from typing import TYPE_CHECKING, Any, Optional, Self, TypeVar, Union, cast
-
-if sys.version_info[:2] >= (3, 9):  # pragma: no cover
-    from collections.abc import Iterable
-
-    List = list
-    Dict = dict
-else:  # pragma: no cover
-    from collections.abc import Iterable
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Any, Self, cast
 
 if TYPE_CHECKING:
     from .document import Document
     from .section import Section
 
 from .block import AssignMultilineValueError, Block
-
-Value = Union["Option", str]
-T = TypeVar("T", bound="Option")
 
 
 def is_multi_line(value: Any) -> bool:
@@ -58,7 +49,7 @@ class Option(Block):
         self,
         key: str,
         value: str | None = None,
-        container: Optional["Section"] = None,
+        container: Section | None = None,
         delimiter: str = "=",
         space_around_delimiters: bool = True,
         line: str | None = None,
@@ -145,13 +136,13 @@ class Option(Block):
             space_around_delimiters=self._space_around_delimiters,
         )
 
-    def _document(self) -> Optional["Document"]:
+    def _document(self) -> Document | None:
         if self._container is None:
             return None
         return self._container._container  # type: ignore
 
     @property
-    def section(self) -> "Section":
+    def section(self) -> Section:
         return cast("Section", self.container)
 
     @property
@@ -209,7 +200,7 @@ class Option(Block):
         else:
             return [v.strip() for v in cast(str, self.value).strip().split(separator)]
 
-    def append(self, value: str, **kwargs) -> "Option":
+    def append(self, value: str, **kwargs) -> Option:
         """Append a value to a mult-line value
 
         Args:

@@ -7,18 +7,12 @@ configuration file from the disk, change it to your liking and save the updated
 content.
 """
 
-import sys
+from __future__ import annotations
+
+from collections.abc import Iterable, Mapping
 from configparser import Error
 from types import MappingProxyType as ReadOnlyMapping
-from typing import Self, TextIO, TypeVar
-
-if sys.version_info[:2] >= (3, 9):  # pragma: no cover
-    from collections.abc import Iterable, Mapping
-
-    List = list
-    Dict = dict
-else:  # pragma: no cover
-    from collections.abc import Iterable, Mapping
+from typing import Self, TextIO
 
 from .block import (
     AlreadyAttachedError,
@@ -45,8 +39,6 @@ __all__ = [
     "Section",
     "Space",
 ]
-
-T = TypeVar("T", bound="ConfigUpdater")
 
 
 class NoConfigFileReadError(Error):

@@ -30,11 +30,13 @@ configuration file.
    see the file LICENSE for details.
 """
 
+from __future__ import annotations
+
 import io
 import os
 import re
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Iterable, Mapping
 from configparser import (
     DuplicateOptionError,
     DuplicateSectionError,
@@ -44,15 +46,7 @@ from configparser import (
     ParsingError,
 )
 from types import MappingProxyType as ReadOnlyMapping
-from typing import TypeVar, Union, cast, overload
-
-if sys.version_info[:2] >= (3, 9):  # pragma: no cover
-    from collections.abc import Iterable, Mapping
-
-    List = list
-    Dict = dict
-else:  # pragma: no cover
-    from collections.abc import Iterable, Mapping
+from typing import TypeVar, cast, overload
 
 from .block import Comment, Space
 from .document import Document
@@ -74,12 +68,7 @@ T = TypeVar("T")
 E = TypeVar("E", bound=Exception)
 D = TypeVar("D", bound=Document)
 
-if sys.version_info[:2] >= (3, 7):  # pragma: no cover
-    PathLike = Union[str, bytes, os.PathLike]
-else:  # pragma: no cover
-    PathLike = Union[str, os.PathLike]
-
-ConfigContent = Union["Section", "Comment", "Space"]
+PathLike = str | bytes | os.PathLike
 
 
 class InconsistentStateError(Exception):  # pragma: no cover (not expected to happen)
