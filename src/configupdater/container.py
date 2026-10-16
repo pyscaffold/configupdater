@@ -5,23 +5,17 @@ The :class:`Container` is the parent class of everything that can contain config
 blocks, e.g. a section or the entire file itself.
 """
 
-import sys
+from __future__ import annotations
+
+from collections.abc import Iterator
 from copy import deepcopy
 from textwrap import indent
 from typing import TYPE_CHECKING, Generic, Self, TypeVar
-
-if sys.version_info[:2] >= (3, 9):  # pragma: no cover
-    from collections.abc import Iterator
-
-    List = list
-else:  # pragma: no cover
-    from collections.abc import Iterator
 
 if TYPE_CHECKING:
     from .block import Block
 
 T = TypeVar("T", bound="Block")
-C = TypeVar("C", bound="Container")
 
 
 class Container(Generic[T]):

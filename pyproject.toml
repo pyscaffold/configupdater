@@ -7,3 +7,8 @@ build-backend = "setuptools.build_meta"
 # For smarter version schemes and other configuration options,
 # check out https://github.com/pypa/setuptools_scm
 version_scheme = "no-guess-dev"
+
+[tool.ruff]
+# Keep in sync with `python_requires` in setup.cfg, otherwise autofixes may introduce
+# syntax that is not available in the oldest supported Python version.
+target-version = "py311"

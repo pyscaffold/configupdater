@@ -2,25 +2,25 @@
 easier.
 """
 
+from __future__ import annotations
+
 from configparser import DuplicateOptionError, DuplicateSectionError
-from typing import TYPE_CHECKING, Self, TypeVar, Union
+from typing import TYPE_CHECKING, Self
 
 if TYPE_CHECKING:
     from .block import Block
     from .container import Container
     from .section import Section
 
-T = TypeVar("T", bound="BlockBuilder")
-
 
 class BlockBuilder:
     """Builder that injects blocks at a given index position."""
 
-    def __init__(self, container: "Container", idx: int):
+    def __init__(self, container: Container, idx: int):
         self._container = container
         self._idx = idx
 
-    def _insert(self, block: "Block") -> Self:
+    def _insert(self, block: Block) -> Self:
         self._container.structure.insert(self._idx, block)
         self._idx += 1
         return self
@@ -44,7 +44,7 @@ class BlockBuilder:
             text = "{}{}".format(text, "\n")
         return self._insert(comment.add_line(text))
 
-    def section(self, section: Union[str, "Section"]) -> Self:
+    def section(self, section: str | Section) -> Self:
         """Creates a section block
 
         Args:
