@@ -175,12 +175,12 @@ class Option(Block):
         return self._value
 
     @value.setter
-    def value(self, value: str):
+    def value(self, value: str | None):
         if is_multi_line(value):
             raise AssignMultilineValueError(self)
         self._set_value(value)
 
-    def _set_value(self, value: str):
+    def _set_value(self, value: str | None):
         self._updated = True
         self._multiline_value_joined = True
         self._value = value
