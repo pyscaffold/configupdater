@@ -189,6 +189,7 @@ class Section(Block, Container[Content], MutableMapping[str, "Option"]):
             self._structure.append(option)
 
     def __delitem__(self, key: str):
+        key = self.document.optionxform(key)
         try:
             idx = self._get_option_idx(key=key)
             del self._structure[idx]
