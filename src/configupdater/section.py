@@ -280,6 +280,8 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
 
         A new option keeps the given ``option`` name as
         :attr:`~configupdater.Option.raw_key`, like ``section[option] = value``.
+        Unlike :meth:`configparser.ConfigParser.set`, which writes the key transformed
+        by ``optionxform`` (lowercase by default), the file gets the given spelling.
 
         Args:
             option: option name
