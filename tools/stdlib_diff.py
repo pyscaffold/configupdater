@@ -93,7 +93,9 @@ class CodeInfo:
         try:
             path = getsourcefile(obj) or "<extension>"
             src, start = getsourcelines(obj)
-        except TypeError:
+        except (TypeError, OSError):
+            # OSError: source not available, e.g. for frozen modules like
+            # `_collections_abc` (Python >= 3.11)
             src = [f"# {path} ::: {obj}\n"]
             start = 0
         return cls(src, path, start)
