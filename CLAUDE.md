@@ -37,9 +37,10 @@ Notes:
   debugging order-dependent failures. `pytest-xdist` is available (`-n auto`).
 - `tox -e lint` **rewrites files** (ruff `--fix`, ruff-format, pyupgrade, codespell
   `-w`, end-of-file/trailing-whitespace fixers). Run it deliberately and review the diff.
-- `tox -e publish` uploads to (Test)PyPI. Never run it; releases happen by pushing a
-  `v*` tag, which triggers `.github/workflows/publish-package.yml`. Never create or
-  push tags without being asked.
+- Releases happen by pushing a `v*` tag, which triggers
+  `.github/workflows/publish-package.yml`: it builds the package and uploads it to
+  PyPI via trusted publishing (no API token) in the `pypi` environment. Never upload
+  to PyPI yourself, and never create or push tags without being asked.
 - CI runs on GitHub Actions (`.github/workflows/ci.yml`): build and inspect the
   sdist/wheel, run the tests against the wheel on Linux, macOS and Windows for every
   Python version in the classifiers, and typecheck on the oldest one. Coverage goes
