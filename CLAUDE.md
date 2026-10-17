@@ -13,7 +13,7 @@ It belongs to the PyScaffold organization (PyScaffold uses it to edit `setup.cfg
 All packaging metadata and tool settings live in `pyproject.toml` (build backend
 hatchling). The version comes from git tags via hatch-vcs; `__version__` is read
 from the installed metadata. Development dependencies are PEP 735 dependency groups
-(`test`, `typing`, `dev`), locked in `uv.lock`.
+(`test`, `typing`, `docs`, `dev`), locked in `uv.lock`.
 
 ## Commands
 
@@ -135,6 +135,8 @@ minimum was raised.
 - User-visible changes get an entry in `CHANGELOG.rst` under the next version,
   referencing the issue (`issue #N`), or the PR (`PR #N`) if there is no issue.
 - `README.md` is the PyPI long description; `docs/usage.rst` is a separate, longer
-  usage guide.
+  usage guide. The docs use Sphinx with the furo theme and are built on Read the Docs
+  (`.readthedocs.yaml`, installed with `uv sync --group docs`), where warnings fail
+  the build; check with `uv run tox -e docs -- -W`.
 - Local artifacts such as `docs/html/`, `site/`, `*.bak`, `build/`, `.tox/` and
   `.venv/` are gitignored and not part of the project. Don't commit them.
