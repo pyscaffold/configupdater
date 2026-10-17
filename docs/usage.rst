@@ -91,6 +91,28 @@ Let's say we want to rename ``summary`` to the more common ``description``::
 If we wanted no summary at all, we could just do ``del updater["metadata"]["summary"]``.
 
 
+Option keys and case sensitivity
+--------------------------------
+
+Like ConfigParser, ConfigUpdater passes option keys through
+:meth:`~configupdater.document.Document.optionxform` before comparing them.
+The default is :meth:`str.lower`, so ``updater["metadata"]["AUTHOR"]`` finds the
+``author`` option, while the file keeps the original spelling, which is also
+available as :attr:`~configupdater.option.Option.raw_key`.
+To make keys case-sensitive, set ``optionxform`` before reading the file::
+
+    updater = ConfigUpdater()
+    updater.optionxform = str
+    updater.read_string(cfg)
+
+.. warning::
+   A custom ``optionxform`` must be idempotent, i.e.
+   ``optionxform(optionxform(key)) == optionxform(key)``, because ConfigUpdater may
+   apply it to keys that were already transformed. For example, with
+   ``lambda key: "prefix_" + key``, ``updater.set("metadata", "license", "MIT")``
+   would write ``prefix_prefix_license = MIT`` to the file.
+
+
 Adding and removing sections
 ----------------------------
 

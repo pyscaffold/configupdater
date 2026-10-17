@@ -71,6 +71,14 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         This implementation mimics ConfigParser API, and can be configured as described
         in :meth:`configparser.ConfigParser.optionxform`.
 
+        Warning:
+            A custom ``optionxform`` must be idempotent, i.e.
+            ``optionxform(optionxform(key)) == optionxform(key)``. ConfigUpdater may
+            apply it to keys that were already transformed, e.g. when
+            :meth:`set` creates a new option. :meth:`str.lower`, :meth:`str.upper`
+            and :class:`str` (to keep keys case-sensitive) satisfy this, while
+            something like ``lambda key: "prefix_" + key`` does not.
+
         Args:
              optionstr (str): key name
 
