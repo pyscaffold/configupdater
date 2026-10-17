@@ -513,6 +513,27 @@ def test_add_before_after_option():
     assert str(updater) == test4_cfg_out
 
 
+def test_add_option_with_delimiter_and_spaces():
+    updater = ConfigUpdater(delimiters=("=", ":"), space_around_delimiters=False)
+    updater.read_string("[section]\nkey1=1\n")
+    builder = updater["section"]["key1"].add_after
+    builder.option("key2", "2", delimiter=":")
+    builder.option("key3", "3", space_around_delimiters=True)
+    builder.option("key4", "4")
+    assert str(updater) == "[section]\nkey1=1\nkey2:2\nkey3 = 3\nkey4=4\n"
+    parser = ConfigParser(delimiters=("=", ":"))
+    parser.read_string(str(updater))
+    assert dict(parser["section"]) == {
+        "key1": "1",
+        "key2": "2",
+        "key3": "3",
+        "key4": "4",
+    }
+    # Other keyword arguments of Option make no sense here and used to be ignored
+    with pytest.raises(TypeError, match="unexpected keyword argument 'line'"):
+        builder.option("key5", "5", line="key5 = 5\n")
+
+
 test5_cfg_in = """
 [section0]
 key0 = 0
