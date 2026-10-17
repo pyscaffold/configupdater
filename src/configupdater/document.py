@@ -281,12 +281,11 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         if section_obj is _UNSET:
             raise NoSectionError(section) from None
 
-        option = self.optionxform(option)
         value = section_obj.get(option, fallback)
         # ^  we checked section_obj against _UNSET, so we are sure about its type
 
         if value is _UNSET:
-            raise NoOptionError(option, section)
+            raise NoOptionError(self.optionxform(option), section)
 
         return value
 
@@ -341,8 +340,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         Returns:
             bool: whether the option exists in the given section
         """
-        key = self.optionxform(option)
-        return key in self.get_section(section, {})
+        return option in self.get_section(section, {})
 
     def set(
         self,
@@ -351,6 +349,9 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         value: None | str | Iterable[str] = None,
     ) -> Self:
         """Set an option.
+
+        A new option keeps the given ``option`` name as
+        :attr:`~configupdater.Option.raw_key`, see :meth:`~configupdater.Section.set`.
 
         Args:
             section: section name
@@ -361,7 +362,6 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
             section_obj = self.__getitem__(section)
         except KeyError:
             raise NoSectionError(section) from None
-        option = self.optionxform(option)
         section_obj.set(option, value)
         return self
 
@@ -379,11 +379,11 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
             section_obj = self.__getitem__(section)
         except KeyError:
             raise NoSectionError(section) from None
-        option = self.optionxform(option)
-        existed = option in section_obj.options()
-        if existed:
+        try:
             del section_obj[option]
-        return existed
+        except KeyError:
+            return False
+        return True
 
     def remove_section(self, name: str) -> bool:
         """Remove a file section.

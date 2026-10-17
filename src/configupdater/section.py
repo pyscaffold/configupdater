@@ -107,12 +107,18 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
         space.add_line(line)
         return self
 
+    # The following private helpers expect a key that was already transformed with
+    # `optionxform`. Public methods transform the given key exactly once and then
+    # use them, so a key is never transformed twice.
     def _get_option_idx(self, key: str) -> int:
         return next(
             i
             for i, entry in enumerate(self._structure)
             if isinstance(entry, Option) and entry.key == key
         )
+
+    def _find_option(self, key: str) -> Option | None:
+        return next((o for o in self.iter_options() if o.key == key), None)
 
     def __str__(self) -> str:
         if not self.updated:
@@ -141,17 +147,18 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
 
     def __getitem__(self, key: str) -> Option:
         key = self.document.optionxform(key)
-        try:
-            return next(o for o in self.iter_options() if o.key == key)
-        except StopIteration as ex:
-            raise KeyError(f"No option `{key}` found", {"key": key}) from ex
+        option = self._find_option(key)
+        if option is None:
+            raise KeyError(f"No option `{key}` found", {"key": key})
+        return option
 
     def __setitem__(self, key: str, value: Value | None = None):
         """Set the value of an option.
 
-        Please notice that this method used
+        Please notice that this method uses
         :meth:`~configupdater.document.Document.optionxform` to verify if the given
-        option already exists inside the section object.
+        option already exists inside the section object. A new option keeps the
+        given ``key`` as :attr:`~configupdater.Option.raw_key`.
         """
         # First we check for inconsistencies
         given_key = self.document.optionxform(key)
@@ -167,16 +174,15 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
         else:
             option = self.create_option(key, value)
 
-        if given_key in self:  # Replace an existing option
+        curr_option = self._find_option(given_key)
+        if curr_option is not None:  # Replace an existing option
             if isinstance(value, Option):
-                curr_value = self.__getitem__(given_key)
-                idx = curr_value.container_idx
-                curr_value.detach()
+                idx = curr_option.container_idx
+                curr_option.detach()
                 value.attach(self)
                 self._structure.insert(idx, value)
             else:
-                option = self.__getitem__(given_key)
-                option.value = value
+                curr_option.value = value
         else:  # Append a new option
             option.attach(self)
             self._structure.append(option)
@@ -189,18 +195,23 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
         except StopIteration as ex:
             raise KeyError(f"No option `{key}` found", {"key": key}) from ex
 
-    # MutableMapping[str, Option] for some reason accepts key: object
-    # it actually doesn't matter for the implementation, so we omit the typing
+    # MutableMapping[str, Option] for some reason accepts key: object.
+    # Option keys are always strings, so any other object is never contained.
     def __contains__(self, key) -> bool:
         """Returns whether the given option exists.
 
+        Like ``section[key]``, this applies
+        :meth:`~configupdater.ConfigUpdater.optionxform` to ``key``.
+
         Args:
-            option (str): name of option
+            key (str): name of option
 
         Returns:
-            bool: whether the section exists
+            bool: whether the option exists
         """
-        return next((True for o in self.iter_options() if o.key == key), False)
+        if not isinstance(key, str):
+            return False
+        return self._find_option(self.document.optionxform(key)) is not None
 
     # Omit typing so it can represent any object
     def __eq__(self, other) -> bool:
@@ -269,17 +280,21 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
     def set(self, option: str, value: None | str | Iterable[str] = None) -> Self:
         """Set an option for chaining.
 
+        A new option keeps the given ``option`` name as
+        :attr:`~configupdater.Option.raw_key`, like ``section[option] = value``.
+
         Args:
             option: option name
             value: value, default None
         """
-        option = self.document.optionxform(option)
-        if option not in self.options():
-            self[option] = self.create_option(option)
+        opt = self._find_option(self.document.optionxform(option))
+        if opt is None:
+            opt = self.create_option(option)
+            self.add_option(opt)
         if not isinstance(value, Iterable) or isinstance(value, str):
-            self[option].value = value
+            opt.value = value
         else:
-            self[option].set_values(value)
+            opt.set_values(value)
         return self
 
     def create_option(self, key: str, value: str | None = None) -> Option:
@@ -309,8 +324,12 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
     def get(self, key, default=None):
         """This method works similarly to :meth:`dict.get`, and allows you
         to retrieve an option object by its key.
+
+        Like ``section[key]``, this applies
+        :meth:`~configupdater.ConfigUpdater.optionxform` to ``key``.
         """
-        return next((o for o in self.iter_options() if o.key == key), default)
+        option = self._find_option(self.document.optionxform(key))
+        return default if option is None else option
 
     # The following is a pragmatic violation of Liskov substitution principle
     # For some reason MutableMapping.items return a Set-like object
