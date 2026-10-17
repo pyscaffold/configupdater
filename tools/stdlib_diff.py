@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Simple command line utility to help finding the differences between
 ConfigUpdater and ConfigParser.
 

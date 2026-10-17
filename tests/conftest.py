@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Dummy conftest.py for configupdater.
 
