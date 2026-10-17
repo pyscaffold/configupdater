@@ -69,7 +69,8 @@ def test_update_file_issue_68(tmp_path):
     # allow_no_value = False
     file = tmp_path / "file.cfg"
     file.write_text("[section]")
-    cfg = ConfigUpdater(allow_no_value=False).read_file(open(file))
+    with open(file) as fp:
+        cfg = ConfigUpdater(allow_no_value=False).read_file(fp)
     cfg.set("section", "option")
     with pytest.warns(NoneValueDisallowed):
         # A warning is issued, but the method will not fail
@@ -78,7 +79,8 @@ def test_update_file_issue_68(tmp_path):
 
     # allow_no_value = True
     file.write_text("[section]")
-    cfg = ConfigUpdater(allow_no_value=True).read_file(open(file))
+    with open(file) as fp:
+        cfg = ConfigUpdater(allow_no_value=True).read_file(fp)
     cfg.set("section", "option")
     cfg.update_file()
     assert file.read_text().strip() == "[section]\noption"
@@ -145,7 +147,7 @@ def test_iter_items_section(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
 
-    result = list(k for k, v in updater["metadata"].items())
+    result = [k for k, v in updater["metadata"].items()]
     assert result == [
         "name",
         "description",
@@ -260,12 +262,12 @@ def test_items(setup_cfg_path):
         "pyscaffold",
     ]
     assert list(sect_names) == exp_sect_namess
-    assert all([isinstance(s, Section) for s in sects])
+    assert all(isinstance(s, Section) for s in sects)
 
     opt_names, opts = zip(*updater.items("devpi:upload"))
     exp_opt_names = ["no-vcs", "formats"]
     assert list(opt_names) == exp_opt_names
-    assert all([isinstance(o, Option) for o in opts])
+    assert all(isinstance(o, Option) for o in opts)
 
 
 def test_get_method(setup_cfg_path):
@@ -1098,7 +1100,7 @@ def test_add_detached_section_option_objects():
     assert not updater.has_section("sec2")
     assert not sec2.has_container()
     with pytest.raises(NotAttachedError):
-        sec2.container
+        _ = sec2.container
 
     new_sec2 = Section("new-sec2")
     new_opt = Option(key="new-key", value="new-value")
@@ -1679,6 +1681,6 @@ def test_edit_equal_blocks_by_identity(container_kind, block_kind, operation):
 @pytest.mark.parametrize("block_type", [Space, Comment])
 def test_container_idx_errors_for_missing_blocks(block_type):
     with pytest.raises(NotAttachedError):
-        block_type().container_idx
+        _ = block_type().container_idx
     with pytest.raises(ValueError):
-        block_type(container=ConfigUpdater()).container_idx
+        _ = block_type(container=ConfigUpdater()).container_idx

@@ -534,10 +534,9 @@ class Parser:
         for section in self._document.section_blocks():
             for option in section.option_blocks():
                 next_block = option.next_block
-                if isinstance(next_block, Space):
-                    # check if space is part of a multi-line value with blank lines
-                    if "".join(next_block.lines).strip():
-                        self._merge_option_with_space(option, next_block)
+                # check if space is part of a multi-line value with blank lines
+                if isinstance(next_block, Space) and "".join(next_block.lines).strip():
+                    self._merge_option_with_space(option, next_block)
 
     def _merge_option_with_space(self, option: Option, space: Space):
         last_val_idx = max(i for i, line in enumerate(space.lines) if line.strip())

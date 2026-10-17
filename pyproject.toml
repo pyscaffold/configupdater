@@ -12,3 +12,8 @@ version_scheme = "no-guess-dev"
 # Keep in sync with `python_requires` in setup.cfg, otherwise autofixes may introduce
 # syntax that is not available in the oldest supported Python version.
 target-version = "py311"
+
+[tool.ruff.lint]
+# TRY004: raising TypeError instead of ValueError/RuntimeError on type checks would
+# break callers that catch the current exceptions.
+ignore = ["TRY004"]
