@@ -19,6 +19,16 @@ Version 4.0 (unreleased)
 - ``del section[key]`` (and thus ``section.pop(key)``) now applies ``optionxform``
   like ``section[key]`` does, PR #148
 - Document that a custom ``optionxform`` must be idempotent
+- **Breaking:** ``key in section``, ``section.has_option(key)`` and
+  ``section.get(key)`` now apply ``optionxform`` to ``key``, like ``section[key]``
+  and ConfigParser do. With the default ``str.lower``, ``"KEY" in section`` is now
+  ``True`` and ``section.get("KEY")`` returns the option instead of ``None``
+- **Breaking:** ``Section.set`` and ``ConfigUpdater.set`` keep the given spelling
+  when they create a new option, like ``section[key] = value`` does. For example,
+  ``updater.set("metadata", "Name", "x")`` now writes ``Name = x`` instead of
+  ``name = x``
+- ``ConfigUpdater.set``, ``get``, ``has_option`` and ``remove_option`` apply
+  ``optionxform`` only once instead of transforming already transformed keys again
 
 Version 3.2
 ===========

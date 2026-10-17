@@ -68,11 +68,13 @@ Key invariants. Changes must preserve them:
   `container_idx` locates blocks by identity (`is`), because blocks compare equal
   by their string content.
 - **Option keys** are normalized through `Document.optionxform` (default `str.lower`);
-  `Option.raw_key` keeps the original spelling. Section names are case-sensitive.
-  `optionxform` must be idempotent, because keys are often transformed twice (e.g.
-  `Document.set` → `Section.set`). In `Section`, `s[key]` get/set/del apply it, but
-  `key in s` and `s.get(key)` expect an already transformed key (asserted in
-  `tests/test_optionxform.py`).
+  `Option.raw_key` keeps the original spelling, also for options created with
+  `s[key] = v`, `set` or the builder. Section names are case-sensitive. Each public
+  `Section` method that takes a key (`s[key]` get/set/del, `in`/`has_option`, `get`,
+  `set`) applies `optionxform` exactly once and then uses private helpers
+  (`_find_option`, `_get_option_idx`) that expect a transformed key. `Document`
+  methods pass the caller's key on unchanged. Iteration yields transformed keys, so
+  `optionxform` must still be idempotent (e.g. `[s[k] for k in s]`).
 - `updater["sect"]["key"]` returns an `Option`, not a string. Use `.value`.
 - Deliberately **not** supported: interpolation, `DEFAULT` section propagation,
   value type conversion, non-strict mode (duplicate sections/options).
