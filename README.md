@@ -270,8 +270,8 @@ ConfigUpdater was mainly developed for [PyScaffold].
 [module reference]: https://configupdater.readthedocs.io/en/latest/api.html#configupdater.configupdater.ConfigUpdater
 [unit tests]: https://github.com/pyscaffold/configupdater/blob/main/tests/test_configupdater.py
 
-[Tests-image]: https://api.cirrus-ci.com/github/pyscaffold/configupdater.svg?branch=main
-[Tests-link]: https://cirrus-ci.com/github/pyscaffold/configupdater
+[Tests-image]: https://github.com/pyscaffold/configupdater/actions/workflows/ci.yml/badge.svg
+[Tests-link]: https://github.com/pyscaffold/configupdater/actions/workflows/ci.yml
 [Coverage-image]: https://img.shields.io/coveralls/github/pyscaffold/configupdater/main.svg
 [Coverage-link]: https://coveralls.io/r/pyscaffold/configupdater
 [Publish-image]: https://github.com/pyscaffold/configupdater/actions/workflows/publish-package.yml/badge.svg
