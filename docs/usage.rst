@@ -95,10 +95,10 @@ Option keys and case sensitivity
 --------------------------------
 
 Like ConfigParser, ConfigUpdater passes option keys through
-:meth:`~configupdater.document.Document.optionxform` before comparing them.
+:meth:`~configupdater.ConfigUpdater.optionxform` before comparing them.
 The default is :meth:`str.lower`, so ``updater["metadata"]["AUTHOR"]`` finds the
 ``author`` option, while the file keeps the original spelling, which is also
-available as :attr:`~configupdater.option.Option.raw_key`.
+available as :attr:`~configupdater.Option.raw_key`.
 To make keys case-sensitive, set ``optionxform`` before reading the file::
 
     updater = ConfigUpdater()
@@ -200,7 +200,7 @@ Keeping comments immediately before a section
 ``add_before`` inserts directly before the section block. If you have added
 comments immediately before that section using the builder, they remain before
 the newly inserted block. To keep those comments next to the original section,
-use :attr:`~configupdater.section.Section.add_before_skip_comments` instead::
+use :attr:`~configupdater.Section.add_before_skip_comments` instead::
 
     updater = ConfigUpdater()
     updater.read_string("[first]\n")
