@@ -25,6 +25,8 @@ Version 4.0 (unreleased)
   development dependencies are dependency groups, e.g. ``uv sync``, PR #156
 - Complete the type annotations of the public API, now checked with mypy in strict
   mode, and fix the ``NoneValueDisallowed`` warning under ``python -OO``, PR #158
+- Fix ``NotAttachedError``, ``AlreadyAttachedError`` and ``AssignMultilineValueError``
+  failing with an ``AttributeError`` under ``python -OO``
 - **Breaking:** ``key in section``, ``section.has_option(key)`` and
   ``section.get(key)`` now apply ``optionxform`` to ``key``, like ``section[key]``
   and ConfigParser do. With the default ``str.lower``, ``"KEY" in section`` is now

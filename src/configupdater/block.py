@@ -8,8 +8,7 @@ configuration file, e.g. comments, sections, options and even sequences of white
 from __future__ import annotations
 
 from copy import deepcopy
-from inspect import cleandoc
-from typing import TYPE_CHECKING, Any, Self, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Self, TypeVar
 
 if TYPE_CHECKING:
     from .builder import BlockBuilder
@@ -26,37 +25,40 @@ def _short_repr(block: object) -> str:
     return f"<{block.__class__.__name__}{name}>"
 
 
+# The messages of the following exceptions double as their docstrings. They are
+# assigned to ``__doc__`` explicitly since ``python -OO`` strips real docstrings.
+
+
 class NotAttachedError(Exception):
-    """{block} is not attached to a container yet. Try to insert it first."""
+    _template = "{block} is not attached to a container yet. Try to insert it first."
+    __doc__ = _template
 
     def __init__(self, block: str | Block = "The block"):
-        doc = cleandoc(cast(str, self.__class__.__doc__))
-        msg = doc.format(block=_short_repr(block))
-        super().__init__(msg)
+        super().__init__(self._template.format(block=_short_repr(block)))
 
 
 class AlreadyAttachedError(Exception):
-    """{block} has been already attached to a container.
-
-    Try to remove it first using ``detach`` or create a copy using stdlib's
-    ``copy.deepcopy``.
-    """
+    _template = (
+        "{block} has been already attached to a container.\n"
+        "\n"
+        "Try to remove it first using ``detach`` or create a copy using stdlib's\n"
+        "``copy.deepcopy``."
+    )
+    __doc__ = _template
 
     def __init__(self, block: str | Block = "The block"):
-        doc = cleandoc(cast(str, self.__class__.__doc__))
-        msg = doc.format(block=_short_repr(block))
-        super().__init__(msg)
+        super().__init__(self._template.format(block=_short_repr(block)))
 
 
 class AssignMultilineValueError(Exception):
-    """Trying to assign a multi-line value to {block}.
-    Use the ``set_values`` or ``append`` method to accomplish that.
-    """
+    _template = (
+        "Trying to assign a multi-line value to {block}.\n"
+        "Use the ``set_values`` or ``append`` method to accomplish that."
+    )
+    __doc__ = _template
 
     def __init__(self, block: str | Block = "The block"):
-        doc = cleandoc(cast(str, self.__class__.__doc__))
-        msg = doc.format(block=_short_repr(block))
-        super().__init__(msg)
+        super().__init__(self._template.format(block=_short_repr(block)))
 
 
 class Block:
