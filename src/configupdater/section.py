@@ -195,8 +195,8 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
         except StopIteration as ex:
             raise KeyError(f"No option `{key}` found", {"key": key}) from ex
 
-    # MutableMapping[str, Option] for some reason accepts key: object.
-    # Option keys are always strings, so any other object is never contained.
+    # MutableMapping[str, Option] for some reason accepts key: object
+    # it actually doesn't matter for the implementation, so we omit the typing
     def __contains__(self, key) -> bool:
         """Returns whether the given option exists.
 
@@ -209,8 +209,6 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
         Returns:
             bool: whether the option exists
         """
-        if not isinstance(key, str):
-            return False
         return self._find_option(self.document.optionxform(key)) is not None
 
     # Omit typing so it can represent any object

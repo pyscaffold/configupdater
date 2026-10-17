@@ -72,7 +72,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         in :meth:`configparser.ConfigParser.optionxform`.
 
         Warning:
-            A custom ``optionxform`` must be idempotent, i.e.
+            As in ConfigParser, a custom ``optionxform`` must be idempotent, i.e.
             ``optionxform(optionxform(key)) == optionxform(key)``. The keys that
             ConfigUpdater returns, e.g. when iterating over a section, are already
             transformed and are transformed again when they are used for a lookup.

@@ -60,6 +60,12 @@ Source is in `src/configupdater/` (src layout). The document is a tree of *block
 | `builder.py` | `BlockBuilder`: fluent insertion API behind `block.add_before`, `block.add_after`, `section.insert_at(idx)` |
 
 Key invariants. Changes must preserve them:
+- **Mirror ConfigParser.** Behavior matches the stdlib `configparser.ConfigParser`
+  as closely as possible. Deviate only where format preservation requires it (e.g.
+  `Option` objects instead of strings, keeping the spelling of parsed keys) or for
+  the deliberately unsupported features below, and document every deviation in the
+  docstring and, if it is user-visible, in the changelog. When in doubt, check what
+  ConfigParser does and add a test that compares against it.
 - **Round-trip fidelity.** An unmodified document serializes byte-identically to its
   input (`str(updater) == original`). `Block.__str__` returns the original lines
   unless the block is `updated`; only updated blocks are re-rendered.
@@ -73,8 +79,9 @@ Key invariants. Changes must preserve them:
   `Section` method that takes a key (`s[key]` get/set/del, `in`/`has_option`, `get`,
   `set`) applies `optionxform` exactly once and then uses private helpers
   (`_find_option`, `_get_option_idx`) that expect a transformed key. `Document`
-  methods pass the caller's key on unchanged. Iteration yields transformed keys, so
-  `optionxform` must still be idempotent (e.g. `[s[k] for k in s]`).
+  methods pass the caller's key on unchanged. As in ConfigParser, whose docs require
+  it, `optionxform` must be idempotent: iteration yields transformed keys that are
+  transformed again on lookup (e.g. `[s[k] for k in s]`).
 - `updater["sect"]["key"]` returns an `Option`, not a string. Use `.value`.
 - Deliberately **not** supported: interpolation, `DEFAULT` section propagation,
   value type conversion, non-strict mode (duplicate sections/options).
