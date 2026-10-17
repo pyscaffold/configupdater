@@ -41,7 +41,7 @@ Notes:
   `v*` tag, which triggers `.github/workflows/publish-package.yml`. Never create or
   push tags without being asked.
 - CI runs on Cirrus (`.cirrus.yml`): build + lint + typecheck on Linux 3.11, tests on
-  Linux 3.8/3.10/3.12, conda, macOS, FreeBSD and Windows. pre-commit.ci pushes
+  Linux 3.11–3.14, conda, macOS, FreeBSD and Windows. pre-commit.ci pushes
   autofix and autoupdate commits to PRs.
 
 ## Architecture
@@ -88,24 +88,19 @@ ConfigParser counterparts. It is useful when porting upstream parser fixes.
 
 ## Python version support
 
-Declared support is Python 3.8+ (classifiers, CI matrix, `pyupgrade --py38-plus`;
-`python_requires` in `setup.cfg` still says `>=3.6`).
-
-**Known issue (since commit `99c0a76`, Oct 2026):** a pre-commit.ci autofix with
-ruff 0.17 rewrote the sources to use `typing.Self` and runtime-evaluated `X | None`
-annotations, so the package currently fails to import on Python < 3.11. Ruff has no
-`target-version` configured, so autofixes can introduce syntax newer than the
-supported minimum again. When touching typing code, keep it importable on the
-minimum supported version (e.g. `from __future__ import annotations`,
-`typing_extensions`, or a pinned ruff `target-version`). Legacy
-`if sys.version_info[:2] >= (3, 9): List = list` shims remain in several modules;
-don't add new ones.
+The minimum is Python 3.11 (since 4.0), so 3.11 features such as `typing.Self` and
+`X | Y` unions are fine. The minimum is set in several places that must stay in sync:
+`python_requires` and the classifiers in `setup.cfg`, ruff's `target-version` in
+`pyproject.toml`, `pyupgrade --py311-plus` in `.pre-commit-config.yaml`, the Cirrus
+matrix and the `py{…}-diff` envs in `tox.ini`. Otherwise pre-commit.ci autofixes can
+introduce syntax newer than the minimum, which is how commit `99c0a76` broke imports
+on Python < 3.11 before the minimum was raised.
 
 ## Conventions
 
-- Formatting/linting: ruff + ruff-format (Black style, line length 88), isort
-  profile black with `configupdater` as first-party. Flake8 settings in `setup.cfg`
-  are legacy.
+- Formatting/linting: ruff + ruff-format (Black style, line length 88) with ruff's
+  default rule set plus the ignores in `pyproject.toml`. `.isort.cfg` and the flake8
+  settings in `setup.cfg` are legacy; no hook runs isort or flake8.
 - Docstrings use Google style (`Args:`, `Returns:`, `Raises:`) with Sphinx roles;
   `docs/api.rst` autodocs the package.
 - Tests are plain pytest functions in `tests/`. Inline configs use `dedent(...)`;
@@ -114,7 +109,8 @@ don't add new ones.
   where behavior should match. Every bugfix needs a regression test; name it after
   the GitHub issue when there is one (e.g. `test_update_file_issue_68`).
 - User-visible changes get an entry in `CHANGELOG.rst` under the next version,
-  referencing the issue (`issue #N`).
-- `README.md` is the PyPI long description. `README.rst` is a stale leftover.
+  referencing the issue (`issue #N`), or the PR (`PR #N`) if there is no issue.
+- `README.md` is the PyPI long description; `docs/usage.rst` is a separate, longer
+  usage guide.
 - Untracked local artifacts (`docs/html/`, `site/`, `*.bak`, `build/`, `.tox/`) are
   not part of the project. Ignore them and don't commit them.
