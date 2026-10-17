@@ -37,12 +37,16 @@ Notes:
   debugging order-dependent failures. `pytest-xdist` is available (`-n auto`).
 - `tox -e lint` **rewrites files** (ruff `--fix`, ruff-format, pyupgrade, codespell
   `-w`, end-of-file/trailing-whitespace fixers). Run it deliberately and review the diff.
-- `tox -e publish` uploads to (Test)PyPI. Never run it; releases happen by pushing a
-  `v*` tag, which triggers `.github/workflows/publish-package.yml`. Never create or
-  push tags without being asked.
-- CI runs on Cirrus (`.cirrus.yml`): build + lint + typecheck on Linux 3.11, tests on
-  Linux 3.11–3.14, conda, macOS, FreeBSD and Windows. pre-commit.ci pushes
-  autofix and autoupdate commits to PRs.
+- Releases happen by pushing a `v*` tag, which triggers
+  `.github/workflows/publish-package.yml`: it builds the package and uploads it to
+  PyPI via trusted publishing (no API token) in the `pypi` environment. Never upload
+  to PyPI yourself, and never create or push tags without being asked.
+- CI runs on GitHub Actions (`.github/workflows/ci.yml`): build and inspect the
+  sdist/wheel, run the tests against the wheel on Linux, macOS and Windows for every
+  Python version in the classifiers, and typecheck on the oldest one. Coverage goes
+  to Coveralls. The `All required checks pass` job is the single status check for
+  branch protection. Actions are pinned to commit SHAs, which Dependabot updates.
+  Lint runs on pre-commit.ci, which pushes autofix and autoupdate commits to PRs.
 
 ## Architecture
 
@@ -100,8 +104,8 @@ ConfigParser counterparts. It is useful when porting upstream parser fixes.
 The minimum is Python 3.11 (since 4.0), so 3.11 features such as `typing.Self` and
 `X | Y` unions are fine. The minimum is set in several places that must stay in sync:
 `python_requires` and the classifiers in `setup.cfg`, ruff's `target-version` in
-`pyproject.toml`, `pyupgrade --py311-plus` in `.pre-commit-config.yaml`, the Cirrus
-matrix and the `py{…}-diff` envs in `tox.ini`. Otherwise pre-commit.ci autofixes can
+`pyproject.toml`, `pyupgrade --py311-plus` in `.pre-commit-config.yaml` and the
+`py{…}-diff` envs in `tox.ini`. The CI test matrix is derived from the classifiers. Otherwise pre-commit.ci autofixes can
 introduce syntax newer than the minimum, which is how commit `99c0a76` broke imports
 on Python < 3.11 before the minimum was raised.
 

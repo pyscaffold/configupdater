@@ -32,8 +32,7 @@
       "Bash(git tag *)"
     ],
     "deny": [
-      "Bash(tox -e publish *)",
-      "Bash(uvx --python 3.12 --with tox-uv tox -e publish *)",
+      "Bash(uv publish *)",
       "Bash(twine upload *)",
       "Bash(python -m twine upload *)"
     ]
