@@ -14,6 +14,9 @@ Version 4.0 (unreleased)
   does not end with a newline, issue #126
 - Fix ``None`` being written as delimiter when assigning a value to an option that was
   parsed without a value (``allow_no_value``), issue #141
+- Port the option regexes of Python 3.15's ``configparser`` (CPython gh-146333). The
+  old ones backtracked quadratically, so a long line with many spaces could stall
+  the parser for minutes, PR #161
 - Fix navigating, detaching or inserting at the wrong position when a container holds
   several equal comment or blank-line blocks, issue #140
 - ``del section[key]`` (and thus ``section.pop(key)``) now applies ``optionxform``

@@ -111,8 +111,13 @@ class Parser:
         \]                                 # ]
         (?P<raw_comment>.*)                # match any suffix
         """
+    # The option templates are taken from Python 3.15's configparser, whose negative
+    # lookaheads avoid quadratic backtracking on long lines (CPython gh-146333)
     _OPT_TMPL: str = r"""
-        (?P<option>.*?)                    # very permissive!
+        (?P<option>                        # very permissive!
+            (?:(?!{delim})\S)*             # non-delimiter non-whitespace
+            (?:(?:(?!{delim})\s)+          # optionally more
+             (?:(?!{delim})\S)+)*)         #   space-separated words
         \s*(?P<vi>{delim})\s*              # any number of space/tab,
                                            # followed by any of the
                                            # allowed delimiters,
@@ -120,7 +125,10 @@ class Parser:
         (?P<value>.*)$                     # everything up to eol
         """
     _OPT_NV_TMPL: str = r"""
-        (?P<option>.*?)                    # very permissive!
+        (?P<option>                        # very permissive!
+            (?:(?!{delim})\S)*             # non-delimiter non-whitespace
+            (?:(?:(?!{delim})\s)+          # optionally more
+             (?:(?!{delim})\S)+)*)         #   space-separated words
         \s*(?:                             # any number of space/tab,
         (?P<vi>{delim})\s*                 # optionally followed by
                                            # any of the allowed
