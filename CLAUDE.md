@@ -27,7 +27,7 @@ uv run tox -e default -- tests/test_option.py::test_name
 uv run tox -e typecheck          # mypy src tools
 uv run tox -e lint               # pre-commit run --all-files
 uv run tox -e docs               # sphinx html → docs/_build/html
-uv run tox -e doctests
+uv run tox -e doctests           # run the examples in docs/usage.rst
 uv run tox -e py312-diff         # diff vs. stdlib ConfigParser (tools/stdlib_diff.py)
 uv run pytest                    # quick test run in .venv, without coverage
 uv build                         # sdist + wheel in dist/
@@ -49,10 +49,11 @@ Notes:
   to PyPI yourself, and never create or push tags without being asked.
 - CI runs on GitHub Actions (`.github/workflows/ci.yml`): build and inspect the
   sdist/wheel, run the tests against the wheel on Linux, macOS and Windows for every
-  Python version in the classifiers, and typecheck on the oldest one. Coverage goes
-  to Coveralls. The `All required checks pass` job is the single status check for
-  branch protection. Actions are pinned to commit SHAs, which Dependabot updates.
-  Lint runs on pre-commit.ci, which pushes autofix and autoupdate commits to PRs.
+  Python version in the classifiers, and typecheck and run the doctests on the oldest
+  one. Coverage goes to Coveralls. The `All required checks pass` job is the single
+  status check for branch protection. Actions are pinned to commit SHAs, which
+  Dependabot updates. Lint runs on pre-commit.ci, which pushes autofix and autoupdate
+  commits to PRs.
 
 ## Architecture
 
@@ -138,5 +139,9 @@ minimum was raised.
   usage guide. The docs use Sphinx with the furo theme and are built on Read the Docs
   (`.readthedocs.yaml`, installed with `uv sync --group docs`), where warnings fail
   the build; check with `uv run tox -e docs -- -W`.
+- The code examples in both are tested. In `docs/usage.rst` they are Sphinx
+  `testcode`/`testoutput` blocks (hidden ones print the results the text shows),
+  run by `tox -e doctests`. `tests/test_readme.py` runs the `python` blocks of
+  `README.md` in order and compares each `ini` block with `str(updater)`.
 - Local artifacts such as `docs/html/`, `site/`, `*.bak`, `build/`, `.tox/` and
   `.venv/` are gitignored and not part of the project. Don't commit them.
