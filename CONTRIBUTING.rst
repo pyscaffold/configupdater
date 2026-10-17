@@ -22,10 +22,11 @@ additional considerations and avoids unnecessary work.
 Create an environment
 ---------------------
 
-Before you start coding we recommend to install Miniconda_ which allows
-to setup a dedicated development environment named ``configupdater`` with::
+ConfigUpdater requires Python 3.11 or newer. Before you start coding we recommend
+to install Miniconda_ which allows to setup a dedicated development environment
+named ``configupdater`` with::
 
-   conda create -n configupdater python=3 virtualenv pytest pytest-cov
+   conda create -n configupdater "python>=3.11" tox
 
 Then activate the environment ``configupdater`` with::
 
@@ -41,7 +42,7 @@ Clone the repository
 
     git clone git@github.com:YourLogin/configupdater.git
 
-#. Run ``python setup.py develop`` to install ``configupdater`` into your environment.
+#. Run ``pip install -e .`` to install ``configupdater`` into your environment.
 
 #. Install ``pre-commit``::
 
@@ -68,12 +69,14 @@ Clone the repository
 
 #. Please check that your changes don't break any unit tests with::
 
-    python setup.py test
+    tox
 
    Don't forget to also add unit tests in case your contribution
    adds an additional feature and is not just a bugfix.
 
-#. Use `flake8`_ to check your code style.
+#. The ``pre-commit`` hooks check your code style with `ruff`_ on every commit.
+   You can also run them on all files with ``tox -e lint``, and check the type
+   hints with ``tox -e typecheck``.
 #. Add yourself to the list of contributors in ``AUTHORS.rst``.
 #. Go to the web page of your ConfigUpdater fork, and click
    "Create pull request" to send your changes to the maintainers for review.
@@ -87,4 +90,4 @@ Clone the repository
 .. _issue tracker: https://github.com/pyscaffold/configupdater/issues
 .. _Create a Github account: https://github.com/join
 .. _creating a PR: https://help.github.com/articles/creating-a-pull-request/
-.. _flake8: https://flake8.pycqa.org/
+.. _ruff: https://docs.astral.sh/ruff/
