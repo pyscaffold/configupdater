@@ -22,13 +22,14 @@ Version 4.0 (unreleased)
 - **Breaking:** ``key in section``, ``section.has_option(key)`` and
   ``section.get(key)`` now apply ``optionxform`` to ``key``, like ``section[key]``
   and ConfigParser do. With the default ``str.lower``, ``"KEY" in section`` is now
-  ``True`` and ``section.get("KEY")`` returns the option instead of ``None``
+  ``True`` and ``section.get("KEY")`` returns the option instead of ``None``, PR #153
 - **Breaking:** ``Section.set`` and ``ConfigUpdater.set`` keep the given spelling
   when they create a new option, like ``section[key] = value`` does. For example,
   ``updater.set("metadata", "Name", "x")`` now writes ``Name = x`` instead of
-  ``name = x``
+  ``name = x``, PR #153
 - ``ConfigUpdater.set``, ``get``, ``has_option`` and ``remove_option`` apply
-  ``optionxform`` only once instead of transforming already transformed keys again
+  ``optionxform`` only once instead of transforming already transformed keys again,
+  PR #153
 
 Version 3.2
 ===========
