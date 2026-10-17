@@ -73,11 +73,12 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
 
         Warning:
             A custom ``optionxform`` must be idempotent, i.e.
-            ``optionxform(optionxform(key)) == optionxform(key)``. ConfigUpdater may
-            apply it to keys that were already transformed, e.g. when
-            :meth:`set` creates a new option. :meth:`str.lower`, :meth:`str.upper`
-            and :class:`str` (to keep keys case-sensitive) satisfy this, while
-            something like ``lambda key: "prefix_" + key`` does not.
+            ``optionxform(optionxform(key)) == optionxform(key)``. The keys that
+            ConfigUpdater returns, e.g. when iterating over a section, are already
+            transformed and are transformed again when they are used for a lookup.
+            :meth:`str.lower`, :meth:`str.upper` and :class:`str` (to keep keys
+            case-sensitive) satisfy this, while something like
+            ``lambda key: "prefix_" + key`` does not.
 
         Args:
              optionstr (str): key name

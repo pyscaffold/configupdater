@@ -107,10 +107,13 @@ To make keys case-sensitive, set ``optionxform`` before reading the file::
 
 .. warning::
    A custom ``optionxform`` must be idempotent, i.e.
-   ``optionxform(optionxform(key)) == optionxform(key)``, because ConfigUpdater may
-   apply it to keys that were already transformed. For example, with
-   ``lambda key: "prefix_" + key``, ``updater.set("metadata", "license", "MIT")``
-   would write ``prefix_prefix_license = MIT`` to the file.
+   ``optionxform(optionxform(key)) == optionxform(key)``, because the keys that
+   ConfigUpdater returns, e.g. when iterating over a section, are already
+   transformed and are transformed again when you use them for a lookup.
+   For example, with ``lambda key: "prefix_" + key``,
+   ``[section[key] for key in section]`` raises a :class:`KeyError`: iterating over
+   a section with a ``license`` option yields ``prefix_license``, which is then
+   looked up as ``prefix_prefix_license``.
 
 
 Adding and removing sections
