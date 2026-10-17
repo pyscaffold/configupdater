@@ -1,18 +1,121 @@
 [build-system]
-# AVOID CHANGING REQUIRES: IT WILL BE UPDATED BY PYSCAFFOLD!
-requires = ["setuptools>=46.1.0", "setuptools_scm[toml]>=5"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.27", "hatch-vcs>=0.5"]
+build-backend = "hatchling.build"
 
-[tool.setuptools_scm]
-# For smarter version schemes and other configuration options,
-# check out https://github.com/pypa/setuptools_scm
-version_scheme = "no-guess-dev"
+[project]
+name = "ConfigUpdater"
+description = "Parser like ConfigParser but for updating configuration files"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE.txt"]
+authors = [{ name = "Florian Wilhelm", email = "florian.wilhelm@gmail.com" }]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dynamic = ["version"]
+dependencies = []
 
-[tool.ruff]
-# Keep in sync with `python_requires` in setup.cfg, otherwise autofixes may introduce
-# syntax that is not available in the oldest supported Python version.
-target-version = "py311"
+[project.urls]
+Homepage = "https://github.com/pyscaffold/configupdater"
+Documentation = "https://configupdater.readthedocs.io/"
+Source = "https://github.com/pyscaffold/configupdater/"
+Issues = "https://github.com/pyscaffold/configupdater/issues"
+Changelog = "https://configupdater.readthedocs.io/en/latest/changelog.html"
+Download = "https://pypi.org/project/configupdater/#files"
+Conda-Forge = "https://anaconda.org/conda-forge/configupdater"
 
+[dependency-groups]
+test = [
+    "pytest>=9",
+    "pytest-cov>=7",
+    "pytest-randomly",
+    # Opt in to distributed tests with, e.g., `-n auto`
+    "pytest-xdist",
+]
+typing = ["mypy>=2"]
+dev = [
+    { include-group = "test" },
+    { include-group = "typing" },
+    "pre-commit",
+    "tox>=4.22",
+    "tox-uv>=1.17",
+]
+
+# ---- Build ----
+
+[tool.hatch.version]
+source = "vcs"
+raw-options = { version_scheme = "no-guess-dev" }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/configupdater"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+    "/tools",
+    "/docs",
+    "/AUTHORS.rst",
+    "/CHANGELOG.rst",
+    "/CONTRIBUTING.rst",
+    "/tox.ini",
+]
+
+# ---- Tests ----
+
+[tool.pytest]
+minversion = "9.0"
+addopts = ["-ra", "--verbose"]
+testpaths = ["tests"]
+strict = true
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+branch = true
+source_pkgs = ["configupdater"]
+
+[tool.coverage.paths]
+source = ["src/", "*/site-packages/"]
+
+[tool.coverage.report]
+show_missing = true
+exclude_also = [
+    # Ellipsis, e.g. in overloaded methods
+    '\.\.\.',
+    # Debug-only code
+    'def __repr__',
+    'if self\.debug',
+    # Defensive assertion code
+    'raise AssertionError',
+    'raise NotImplementedError',
+    # Non-runnable code
+    'if 0:',
+    'if __name__ == .__main__.:',
+    'if TYPE_CHECKING:',
+]
+
+# ---- Static analysis ----
+
+[tool.mypy]
+pretty = true
+show_error_context = true
+show_traceback = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+
+# Ruff infers the oldest supported Python from `requires-python`
 [tool.ruff.lint]
 # TRY004: raising TypeError instead of ValueError/RuntimeError on type checks would
 # break callers that catch the current exceptions.

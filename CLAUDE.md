@@ -10,33 +10,37 @@ Guidance for AI coding agents working in this repository.
 are kept, so a file can be read, modified and written back with minimal diffs.
 It belongs to the PyScaffold organization (PyScaffold uses it to edit `setup.cfg`).
 
-The project was generated with PyScaffold 4.6: do not edit the `[pyscaffold]`
-section of `setup.cfg` or the `requires` in `pyproject.toml`.
-Packaging metadata lives in `setup.cfg`; the version comes from git tags via
-`setuptools_scm`.
+All packaging metadata and tool settings live in `pyproject.toml` (build backend
+hatchling). The version comes from git tags via hatch-vcs; `__version__` is read
+from the installed metadata. Development dependencies are PEP 735 dependency groups
+(`test`, `typing`, `dev`), locked in `uv.lock`.
 
 ## Commands
 
-All tasks are defined in `tox.ini`. tox is not installed globally here, so run it
-through uv, using a Python ≥ 3.11 (see "Python version support" below):
+The project is managed with uv. `uv sync` creates `.venv` with the `dev` group
+(tests, mypy, tox, pre-commit); uv picks a Python ≥ 3.11 on its own. Tasks are
+defined in `tox.ini` and run with tox-uv:
 
 ```bash
-uvx --python 3.12 --with tox-uv tox -e default            # tests (pytest -k "not system")
-uvx --python 3.12 --with tox-uv tox -e default -- tests/test_option.py::test_name
-uvx --python 3.12 --with tox-uv tox -e typecheck          # mypy src tools
-uvx --python 3.12 --with tox-uv tox -e lint               # pre-commit run --all-files
-uvx --python 3.12 --with tox-uv tox -e docs               # sphinx html → docs/_build/html
-uvx --python 3.12 --with tox-uv tox -e doctests
-uvx --python 3.12 --with tox-uv tox -e clean,build        # sdist + wheel in dist/
-uvx --python 3.12 --with tox-uv tox -e py312-diff         # diff vs. stdlib ConfigParser (tools/stdlib_diff.py)
+uv run tox -e default            # tests with coverage
+uv run tox -e default -- tests/test_option.py::test_name
+uv run tox -e typecheck          # mypy src tools
+uv run tox -e lint               # pre-commit run --all-files
+uv run tox -e docs               # sphinx html → docs/_build/html
+uv run tox -e doctests
+uv run tox -e py312-diff         # diff vs. stdlib ConfigParser (tools/stdlib_diff.py)
+uv run pytest                    # quick test run in .venv, without coverage
+uv build                         # sdist + wheel in dist/
 ```
 
 Notes:
-- pytest options come from `[tool:pytest]` in `setup.cfg` (coverage is always on,
-  `--verbose`). `pytest-randomly` shuffles test order; add `-p no:randomly` when
-  debugging order-dependent failures. `pytest-xdist` is available (`-n auto`).
+- pytest options come from `[tool.pytest]` in `pyproject.toml` (`strict = true`,
+  warnings are errors). The tox envs add coverage. `pytest-randomly` shuffles test
+  order; add `-p no:randomly` when debugging order-dependent failures. `pytest-xdist`
+  is available (`-n auto`).
 - `tox -e lint` **rewrites files** (ruff `--fix`, ruff-format, pyupgrade, codespell
   `-w`, end-of-file/trailing-whitespace fixers). Run it deliberately and review the diff.
+- After changing dependency groups, run `uv lock` and commit `uv.lock`.
 - Releases happen by pushing a `v*` tag, which triggers
   `.github/workflows/publish-package.yml`: it builds the package and uploads it to
   PyPI via trusted publishing (no API token) in the `pypi` environment. Never upload
@@ -102,18 +106,18 @@ ConfigParser counterparts. It is useful when porting upstream parser fixes.
 ## Python version support
 
 The minimum is Python 3.11 (since 4.0), so 3.11 features such as `typing.Self` and
-`X | Y` unions are fine. The minimum is set in several places that must stay in sync:
-`python_requires` and the classifiers in `setup.cfg`, ruff's `target-version` in
-`pyproject.toml`, `pyupgrade --py311-plus` in `.pre-commit-config.yaml` and the
-`py{…}-diff` envs in `tox.ini`. The CI test matrix is derived from the classifiers. Otherwise pre-commit.ci autofixes can
+`X | Y` unions are fine. The supported versions are set in several places that must
+stay in sync: `requires-python` and the classifiers in `pyproject.toml`,
+`pyupgrade --py311-plus` in `.pre-commit-config.yaml` and the `py{…}-diff` envs in
+`tox.ini`. Ruff reads its target version from `requires-python`, and the CI test
+matrix is derived from the classifiers. Otherwise pre-commit.ci autofixes can
 introduce syntax newer than the minimum, which is how commit `99c0a76` broke imports
 on Python < 3.11 before the minimum was raised.
 
 ## Conventions
 
 - Formatting/linting: ruff + ruff-format (Black style, line length 88) with ruff's
-  default rule set plus the ignores in `pyproject.toml`. `.isort.cfg` and the flake8
-  settings in `setup.cfg` are legacy; no hook runs isort or flake8.
+  default rule set plus the ignores in `pyproject.toml`.
 - Docstrings use Google style (`Args:`, `Returns:`, `Raises:`) with Sphinx roles;
   `docs/api.rst` autodocs the package.
 - Tests are plain pytest functions in `tests/`. Inline configs use `dedent(...)`;
@@ -125,5 +129,5 @@ on Python < 3.11 before the minimum was raised.
   referencing the issue (`issue #N`), or the PR (`PR #N`) if there is no issue.
 - `README.md` is the PyPI long description; `docs/usage.rst` is a separate, longer
   usage guide.
-- Untracked local artifacts (`docs/html/`, `site/`, `*.bak`, `build/`, `.tox/`) are
-  not part of the project. Ignore them and don't commit them.
+- Local artifacts such as `docs/html/`, `site/`, `*.bak`, `build/`, `.tox/` and
+  `.venv/` are gitignored and not part of the project. Don't commit them.

@@ -22,15 +22,9 @@ additional considerations and avoids unnecessary work.
 Create an environment
 ---------------------
 
-ConfigUpdater requires Python 3.11 or newer. Before you start coding we recommend
-to install Miniconda_ which allows to setup a dedicated development environment
-named ``configupdater`` with::
-
-   conda create -n configupdater "python>=3.11" tox
-
-Then activate the environment ``configupdater`` with::
-
-   source activate configupdater
+ConfigUpdater requires Python 3.11 or newer. The development environment is
+managed with uv_, so install it first. uv also downloads a suitable Python
+version if you don't have one.
 
 Clone the repository
 --------------------
@@ -42,15 +36,16 @@ Clone the repository
 
     git clone git@github.com:YourLogin/configupdater.git
 
-#. Run ``pip install -e .`` to install ``configupdater`` into your environment.
+#. Create a virtual environment in ``.venv`` with ``configupdater`` and all
+   development tools (pytest, mypy, tox, pre-commit)::
 
-#. Install ``pre-commit``::
+    uv sync
 
-    pip install pre-commit
-    pre-commit install
+#. Install the ``pre-commit`` hooks::
 
-   PyScaffold project comes with a lot of hooks configured to
-   automatically help the developer to check the code being written.
+    uv run pre-commit install
+
+   The hooks automatically check the code you are writing on every commit.
 
 #. Create a branch to hold your changes::
 
@@ -69,14 +64,16 @@ Clone the repository
 
 #. Please check that your changes don't break any unit tests with::
 
-    tox
+    uv run tox
+
+   or, for a quick run without coverage, ``uv run pytest``.
 
    Don't forget to also add unit tests in case your contribution
    adds an additional feature and is not just a bugfix.
 
 #. The ``pre-commit`` hooks check your code style with `ruff`_ on every commit.
-   You can also run them on all files with ``tox -e lint``, and check the type
-   hints with ``tox -e typecheck``.
+   You can also run them on all files with ``uv run tox -e lint``, and check the
+   type hints with ``uv run tox -e typecheck``.
 #. Add yourself to the list of contributors in ``AUTHORS.rst``.
 #. Go to the web page of your ConfigUpdater fork, and click
    "Create pull request" to send your changes to the maintainers for review.
@@ -86,7 +83,7 @@ Clone the repository
 .. _PyPI: https://pypi.python.org/
 .. _project repository: https://github.com/pyscaffold/configupdater/
 .. _Git: https://git-scm.com/
-.. _Miniconda: https://docs.conda.io/en/latest/miniconda.html
+.. _uv: https://docs.astral.sh/uv/getting-started/installation/
 .. _issue tracker: https://github.com/pyscaffold/configupdater/issues
 .. _Create a Github account: https://github.com/join
 .. _creating a PR: https://help.github.com/articles/creating-a-pull-request/
