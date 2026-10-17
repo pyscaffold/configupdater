@@ -407,7 +407,7 @@ class Parser:
             self._lineno = lineno
             comment_start: int | None = sys.maxsize
             # strip inline comments
-            inline_prefixes = {p: -1 for p in self._inline_comment_prefixes}
+            inline_prefixes = {p: -1 for p in self._inline_comment_prefixes}  # noqa: C420
             while comment_start == sys.maxsize and inline_prefixes:
                 next_prefixes = {}
                 for prefix, index in inline_prefixes.items():

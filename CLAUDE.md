@@ -38,8 +38,10 @@ Notes:
   warnings are errors). The tox envs add coverage. `pytest-randomly` shuffles test
   order; add `-p no:randomly` when debugging order-dependent failures. `pytest-xdist`
   is available (`-n auto`).
-- `tox -e lint` **rewrites files** (ruff `--fix`, ruff-format, pyupgrade, codespell
-  `-w`, end-of-file/trailing-whitespace fixers). Run it deliberately and review the diff.
+- `tox -e lint` **rewrites files** (ruff `--fix`, ruff-format, codespell `-w`,
+  end-of-file/trailing-whitespace fixers). Run it deliberately and review the diff.
+  Besides formatting, the hooks validate `pyproject.toml`, the GitHub workflows, the
+  Dependabot and Read the Docs configs, and audit the workflows with zizmor.
 - After changing dependency groups, run `uv lock` and commit `uv.lock`.
 - Releases happen by pushing a `v*` tag, which triggers
   `.github/workflows/publish-package.yml`: it builds the package and uploads it to
@@ -107,17 +109,20 @@ ConfigParser counterparts. It is useful when porting upstream parser fixes.
 
 The minimum is Python 3.11 (since 4.0), so 3.11 features such as `typing.Self` and
 `X | Y` unions are fine. The supported versions are set in several places that must
-stay in sync: `requires-python` and the classifiers in `pyproject.toml`,
-`pyupgrade --py311-plus` in `.pre-commit-config.yaml` and the `py{…}-diff` envs in
-`tox.ini`. Ruff reads its target version from `requires-python`, and the CI test
-matrix is derived from the classifiers. Otherwise pre-commit.ci autofixes can
-introduce syntax newer than the minimum, which is how commit `99c0a76` broke imports
-on Python < 3.11 before the minimum was raised.
+stay in sync: `requires-python` and the classifiers in `pyproject.toml` and the
+`py{…}-diff` envs in `tox.ini`. Ruff (including its pyupgrade rules) reads its target
+version from `requires-python`, and the CI test matrix is derived from the
+classifiers. A mismatch lets pre-commit.ci autofixes introduce syntax newer than the
+minimum, which is how commit `99c0a76` broke imports on Python < 3.11 before the
+minimum was raised.
 
 ## Conventions
 
 - Formatting/linting: ruff + ruff-format (Black style, line length 88) with ruff's
-  default rule set plus the ignores in `pyproject.toml`.
+  default rule set plus the `extend-select` rules in `pyproject.toml`. In
+  `parser.py`, keep code that mirrors CPython's `configparser` as is (with a
+  `noqa`), so `tools/stdlib_diff.py` stays readable. Tests that expect an exception
+  pass `match=` to `pytest.raises`.
 - Docstrings use Google style (`Args:`, `Returns:`, `Raises:`) with Sphinx roles;
   `docs/api.rst` autodocs the package.
 - Tests are plain pytest functions in `tests/`. Inline configs use `dedent(...)`;

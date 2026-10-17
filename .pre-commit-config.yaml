@@ -1,5 +1,8 @@
 exclude: '^docs/conf.py'
 
+ci:
+  autoupdate_schedule: monthly
+
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v6.0.0
@@ -7,9 +10,10 @@ repos:
   - id: trailing-whitespace
   - id: check-added-large-files
   - id: check-ast
+  - id: check-case-conflict
   - id: check-json
   - id: check-merge-conflict
-  - id: check-xml
+  - id: check-toml
   - id: check-yaml
   - id: debug-statements
   - id: end-of-file-fixer
@@ -18,17 +22,11 @@ repos:
     args: ['--fix=auto']  # replace 'auto' with 'lf' to enforce Linux/Mac line endings or 'crlf' for Windows
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: 'v0.17.0'  # make sure this is consistent with with pyproject.toml
+  rev: v0.17.0
   hooks:
-    - id: ruff
+    - id: ruff-check
       args: [--fix]
     - id: ruff-format
-
-- repo: https://github.com/asottile/pyupgrade
-  rev: v3.22.0
-  hooks:
-  - id: pyupgrade
-    args: ['--py311-plus']
 
 - repo: https://github.com/asottile/blacken-docs
   rev: 1.20.0
@@ -41,3 +39,21 @@ repos:
   hooks:
   - id: codespell
     args: [-w]
+
+- repo: https://github.com/abravalheri/validate-pyproject
+  rev: '0.26'
+  hooks:
+  - id: validate-pyproject
+    additional_dependencies: ["validate-pyproject-schema-store[all]"]
+
+- repo: https://github.com/python-jsonschema/check-jsonschema
+  rev: 0.38.2
+  hooks:
+  - id: check-github-workflows
+  - id: check-dependabot
+  - id: check-readthedocs
+
+- repo: https://github.com/zizmorcore/zizmor-pre-commit
+  rev: v1.31.1
+  hooks:
+  - id: zizmor

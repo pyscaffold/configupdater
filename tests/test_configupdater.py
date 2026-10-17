@@ -246,7 +246,7 @@ def test_get_options(setup_cfg_path):
 def test_items(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
-    sect_names, sects = zip(*updater.items())
+    sect_names, sects = zip(*updater.items(), strict=True)
     exp_sect_namess = [
         "metadata",
         "options",
@@ -264,7 +264,7 @@ def test_items(setup_cfg_path):
     assert list(sect_names) == exp_sect_namess
     assert all(isinstance(s, Section) for s in sects)
 
-    opt_names, opts = zip(*updater.items("devpi:upload"))
+    opt_names, opts = zip(*updater.items("devpi:upload"), strict=True)
     exp_opt_names = ["no-vcs", "formats"]
     assert list(opt_names) == exp_opt_names
     assert all(isinstance(o, Option) for o in opts)
@@ -376,7 +376,7 @@ def test_set_option():
     assert updater["default"]["key"] is new_option
     new_option = copy.deepcopy(updater["default"]["key"])
     new_option.key = "wrong_key"
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="does not equal option key"):
         updater["default"]["key"] = new_option
 
 
@@ -504,7 +504,7 @@ key2
 def test_add_before_after_option():
     updater = ConfigUpdater(allow_no_value=True)
     updater.read_string(test4_cfg_in)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="only be added inside a section"):
         updater["section"].add_before.option("key0", 0)
     updater["section"]["key1"].add_before.option("key0", 0)
     updater["section"]["key1"].add_after.option("key2")
@@ -576,13 +576,13 @@ key0 = 0
 def test_add_before_after_section():
     updater = ConfigUpdater()
     updater.read_string(test6_cfg_in)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="only be added at section level"):
         updater["section2"]["key1"].add_before.section("section1")
     updater["section2"].add_before.section("section1")
     updater["section1"]["key1"] = 42
     updater["section2"].add_after.space(1).section("section3")
     assert str(updater) == test6_cfg_out
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="must be a string or Section"):
         updater["section2"].add_before.section(updater["section2"]["key1"])
     updater.read_string(test6_cfg_in)
     sect_updater = ConfigUpdater()
@@ -623,7 +623,7 @@ def test_add_section():
     updater.add_section("section2")
     updater["section2"]["key1"] = 1
     assert str(updater) == test7_cfg_out
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="must be a string or Section"):
         updater.add_section(updater["section2"]["key1"])
 
 
@@ -649,11 +649,11 @@ def test_set_item_section():
     updater = ConfigUpdater()
     sect_updater = ConfigUpdater()
     updater.read_string(test6_cfg_in)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="must be of type Section"):
         updater["section"] = "newsection"
     sect_updater.read_string(test6_cfg_in)
     section = sect_updater["section0"]
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="does not equal option key"):
         updater["new_section"] = section
     section.name = "new_section"
     updater["new_section"] = section.detach()
@@ -1016,8 +1016,8 @@ def test_empty_lines_in_values_support():
     assert [v for v in value if v] == ["a", "b", "c", "d"]
 
     assert test21_cfg_in == str(updater)
+    updater = ConfigUpdater(empty_lines_in_values=False)
     with pytest.raises(ParsingError):
-        updater = ConfigUpdater(empty_lines_in_values=False)
         updater.read_string(test21_cfg_in)
 
 
@@ -1670,7 +1670,8 @@ def test_edit_equal_blocks_by_identity(container_kind, block_kind, operation):
 
     assert len(container.structure) == len(expected)
     assert all(
-        actual is wanted for actual, wanted in zip(container.structure, expected)
+        actual is wanted
+        for actual, wanted in zip(container.structure, expected, strict=True)
     )
     assert all(block.container is container for block in container.structure)
     parser = ConfigParser()
@@ -1682,5 +1683,5 @@ def test_edit_equal_blocks_by_identity(container_kind, block_kind, operation):
 def test_container_idx_errors_for_missing_blocks(block_type):
     with pytest.raises(NotAttachedError):
         _ = block_type().container_idx
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="is not in the container"):
         _ = block_type(container=ConfigUpdater()).container_idx

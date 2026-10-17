@@ -275,7 +275,7 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
         self._raw_comment = value
         self._updated = True
 
-    def set(self, option: str, value: None | str | Iterable[str] = None) -> Self:
+    def set(self, option: str, value: str | Iterable[str] | None = None) -> Self:
         """Set an option for chaining.
 
         A new option keeps the given ``option`` name as

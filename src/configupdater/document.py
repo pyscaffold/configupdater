@@ -347,7 +347,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         self,
         section: str,
         option: str,
-        value: None | str | Iterable[str] = None,
+        value: str | Iterable[str] | None = None,
     ) -> Self:
         """Set an option.
 

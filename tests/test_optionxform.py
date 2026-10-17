@@ -256,10 +256,10 @@ def test_section_setitem():
     other.read_string("[section1]\nkEy = value")
     option = other["section1"]["key"].detach()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="does not equal option key"):
         # otherkey exists in section1, but option is `key` instead of `otherkey`
         cfg["section1"]["otherkey"] = option
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="does not equal option key"):
         # anotherkey exists in section1 and option is `key` instead of `anotherkey`
         cfg["section1"]["anotherkey"] = option
 

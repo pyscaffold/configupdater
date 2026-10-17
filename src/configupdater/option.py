@@ -93,10 +93,8 @@ class Option(Block):
         opts = getattr(document, "syntax_options", None) or {}
         value = self._value
         space = self._space_around_delimiters or opts.get("space_around_delimiters")
-        if determine_suffix and str(value).startswith("\n"):
-            suffix = ""  # no space is needed if we use multi-line arguments
-        else:
-            suffix = " "
+        # no space is needed if we use multi-line arguments
+        suffix = "" if determine_suffix and str(value).startswith("\n") else " "
         delim = f" {self._delimiter}{suffix}" if space else self._delimiter
         return delim
 
@@ -139,7 +137,7 @@ class Option(Block):
     def _document(self) -> Document | None:
         if self._container is None:
             return None
-        return self._container._container  # type: ignore
+        return self._container._container  # type: ignore[attr-defined]
 
     @property
     def section(self) -> Section:
@@ -207,11 +205,8 @@ class Option(Block):
             value (str): value
             kwargs: keyword arguments for `set_values`
         """
-        sep = kwargs.get("separator", None)
-        if sep is None:
-            new_values = self.as_list()
-        else:
-            new_values = self.as_list(separator=sep)
+        sep = kwargs.get("separator")
+        new_values = self.as_list() if sep is None else self.as_list(separator=sep)
 
         new_values.append(value)
         self.set_values(new_values, **kwargs)
@@ -240,14 +235,11 @@ class Option(Block):
         self._values = cast(list[str | None], values)
 
         if indent is None:
-            if prepend_newline:
-                indent = 4 * " "
-            else:
-                indent = self.value_start_idx() * " "
+            indent = 4 * " " if prepend_newline else self.value_start_idx() * " "
 
         # The most common case of multiline values being preceded by a new line
         if prepend_newline and "\n" in separator:
-            values = [""] + values
+            values = ["", *values]
             separator = separator + indent
         elif "\n" in separator:
             separator = separator + indent
