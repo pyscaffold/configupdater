@@ -106,7 +106,7 @@ To make keys case-sensitive, set ``optionxform`` before reading the file::
     updater.read_string(cfg)
 
 .. warning::
-   A custom ``optionxform`` must be idempotent, i.e.
+   As in ConfigParser, a custom ``optionxform`` must be idempotent, i.e.
    ``optionxform(optionxform(key)) == optionxform(key)``, because the keys that
    ConfigUpdater returns, e.g. when iterating over a section, are already
    transformed and are transformed again when you use them for a lookup.

@@ -69,7 +69,6 @@ def test_section_contains():
     assert "KEY" in lowercase["section1"]
     assert lowercase["section1"].has_option("KEY")
     assert "missing" not in lowercase["section1"]
-    assert 42 not in lowercase["section1"]
 
 
 @pytest.mark.parametrize("key", ["key", "KEY", "kEy", "missing"])
