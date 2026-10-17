@@ -12,7 +12,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from configparser import Error
 from types import MappingProxyType as ReadOnlyMapping
-from typing import Self, TextIO
+from typing import Any, Self, TextIO
 
 from .block import (
     AlreadyAttachedError,
@@ -44,7 +44,7 @@ __all__ = [
 class NoConfigFileReadError(Error):
     """Raised when no configuration file was read but update requested."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__("No configuration file was yet read! Use .read(...) first.")
 
 
@@ -81,7 +81,7 @@ class ConfigUpdater(Document):
 
     def __init__(
         self,
-        allow_no_value=False,
+        allow_no_value: bool = False,
         *,
         delimiters: tuple[str, ...] = ("=", ":"),
         comment_prefixes: tuple[str, ...] = ("#", ";"),
@@ -89,8 +89,8 @@ class ConfigUpdater(Document):
         strict: bool = True,
         empty_lines_in_values: bool = True,
         space_around_delimiters: bool = True,
-    ):
-        self._parser_opts = {
+    ) -> None:
+        self._parser_opts: dict[str, Any] = {
             "allow_no_value": allow_no_value,
             "delimiters": delimiters,
             "comment_prefixes": comment_prefixes,
@@ -110,12 +110,12 @@ class ConfigUpdater(Document):
         clone._filename = self._filename
         return clone
 
-    def _parser(self, **kwargs):
+    def _parser(self, **kwargs: Any) -> Parser:
         opts = {"optionxform": self.optionxform, **self._parser_opts, **kwargs}
         return Parser(**opts)
 
     @property
-    def syntax_options(self) -> Mapping:
+    def syntax_options(self) -> Mapping[str, Any]:
         return self._syntax_options
 
     def read(self, filename: PathLike, encoding: str | None = None) -> Self:
@@ -127,7 +127,7 @@ class ConfigUpdater(Document):
         """
         self.clear()
         self._filename = filename
-        return self._parser().read(filename, encoding, self)
+        return self._parser().read(filename, encoding=encoding, into=self)
 
     def read_file(self, f: Iterable[str], source: str | None = None) -> Self:
         """Like read() but the argument must be a file-like object.
@@ -146,7 +146,7 @@ class ConfigUpdater(Document):
             self._filename = f.name
         return self._parser().read_file(f, source, self)
 
-    def read_string(self, string: str, source="<string>") -> Self:
+    def read_string(self, string: str, source: str = "<string>") -> Self:
         """Read configuration from a given string.
 
         Args:
@@ -156,7 +156,7 @@ class ConfigUpdater(Document):
         self.clear()
         return self._parser().read_string(string, source, self)
 
-    def write(self, fp: TextIO, validate: bool = True):
+    def write(self, fp: TextIO, validate: bool = True) -> None:
         # TODO: For Python>=3.8 instead of TextIO we can define a Writeable protocol
         """Write an .cfg/.ini-format representation of the configuration state.
 
@@ -182,7 +182,7 @@ class ConfigUpdater(Document):
             self.write(fb, validate=False)
         return self
 
-    def validate_format(self, **kwargs):
+    def validate_format(self, **kwargs: Any) -> bool:
         """Given the current state of the ``ConfigUpdater`` object (e.g. after
         modifications), validate its INI/CFG textual representation by parsing it with
         :class:`~configparser.ConfigParser`.

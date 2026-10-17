@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from inspect import cleandoc
-from typing import TYPE_CHECKING, Self, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Self, TypeVar, cast
 
 if TYPE_CHECKING:
     from .builder import BlockBuilder
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-def _short_repr(block) -> str:
+def _short_repr(block: object) -> str:
     if isinstance(block, str):
         return block
     name = getattr(block, "raw_key", None) or getattr(block, "name", None)
@@ -69,7 +69,7 @@ class Block:
     inside the container.
     """
 
-    def __init__(self, container: Container | None = None):
+    def __init__(self, container: Container[Any] | None = None) -> None:
         self._container = container
         self._lines: list[str] = []
         self._updated = False
@@ -80,13 +80,13 @@ class Block:
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}: {str(self)!r}>"
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             return str(self) == str(other)
         else:
             return False
 
-    def __deepcopy__(self, memo: dict) -> Self:
+    def __deepcopy__(self, memo: dict[int, Any]) -> Self:
         clone = self._instantiate_copy()
         clone._lines = deepcopy(self._lines, memo)
         clone._updated = self._updated
@@ -115,7 +115,7 @@ class Block:
         return self._lines
 
     @property
-    def container(self) -> Container:
+    def container(self) -> Container[Any]:
         """Container holding the block"""
         if self._container is None:
             raise NotAttachedError(self)
@@ -155,7 +155,8 @@ class Block:
         """Next block in the current container"""
         idx = self.container_idx + 1
         if idx < len(self.container):
-            return self.container.structure[idx]
+            block: Block = self.container.structure[idx]
+            return block
         else:
             return None
 
@@ -164,7 +165,8 @@ class Block:
         """Previous block in the current container"""
         idx = self.container_idx - 1
         if idx >= 0:
-            return self.container.structure[idx]
+            block: Block = self.container.structure[idx]
+            return block
         else:
             return None
 
@@ -178,7 +180,7 @@ class Block:
         """Checks if this block has a container attached"""
         return self._container is not None
 
-    def attach(self, container: Container) -> Self:
+    def attach(self, container: Container[Any]) -> Self:
         """PRIVATE: Don't use this as a user!
 
         Rather use `add_*` or the bracket notation

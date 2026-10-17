@@ -26,6 +26,7 @@ from configparser import ConfigParser, SectionProxy
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from inspect import getmembers, getsourcefile, getsourcelines
+from typing import Any
 
 try:
     import configupdater  # noqa: F401
@@ -88,7 +89,7 @@ class CodeInfo:
     starting_line: int
 
     @classmethod
-    def inspect(cls, obj) -> CodeInfo:
+    def inspect(cls, obj: Any) -> CodeInfo:
         path = "<builtin>"
         try:
             path = getsourcefile(obj) or "<extension>"
@@ -131,7 +132,7 @@ def format_patch(
                     yield "+" + line
 
 
-def line_range(start, stop, offset):
+def line_range(start: int, stop: int, offset: int) -> str:
     length = stop - start
     return f"{offset + start},{length}"  # Lines are counted from 1
 
@@ -141,7 +142,7 @@ def relativise_path(path: str) -> str:
     return relative if len(path) > len(relative) else path
 
 
-def main():
+def main() -> None:
     cli = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,

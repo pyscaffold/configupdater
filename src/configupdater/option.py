@@ -38,8 +38,10 @@ class NoneValueDisallowed(SyntaxWarning):
     """
 
     @classmethod
-    def warn(cls, option):
-        warnings.warn(cls.__doc__.format(option=option), cls, stacklevel=2)
+    def warn(cls, option: str) -> None:
+        # __doc__ is None when Python runs with -OO
+        doc = cls.__doc__ or "Cannot represent <{option} = None>, use allow_no_value."
+        warnings.warn(doc.format(option=option), cls, stacklevel=2)
 
 
 class Option(Block):
@@ -68,27 +70,28 @@ class Option(Block):
         if value is not None:
             self._set_value(value)
 
-    def add_value(self, value: str | None):
+    def add_value(self, value: str | None) -> None:
         """PRIVATE: this function is not part of the public API of Option.
         It is only used internally by other classes of the package during parsing.
         """
         self._value_is_none = value is None
         self._values.append(value)
 
-    def add_line(self, line: str):
+    def add_line(self, line: str) -> Self:
         """PRIVATE: this function is not part of the public API of Option.
         It is only used internally by other classes of the package during parsing.
         """
         super().add_line(line)
         self.add_value(line.strip())
+        return self
 
-    def _join_multiline_value(self):
+    def _join_multiline_value(self) -> None:
         if not self._multiline_value_joined and not self._value_is_none:
             # do what `_join_multiline_value` in ConfigParser would do
-            self._value = "\n".join(self._values).rstrip()
+            self._value = "\n".join(cast(list[str], self._values)).rstrip()
             self._multiline_value_joined = True
 
-    def _get_delim(self, determine_suffix=True) -> str:
+    def _get_delim(self, determine_suffix: bool = True) -> str:
         document = self._document()
         opts = getattr(document, "syntax_options", None) or {}
         value = self._value
@@ -137,7 +140,7 @@ class Option(Block):
     def _document(self) -> Document | None:
         if self._container is None:
             return None
-        return self._container._container  # type: ignore[attr-defined]
+        return cast("Section", self._container)._container
 
     @property
     def section(self) -> Section:
@@ -156,7 +159,7 @@ class Option(Block):
         return self.section.document.optionxform(self._key)
 
     @key.setter
-    def key(self, value: str):
+    def key(self, value: str) -> None:
         self._join_multiline_value()
         self._key = value
         self._updated = True
@@ -173,18 +176,18 @@ class Option(Block):
         return self._value
 
     @value.setter
-    def value(self, value: str | None):
+    def value(self, value: str | None) -> None:
         if is_multi_line(value):
             raise AssignMultilineValueError(self)
         self._set_value(value)
 
-    def _set_value(self, value: str | None):
+    def _set_value(self, value: str | None) -> None:
         self._updated = True
         self._multiline_value_joined = True
         self._value = value
         self._values = [value]
 
-    def as_list(self, separator="\n") -> list[str]:
+    def as_list(self, separator: str = "\n") -> list[str]:
         """Returns the (multi-line/element) value as a list
 
         Empty list if value is None, single-element list for a one-element
@@ -198,7 +201,7 @@ class Option(Block):
         else:
             return [v.strip() for v in cast(str, self.value).strip().split(separator)]
 
-    def append(self, value: str, **kwargs) -> Option:
+    def append(self, value: str, **kwargs: Any) -> Option:
         """Append a value to a mult-line value
 
         Args:
@@ -215,10 +218,10 @@ class Option(Block):
     def set_values(
         self,
         values: Iterable[str],
-        separator="\n",
+        separator: str = "\n",
         indent: str | None = None,
-        prepend_newline=True,
-    ):
+        prepend_newline: bool = True,
+    ) -> None:
         """Sets the value to a given list of options, e.g. multi-line values
 
         Args:

@@ -100,7 +100,9 @@ Key invariants. Changes must preserve them:
 
 Public API: `configupdater/__init__.py` re-exports the `__all__` of `configupdater.py`
 and `parser.py`; new public names must be added there. The package ships `py.typed`,
-so type annotations are part of the API and `mypy src tools` must pass.
+so type annotations are part of the API: every function is annotated and
+`mypy src tools` must pass in strict mode (configured in `pyproject.toml`). Keep
+runtime type checks for untyped callers; mypy accepts an unreachable `raise`.
 
 `tools/stdlib_diff.py` prints how ConfigUpdater's methods diverge from their
 ConfigParser counterparts. It is useful when porting upstream parser fixes.

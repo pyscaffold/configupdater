@@ -15,7 +15,7 @@ from configparser import (
     NoSectionError,
 )
 from enum import Enum
-from typing import Self, TypeVar, overload
+from typing import Any, Self, TypeVar, overload
 
 from .block import Comment, Space
 from .container import Container
@@ -62,7 +62,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
             if isinstance(entry, Section) and entry.name == name
         )
 
-    def optionxform(self, optionstr) -> str:
+    def optionxform(self, optionstr: str) -> str:
         """Converts an option key for unification
 
         By default it uses :meth:`str.lower`, which means that ConfigUpdater will
@@ -88,7 +88,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         """
         return optionstr.lower()
 
-    def validate_format(self, **kwargs):
+    def validate_format(self, **kwargs: Any) -> bool:
         """Call ConfigParser to validate config
 
         Args:
@@ -131,17 +131,17 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
     def __str__(self) -> str:
         return "".join(str(block) for block in self._structure)
 
-    def __getitem__(self, key) -> Section:
+    def __getitem__(self, key: str) -> Section:
         for section in self.section_blocks():
             if section.name == key:
                 return section
 
         raise KeyError(f"No section `{key}` found", {"key": key})
 
-    def __setitem__(self, key: str, value: Section):
+    def __setitem__(self, key: str, value: Section) -> None:
         if not isinstance(value, Section):
             raise ValueError("Value must be of type Section!")
-        if isinstance(key, str) and key in self:
+        if key in self:
             idx = self._get_section_idx(key)
             self.__getitem__(key).detach()
             value.attach(self)
@@ -153,13 +153,13 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
                 )
             self.add_section(value)
 
-    def __delitem__(self, key: str):
+    def __delitem__(self, key: str) -> None:
         if not self.remove_section(key):
             raise KeyError(f"No section `{key}` found", {"key": key})
 
-    # MutableMapping[str, Section] for some reason accepts key: object
-    # it actually doesn't matter for the implementation, so we omit the typing
-    def __contains__(self, key) -> bool:
+    # MutableMapping[str, Section] accepts key: object, which is fine here since
+    # the key is only compared with the section names
+    def __contains__(self, key: object) -> bool:
         """Returns whether the given section exists.
 
         Args:
@@ -172,18 +172,18 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
 
     has_section = __contains__
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             return self._structure == other._structure
         else:
             return False
 
-    def clear(self):
+    def clear(self) -> None:
         for block in self._structure:
             block.detach()
         self._structure.clear()
 
-    def add_section(self, section: str | Section):
+    def add_section(self, section: str | Section) -> None:
         """Create a new section in the configuration.
 
         Raise DuplicateSectionError if a section by the specified name
@@ -236,7 +236,9 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
     @overload
     def get(self, section: str, option: str, fallback: T) -> Option | T: ...
 
-    def get(self, section, option, fallback=_UNSET):
+    def get(
+        self, section: str, option: str, fallback: T | _UniqueValues = _UNSET
+    ) -> Option | T:
         """Gets an option object for a given section or a fallback value.
 
         Warning:
@@ -296,7 +298,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
     @overload
     def get_section(self, name: str, default: T) -> Section | T: ...
 
-    def get_section(self, name, default=None):
+    def get_section(self, name: str, default: T | None = None) -> Section | T | None:
         """This method works similarly to :meth:`dict.get`, and allows you
         to retrieve an entire section by its name, or provide a ``default`` value in
         case it cannot be found.
@@ -312,7 +314,9 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
     @overload
     def items(self, section: str) -> list[tuple[str, Option]]: ...
 
-    def items(self, section=_UNSET):
+    def items(
+        self, section: str | _UniqueValues = _UNSET
+    ) -> list[tuple[str, Section]] | list[tuple[str, Option]]:
         """Return a list of (name, value) tuples for options or sections.
 
         If section is given, return a list of tuples with (name, value) for
@@ -328,8 +332,8 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         if section is _UNSET:
             return [(sect.name, sect) for sect in self.iter_sections()]
 
-        section = self.__getitem__(section)
-        return [(opt.key, opt) for opt in section.iter_options()]
+        section_obj = self.__getitem__(section)
+        return [(opt.key, opt) for opt in section_obj.iter_options()]
 
     def has_option(self, section: str, option: str) -> bool:
         """Checks for the existence of a given option in a given section.
