@@ -139,7 +139,7 @@ which would result in:
 author = Ada Lovelace
 # Ada would have loved MIT
 license = MIT
-summary = Analytical Engine calculating the Bernoulli numbers
+summary = The Analytical Engine
 ```
 
 Using `add_after` would give the same result and looks like:
@@ -154,8 +154,8 @@ updater.read_string(cfg)
 )
 ```
 
-Let\'s say we want to rename [summary]{.title-ref} to the more common
-\`description\`:
+Let\'s say we want to rename `summary` to the more common
+`description`:
 
 ```python
 updater = ConfigUpdater()
@@ -178,8 +178,8 @@ updater = ConfigUpdater()
 updater.read_string(cfg)
 (
     updater["metadata"]
-    .add_before.section("options")
-    .comment("Some specific project options")
+    .add_before.comment("Some specific project options")
+    .section("options")
     .space(2)
 )
 ```
@@ -187,8 +187,8 @@ updater.read_string(cfg)
 As expected, this results in:
 
 ```ini
-[options]
 # Some specific project options
+[options]
 
 
 [metadata]
@@ -250,6 +250,13 @@ stdlib\'s `copy.deepcopy` function instead of `detach`:
 
 ```python
 from copy import deepcopy
+
+sphinx = ConfigUpdater()
+sphinx.read_string(sphinx_sect_str)
+sphinx_sect = sphinx["build_sphinx"]
+
+updater = ConfigUpdater()
+updater.read_string(cfg)
 
 (updater["metadata"].add_after.space().section(deepcopy(sphinx_sect)))
 ```
