@@ -1710,30 +1710,33 @@ def test_container_idx_errors_for_missing_blocks(block_type):
         _ = block_type(container=ConfigUpdater()).container_idx
 
 
-def _stderr_of_python_OO(code):
+def _message_under_python_OO(error, code):
     # ``python -OO`` strips docstrings, which the messages must not depend on
-    cmd = [sys.executable, "-OO", "-c", f"import configupdater\n{code}"]
+    script = (
+        "import warnings, configupdater\n"
+        "warnings.simplefilter('error')\n"
+        "try:\n"
+        f"    {code}\n"
+        f"except configupdater.{error.__name__} as ex:\n"
+        "    print(ex, end='')\n"
+    )
+    cmd = [sys.executable, "-OO", "-c", script]
     result = subprocess.run(cmd, capture_output=True, text=True, check=False)
-    assert result.returncode == 1
-    return result.stderr
+    assert result.returncode == 0, result.stderr
+    return result.stdout
 
 
 @pytest.mark.parametrize(
     "error", [NotAttachedError, AlreadyAttachedError, AssignMultilineValueError]
 )
 def test_error_messages_without_docstrings(error):
-    name = error.__name__
-    code = f"raise configupdater.{name}(configupdater.Option('key'))"
-    stderr = _stderr_of_python_OO(code)
-    assert f"{name}: {error(Option('key'))}\n" in stderr
+    code = f"raise configupdater.{error.__name__}(configupdater.Option('key'))"
+    assert _message_under_python_OO(error, code) == str(error(Option("key")))
 
 
 def test_none_value_disallowed_message_without_docstrings():
     with pytest.warns(NoneValueDisallowed) as record:
         NoneValueDisallowed.warn("key")
-    stderr = _stderr_of_python_OO(
-        "import warnings\n"
-        "warnings.simplefilter('error')\n"
-        "configupdater.NoneValueDisallowed.warn('key')"
-    )
-    assert f"NoneValueDisallowed: {record[0].message}\n" in stderr
+    code = "configupdater.NoneValueDisallowed.warn('key')"
+    message = _message_under_python_OO(NoneValueDisallowed, code)
+    assert message == str(record[0].message)
