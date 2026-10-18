@@ -299,7 +299,7 @@ formatting that humans put into them.
 [Conda-image]: https://img.shields.io/conda/vn/conda-forge/configupdater.svg?logo=Anaconda&label=Conda-Forge&logoColor=44A833
 [Conda-link]: https://anaconda.org/conda-forge/configupdater/
 [PyPI_down-image]: https://img.shields.io/pypi/dm/configupdater.svg?color=blue&label=Downloads&logo=pypi&logoColor=gold
-[PyPI_down-link]: https://pepy.tech/project/configupdater
+[PyPI_down-link]: https://clickpy.clickhouse.com/dashboard/configupdater
 [PyPI_py-image]: https://img.shields.io/pypi/pyversions/configupdater.svg?logo=python&label=Python&logoColor=gold
 [PyPI_py-link]: https://pypi.org/project/configupdater/
 [uv-image]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json
