@@ -49,7 +49,14 @@ class NoneValueDisallowed(SyntaxWarning):
 
 
 class Option(Block):
-    """Option block holding a key/value pair."""
+    """Option block holding a key/value pair.
+
+    ``space_around_delimiters`` decides whether the delimiter is surrounded by spaces
+    when the option is rendered after a change. ``True`` and ``False`` take precedence
+    over the syntax options of the :class:`~configupdater.ConfigUpdater` holding the
+    option. ``None`` (the default) follows its ``space_around_delimiters`` and adds
+    spaces if the option does not belong to a :class:`~configupdater.ConfigUpdater`.
+    """
 
     def __init__(
         self,
@@ -57,7 +64,7 @@ class Option(Block):
         value: str | None = None,
         container: Section | None = None,
         delimiter: str = "=",
-        space_around_delimiters: bool = True,
+        space_around_delimiters: bool | None = None,
         line: str | None = None,
     ):
         super().__init__(container=container)
@@ -99,7 +106,9 @@ class Option(Block):
         document = self._document()
         opts = getattr(document, "syntax_options", None) or {}
         value = self._value
-        space = self._space_around_delimiters or opts.get("space_around_delimiters")
+        space = self._space_around_delimiters
+        if space is None:
+            space = opts.get("space_around_delimiters", True)
         # no space is needed if we use multi-line arguments
         suffix = "" if determine_suffix and str(value).startswith("\n") else " "
         delim = f" {self._delimiter}{suffix}" if space else self._delimiter
