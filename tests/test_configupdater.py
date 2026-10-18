@@ -74,7 +74,9 @@ def test_update_file_issue_68(tmp_path):
     with open(file) as fp:
         cfg = ConfigUpdater(allow_no_value=False).read_file(fp)
     cfg.set("section", "option")
-    with pytest.warns(NoneValueDisallowed):
+    with pytest.warns(
+        NoneValueDisallowed, match="<option = None>, the option is omitted"
+    ):
         # A warning is issued, but the method will not fail
         cfg.update_file()
     assert file.read_text().strip() == "[section]"

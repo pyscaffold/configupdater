@@ -27,6 +27,9 @@ Version 4.0 (unreleased)
   mode, and fix the ``NoneValueDisallowed`` warning under ``python -OO``, PR #158
 - Fix ``NotAttachedError``, ``AlreadyAttachedError`` and ``AssignMultilineValueError``
   failing with an ``AttributeError`` under ``python -OO``, PR #163
+- Correct the ``NoneValueDisallowed`` message. It claimed that an option without a
+  value is written with an empty value, but the option is omitted since version 3.0.1,
+  PR #163
 - ``add_before.option`` and ``add_after.option`` pass ``delimiter`` and
   ``space_around_delimiters`` on to the new option instead of silently ignoring all
   keyword arguments. Other keyword arguments now raise a ``TypeError``, PR #163

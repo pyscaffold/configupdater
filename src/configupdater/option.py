@@ -33,7 +33,7 @@ def is_multi_line(value: Any) -> bool:
 
 
 class NoneValueDisallowed(SyntaxWarning):
-    """Warns that an option without a value cannot be written.
+    """Warns that an option without a value is omitted from the output.
 
     This happens when such an option is converted to a string while the
     :class:`~configupdater.ConfigUpdater` does not use ``allow_no_value=True``.
@@ -42,9 +42,8 @@ class NoneValueDisallowed(SyntaxWarning):
     @classmethod
     def warn(cls, option: str) -> None:
         msg = (
-            f"Cannot represent <{option} = None>, it will be converted to "
-            f"<{option} = ''>. Please use ``allow_no_value=True`` with "
-            "``ConfigUpdater``."
+            f"Cannot represent <{option} = None>, the option is omitted. "
+            "Please use ``allow_no_value=True`` with ``ConfigUpdater``."
         )
         warnings.warn(msg, cls, stacklevel=2)
 
