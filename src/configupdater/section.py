@@ -296,20 +296,34 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
             opt.set_values(value)
         return self
 
-    def create_option(self, key: str, value: str | None = None) -> Option:
+    def create_option(
+        self,
+        key: str,
+        value: str | None = None,
+        *,
+        delimiter: str | None = None,
+        space_around_delimiters: bool | None = None,
+    ) -> Option:
         """Creates an option with kwargs that respect syntax options given to
         the parent ConfigUpdater object (e.g. ``space_around_delimiters``).
+
+        ``delimiter`` and ``space_around_delimiters`` override the syntax options
+        unless they are ``None``.
 
         Warning:
             This is a low level API, not intended for public use.
             Prefer :meth:`set` or :meth:`__setitem__`.
         """
         syntax_opts = getattr(self._container, "syntax_options", {})
+        if delimiter is None:
+            delimiter = next(iter(syntax_opts.get("delimiters", [])), None)
+        if space_around_delimiters is None:
+            space_around_delimiters = syntax_opts.get("space_around_delimiters")
         kwargs_: dict[str, Any] = {
             "value": value,
             "container": self,
-            "space_around_delimiters": syntax_opts.get("space_around_delimiters"),
-            "delimiter": next(iter(syntax_opts.get("delimiters", [])), None),
+            "space_around_delimiters": space_around_delimiters,
+            "delimiter": delimiter,
         }
         kwargs = {k: v for k, v in kwargs_.items() if v is not None}
         return Option(key, **kwargs)

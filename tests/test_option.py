@@ -45,7 +45,9 @@ def test_str_for_none_value():
 
     cfg = ConfigUpdater(allow_no_value=False).read_string("[pyscaffold]")
     cfg.set("pyscaffold", "namespace")
-    with pytest.warns(NoneValueDisallowed):
+    with pytest.warns(
+        NoneValueDisallowed, match="<namespace = None>, the option is omitted"
+    ):
         assert str(cfg["pyscaffold"]["namespace"]) == ""
 
 

@@ -33,15 +33,19 @@ def is_multi_line(value: Any) -> bool:
 
 
 class NoneValueDisallowed(SyntaxWarning):
-    """Cannot represent <{option} = None>, it will be converted to <{option} = ''>.
-    Please use ``allow_no_value=True`` with ``ConfigUpdater``.
+    """Warns that an option without a value is omitted from the output.
+
+    This happens when such an option is converted to a string while the
+    :class:`~configupdater.ConfigUpdater` does not use ``allow_no_value=True``.
     """
 
     @classmethod
     def warn(cls, option: str) -> None:
-        # __doc__ is None when Python runs with -OO
-        doc = cls.__doc__ or "Cannot represent <{option} = None>, use allow_no_value."
-        warnings.warn(doc.format(option=option), cls, stacklevel=2)
+        msg = (
+            f"Cannot represent <{option} = None>, the option is omitted. "
+            "Please use ``allow_no_value=True`` with ``ConfigUpdater``."
+        )
+        warnings.warn(msg, cls, stacklevel=2)
 
 
 class Option(Block):

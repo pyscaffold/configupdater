@@ -91,13 +91,25 @@ class BlockBuilder:
             space.add_line("\n")
         return self._insert(space)
 
-    def option(self, key: str, value: str | None = None, **kwargs: Any) -> Self:
+    def option(
+        self,
+        key: str,
+        value: str | None = None,
+        *,
+        delimiter: str | None = None,
+        space_around_delimiters: bool | None = None,
+    ) -> Self:
         """Creates a new option inside a section
 
         Args:
             key (str): key of the option
             value (str or None): value of the option
-            **kwargs: are passed to the constructor of :class:`Option`
+            delimiter (str or None): delimiter between key and value, by default
+                the first of the ``delimiters`` given to
+                :class:`~configupdater.ConfigUpdater`
+            space_around_delimiters (bool or None): surround the delimiter with
+                spaces, by default as given to :class:`~configupdater.ConfigUpdater`.
+                Spaces are always added if it has ``space_around_delimiters=True``.
 
         Returns:
             self for chaining
@@ -108,7 +120,12 @@ class BlockBuilder:
             msg = "Options can only be added inside a section!"
             raise ValueError(msg, {"container": self._container})
         section = self._container
-        option = section.create_option(key, value)
+        option = section.create_option(
+            key,
+            value,
+            delimiter=delimiter,
+            space_around_delimiters=space_around_delimiters,
+        )
         if option.key in section.options():
             raise DuplicateOptionError(section.name, option.key)
         option.value = value
