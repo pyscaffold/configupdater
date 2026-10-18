@@ -50,6 +50,12 @@ Version 4.0 (unreleased)
   PR #153
 - Fix wrong code examples in the usage guide and the README, which are now tested,
   PR #164
+- Fix ``update_file`` writing the file with the platform's default encoding instead
+  of the encoding it was read with. ``read`` and ``read_file`` remember the encoding
+  (``read_file`` takes it from ``f.encoding``), PR #XXX
+- ``ConfigUpdater.read`` and ``Parser.read`` call ``io.text_encoding`` like
+  ConfigParser, so with ``-X warn_default_encoding`` the ``EncodingWarning`` points
+  to the caller (PEP 597), PR #XXX
 
 Version 3.2
 ===========

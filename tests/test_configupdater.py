@@ -90,6 +90,90 @@ def test_update_file_issue_68(tmp_path):
     assert file.read_text().strip() == "[section]\noption"
 
 
+NON_ASCII_CFG = """\
+[metadata]
+author = Jürgen Weiß
+description = Ça va, señor?
+"""
+NON_ASCII_UPDATED = NON_ASCII_CFG.replace("Ça va", "Grüß Gott")
+
+
+# utf-16 differs from every locale encoding, latin-1 at least from UTF-8
+@pytest.mark.parametrize("encoding", ["latin-1", "utf-16"])
+def test_update_file_keeps_encoding_of_read(tmp_path, encoding):
+    file = tmp_path / "file.cfg"
+    file.write_text(NON_ASCII_CFG, encoding=encoding)
+    updater = ConfigUpdater().read(file, encoding=encoding)
+    assert str(updater) == NON_ASCII_CFG
+
+    updater["metadata"]["description"] = "Grüß Gott, señor?"
+    updater.update_file()
+    assert file.read_text(encoding=encoding) == NON_ASCII_UPDATED
+
+    clone = copy.deepcopy(updater)
+    file.write_text(NON_ASCII_CFG, encoding=encoding)
+    clone.update_file()
+    assert file.read_text(encoding=encoding) == NON_ASCII_UPDATED
+
+
+@pytest.mark.parametrize("encoding", ["latin-1", "utf-16"])
+def test_update_file_keeps_encoding_of_read_file(tmp_path, encoding):
+    file = tmp_path / "file.cfg"
+    file.write_text(NON_ASCII_CFG, encoding=encoding)
+    with open(file, encoding=encoding) as fp:
+        updater = ConfigUpdater().read_file(fp)
+    updater["metadata"]["description"] = "Grüß Gott, señor?"
+    updater.update_file()
+    assert file.read_text(encoding=encoding) == NON_ASCII_UPDATED
+
+
+def test_update_file_after_read_string_keeps_file_and_encoding(tmp_path):
+    file = tmp_path / "file.cfg"
+    file.write_text("[section]\n", encoding="utf-16")
+    updater = ConfigUpdater().read(file, encoding="utf-16")
+    updater.read_string(NON_ASCII_CFG)
+    updater.read_file(StringIO(NON_ASCII_UPDATED))  # no `name`, nothing changes
+    updater.update_file()
+    assert file.read_text(encoding="utf-16") == NON_ASCII_UPDATED
+
+
+def test_encoding_warning_points_to_caller(tmp_path):
+    # `-X warn_default_encoding` (PEP 597) cannot be enabled in a running interpreter
+    file = tmp_path / "file.cfg"
+    file.write_text("[section]\n")
+    script = tmp_path / "script.py"
+    script.write_text(
+        dedent(
+            """\
+            import configparser, sys, warnings
+            from configupdater import ConfigUpdater, Parser
+
+            class NamedLines(list):  # has a name, but no encoding
+                name = sys.argv[1]
+
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                configparser.ConfigParser().read(sys.argv[1])  # line 9
+                Parser().read(sys.argv[1])  # line 10
+                updater = ConfigUpdater().read(sys.argv[1])  # line 11
+                updater.update_file()  # no warning, the encoding is known
+                updater.read_file(NamedLines(["[section]\\n"]))
+                updater.update_file()  # line 14
+            for w in caught:
+                print(w.category.__name__, w.filename, w.lineno, sep="|")
+            """
+        )
+    )
+    result = subprocess.run(
+        [sys.executable, "-X", "warn_default_encoding", str(script), str(file)],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    caught = [line.split("|") for line in result.stdout.splitlines()]
+    assert caught == [["EncodingWarning", str(script), str(n)] for n in (9, 10, 11, 14)]
+
+
 def test_str(setup_cfg_path, setup_cfg):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)
