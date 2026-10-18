@@ -36,6 +36,8 @@ Version 4.0 (unreleased)
 - ``ConfigUpdater.set``, ``get``, ``has_option`` and ``remove_option`` apply
   ``optionxform`` only once instead of transforming already transformed keys again,
   PR #153
+- Fix wrong code examples in the usage guide and the README, which are now tested,
+  PR #164
 
 Version 3.2
 ===========
