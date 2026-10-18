@@ -7,7 +7,7 @@
 |---------|------------------------------------|
 | CI/CD   | [![Tests][Tests-image]][Tests-link] [![Coverage][Coverage-image]][Coverage-link] [![Publish Package][Publish-image]][Publish-link] [![GitHub Sponsors][sponsor-image]][sponsor-link]  |
 | Package | [![PyPI - Version][PyPI_ver-image]][PyPI_ver-link] [![Conda - Version][Conda-image]][Conda-link] [![PyPI - Downloads][PyPI_down-image]][PyPI_down-link] [![PyPI - Python Version][PyPI_py-image]][PyPI_py-link] |
-| Details | [![Hatch project][hatch-image]][hatch-link] [![uv][uv-image]][uv-link] [![Linting - Ruff][ruff-image]][ruff-link] [![test - pytest][pytest-image]][pytest-link] [![Pre-Commit][precommit-image]][precommit-link] [![Types - Mypy][mypy-image]][mypy-link] [![License - MIT][MIT-image]][MIT-link] [![Docs - RTD][rtd-image]][rtd-link] |
+| Details | [![uv][uv-image]][uv-link] [![Linting - Ruff][ruff-image]][ruff-link] [![test - pytest][pytest-image]][pytest-link] [![Pre-Commit][precommit-image]][precommit-link] [![Types - Mypy][mypy-image]][mypy-link] [![License - MIT][MIT-image]][MIT-link] [![Docs - RTD][rtd-image]][rtd-link] |
 
 The sole purpose of [ConfigUpdater] is to easily
 update an INI config file with no changes to the original file except
@@ -275,7 +275,11 @@ take a look into the [unit tests] and read the references.
 
 # Notes
 
-ConfigUpdater was mainly developed for [PyScaffold].
+ConfigUpdater started out as a helper for [PyScaffold], which still uses
+it to update the `setup.cfg` of existing projects. Since then it has
+become a useful tool in its own right for everyone who needs to change
+configuration files programmatically without losing the comments and
+formatting that humans put into them.
 
 [ConfigUpdater]: https://configupdater.readthedocs.io/
 [ConfigParser]: https://docs.python.org/3/library/configparser.html
@@ -298,8 +302,6 @@ ConfigUpdater was mainly developed for [PyScaffold].
 [PyPI_down-link]: https://pepy.tech/project/configupdater
 [PyPI_py-image]: https://img.shields.io/pypi/pyversions/configupdater.svg?logo=python&label=Python&logoColor=gold
 [PyPI_py-link]: https://pypi.org/project/configupdater/
-[hatch-image]: https://img.shields.io/badge/%F0%9F%A5%9A-Hatch-4051b5.svg
-[hatch-link]: https://github.com/pypa/hatch
 [uv-image]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json
 [uv-link]: https://github.com/astral-sh/uv
 [ruff-image]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
@@ -308,7 +310,7 @@ ConfigUpdater was mainly developed for [PyScaffold].
 [mypy-link]: https://mypy-lang.org/
 [pytest-image]: https://img.shields.io/static/v1?label=‎&message=Pytest&logo=Pytest&color=0A9EDC&logoColor=white
 [pytest-link]:  https://docs.pytest.org/
-[rtd-image]: https://readthedocs.org/projects/pyscaffold/badge/?version=latest
+[rtd-image]: https://readthedocs.org/projects/configupdater/badge/?version=latest
 [rtd-link]: https://configupdater.readthedocs.io/
 [precommit-image]: https://img.shields.io/static/v1?label=‎&message=pre-commit&logo=pre-commit&color=76877c
 [precommit-link]: https://pre-commit.com/

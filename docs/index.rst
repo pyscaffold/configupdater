@@ -36,7 +36,11 @@ Following features are **deliberately not** implemented:
 
 .. note::
 
-   ConfigUpdater is mainly developed for `PyScaffold`_.
+   ConfigUpdater started out as a helper for `PyScaffold`_, which still uses
+   it to update the ``setup.cfg`` of existing projects. Since then it has
+   become a useful tool in its own right for everyone who needs to change
+   configuration files programmatically without losing the comments and
+   formatting that humans put into them.
 
 .. _ConfigParser: https://docs.python.org/3/library/configparser.html
 .. _ConfigUpdater: https://configupdater.readthedocs.io/
