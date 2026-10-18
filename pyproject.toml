@@ -9,7 +9,10 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE.txt"]
-authors = [{ name = "Florian Wilhelm", email = "florian.wilhelm@gmail.com" }]
+authors = [
+    { name = "Florian Wilhelm", email = "florian.wilhelm@gmail.com" },
+    { name = "Anderson Bravalheri", email = "andersonbravalheri@gmail.com" },
+]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
@@ -49,7 +52,7 @@ dev = [
     { include-group = "test" },
     { include-group = "typing" },
     "pre-commit",
-    "tox>=4.22",
+    "tox>=4.46",
     "tox-uv>=1.17",
 ]
 
@@ -71,7 +74,6 @@ include = [
     "/AUTHORS.rst",
     "/CHANGELOG.rst",
     "/CONTRIBUTING.rst",
-    "/tox.ini",
 ]
 
 # ---- Tests ----
@@ -142,3 +144,72 @@ ignore = ["TRY004"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["configupdater"]
+
+# ---- tox ----
+# Run tox through uv, e.g. `uv run tox -e default` or `uvx --with tox-uv tox -e default`.
+# For distributed tests, pass `-n NUMBER` (pytest-xdist) after `--`.
+
+[tool.tox]
+requires = ["tox>=4.46", "tox-uv>=1.17"]
+env_list = ["default"]
+
+[tool.tox.env_run_base]
+description = "Invoke pytest to run automated tests"
+dependency_groups = ["test"]
+commands = [[
+    "pytest", "--cov", "--cov-report", "term-missing",
+    { replace = "posargs", extend = true },
+]]
+
+[tool.tox.env.lint]
+description = "Perform static analysis and style checks"
+skip_install = true
+dependency_groups = []
+deps = ["pre-commit"]
+pass_env = ["HOMEPATH", "PROGRAMDATA"]
+commands = [[
+    "pre-commit", "run", "--all-files",
+    { replace = "posargs", default = ["--show-diff-on-failure"], extend = true },
+]]
+
+[tool.tox.env.typecheck]
+description = "Invoke mypy to typecheck the source code"
+dependency_groups = ["typing"]
+commands = [[
+    "mypy",
+    { replace = "posargs", default = ["src", "tools"], extend = true },
+]]
+
+[tool.tox.env.docs]
+description = "Invoke sphinx-build to build the docs"
+dependency_groups = ["docs"]
+set_env = { BUILD = "html" }
+commands = [[
+    "sphinx-build", "--color", "-b", "{env:BUILD}",
+    "-d", "{tox_root}/docs/_build/doctrees",
+    "{tox_root}/docs", "{tox_root}/docs/_build/{env:BUILD}",
+    { replace = "posargs", extend = true },
+]]
+
+[tool.tox.env.doctests]
+base = ["docs"]
+description = "Invoke sphinx-build to run doctests"
+set_env = { BUILD = "doctest" }
+
+[tool.tox.env.linkcheck]
+base = ["docs"]
+description = "Check for broken links in the documentation"
+set_env = { BUILD = "linkcheck" }
+
+# Generates the envs diff-py311 … diff-py314. Pipe their output to `delta` or `bat`
+# for highlighting, e.g. `tox -qe diff-py311 | delta --side-by-side` or
+# `tox -qe diff-py311 | bat -l diff`.
+[tool.tox.env_base.diff]
+factors = [{ prefix = "py3", start = 11, stop = 14 }]
+description = "Display differences between stdlib's ConfigParser and ConfigUpdater"
+package = "editable"
+dependency_groups = []
+commands = [[
+    "python", "-m", "tools.stdlib_diff",
+    { replace = "posargs", extend = true },
+]]
