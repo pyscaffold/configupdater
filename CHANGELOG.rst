@@ -2,14 +2,15 @@
 Changelog
 =========
 
-Version 4.0 (unreleased)
-========================
+Version 4.0
+===========
 
-- Drop support for Python < 3.11, the minimum supported version is now Python 3.11
-- Add support for Python 3.15
+- **Breaking:** Drop support for Python < 3.11, the minimum supported version is now
+  Python 3.11, PR #150
+- Add support for Python 3.15, PR #160
 - Simplify type hints using Python 3.11 features (``typing.Self``, ``X | Y`` unions)
-  and remove compatibility code for older Python versions
-- Added ``add_before_skip_comments`` to ``Section`` for inserting blocks before the
+  and remove compatibility code for older Python versions, PR #150
+- Add ``add_before_skip_comments`` to ``Section`` for inserting blocks before the
   comments that directly precede a section, issue #117
 - Fix ``add_section`` gluing the new section header to the last line when the file
   does not end with a newline, issue #126
@@ -22,7 +23,7 @@ Version 4.0 (unreleased)
   several equal comment or blank-line blocks, issue #140
 - ``del section[key]`` (and thus ``section.pop(key)``) now applies ``optionxform``
   like ``section[key]`` does, PR #148
-- Document that a custom ``optionxform`` must be idempotent
+- Document that a custom ``optionxform`` must be idempotent, PR #152
 - Build with hatchling and hatch-vcs, with all metadata in ``pyproject.toml``. The
   wheel is now tagged ``py3-none-any`` (instead of ``py2.py3-none-any``), and the
   license is declared as a PEP 639 expression. The ``testing`` extra is removed;
