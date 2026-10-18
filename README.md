@@ -43,6 +43,12 @@ First install the package with either:
 pip install configupdater
 ```
 
+or add it to a project managed with [uv]:
+
+```console
+uv add configupdater
+```
+
 or:
 
 ```console
@@ -274,6 +280,7 @@ ConfigUpdater was mainly developed for [PyScaffold].
 [ConfigUpdater]: https://configupdater.readthedocs.io/
 [ConfigParser]: https://docs.python.org/3/library/configparser.html
 [PyScaffold]: https://pyscaffold.org/
+[uv]: https://docs.astral.sh/uv/
 [module reference]: https://configupdater.readthedocs.io/en/latest/api.html#configupdater.configupdater.ConfigUpdater
 [unit tests]: https://github.com/pyscaffold/configupdater/blob/main/tests/test_configupdater.py
 

@@ -29,6 +29,12 @@ First install the package with:
 
     pip install configupdater
 
+or add it to a project managed with `uv <https://docs.astral.sh/uv/>`_:
+
+.. code-block:: console
+
+    uv add configupdater
+
 Now we can simply do:
 
 .. testcode::

@@ -6,6 +6,7 @@ Version 4.0 (unreleased)
 ========================
 
 - Drop support for Python < 3.11, the minimum supported version is now Python 3.11
+- Add support for Python 3.15
 - Simplify type hints using Python 3.11 features (``typing.Self``, ``X | Y`` unions)
   and remove compatibility code for older Python versions
 - Added ``add_before_skip_comments`` to ``Section`` for inserting blocks before the
@@ -14,6 +15,9 @@ Version 4.0 (unreleased)
   does not end with a newline, issue #126
 - Fix ``None`` being written as delimiter when assigning a value to an option that was
   parsed without a value (``allow_no_value``), issue #141
+- Port the option regexes of Python 3.15's ``configparser`` (CPython gh-146333). The
+  old ones backtracked quadratically, so a long line with many spaces could stall
+  the parser for minutes, PR #161
 - Fix navigating, detaching or inserting at the wrong position when a container holds
   several equal comment or blank-line blocks, issue #140
 - ``del section[key]`` (and thus ``section.pop(key)``) now applies ``optionxform``
@@ -25,6 +29,14 @@ Version 4.0 (unreleased)
   development dependencies are dependency groups, e.g. ``uv sync``, PR #156
 - Complete the type annotations of the public API, now checked with mypy in strict
   mode, and fix the ``NoneValueDisallowed`` warning under ``python -OO``, PR #158
+- Fix ``NotAttachedError``, ``AlreadyAttachedError`` and ``AssignMultilineValueError``
+  failing with an ``AttributeError`` under ``python -OO``, PR #163
+- Correct the ``NoneValueDisallowed`` message. It claimed that an option without a
+  value is written with an empty value, but the option is omitted since version 3.0.1,
+  PR #163
+- ``add_before.option`` and ``add_after.option`` pass ``delimiter`` and
+  ``space_around_delimiters`` on to the new option instead of silently ignoring all
+  keyword arguments. Other keyword arguments now raise a ``TypeError``, PR #163
 - **Breaking:** ``key in section``, ``section.has_option(key)`` and
   ``section.get(key)`` now apply ``optionxform`` to ``key``, like ``section[key]``
   and ConfigParser do. With the default ``str.lower``, ``"KEY" in section`` is now

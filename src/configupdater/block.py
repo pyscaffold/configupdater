@@ -8,8 +8,7 @@ configuration file, e.g. comments, sections, options and even sequences of white
 from __future__ import annotations
 
 from copy import deepcopy
-from inspect import cleandoc
-from typing import TYPE_CHECKING, Any, Self, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Self, TypeVar
 
 if TYPE_CHECKING:
     from .builder import BlockBuilder
@@ -27,36 +26,45 @@ def _short_repr(block: object) -> str:
 
 
 class NotAttachedError(Exception):
-    """{block} is not attached to a container yet. Try to insert it first."""
+    """Raised when a block needs a container but is not attached to one.
+
+    Insert the block first, e.g. with ``section[key] = option`` or one of the
+    ``add_before``/``add_after`` builders.
+    """
 
     def __init__(self, block: str | Block = "The block"):
-        doc = cleandoc(cast(str, self.__class__.__doc__))
-        msg = doc.format(block=_short_repr(block))
-        super().__init__(msg)
+        super().__init__(
+            f"{_short_repr(block)} is not attached to a container yet. "
+            "Try to insert it first."
+        )
 
 
 class AlreadyAttachedError(Exception):
-    """{block} has been already attached to a container.
+    """Raised when a block is inserted while it is attached to another container.
 
-    Try to remove it first using ``detach`` or create a copy using stdlib's
-    ``copy.deepcopy``.
+    A block belongs to exactly one container. Remove it from the old one first with
+    ``detach`` or insert a copy made with :func:`copy.deepcopy`.
     """
 
     def __init__(self, block: str | Block = "The block"):
-        doc = cleandoc(cast(str, self.__class__.__doc__))
-        msg = doc.format(block=_short_repr(block))
-        super().__init__(msg)
+        super().__init__(
+            f"{_short_repr(block)} has been already attached to a container. "
+            "Try to remove it first using ``detach`` or create a copy using "
+            "stdlib's ``copy.deepcopy``."
+        )
 
 
 class AssignMultilineValueError(Exception):
-    """Trying to assign a multi-line value to {block}.
-    Use the ``set_values`` or ``append`` method to accomplish that.
+    """Raised when a multi-line value is assigned to an option's ``value``.
+
+    Use the option's ``set_values`` or ``append`` method for multi-line values.
     """
 
     def __init__(self, block: str | Block = "The block"):
-        doc = cleandoc(cast(str, self.__class__.__doc__))
-        msg = doc.format(block=_short_repr(block))
-        super().__init__(msg)
+        super().__init__(
+            f"Trying to assign a multi-line value to {_short_repr(block)}. "
+            "Use the ``set_values`` or ``append`` method to accomplish that."
+        )
 
 
 class Block:

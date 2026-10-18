@@ -1,6 +1,8 @@
 import configparser
 import copy
 import os.path
+import subprocess
+import sys
 from configparser import ConfigParser
 from io import StringIO
 from textwrap import dedent
@@ -72,7 +74,9 @@ def test_update_file_issue_68(tmp_path):
     with open(file) as fp:
         cfg = ConfigUpdater(allow_no_value=False).read_file(fp)
     cfg.set("section", "option")
-    with pytest.warns(NoneValueDisallowed):
+    with pytest.warns(
+        NoneValueDisallowed, match="<option = None>, the option is omitted"
+    ):
         # A warning is issued, but the method will not fail
         cfg.update_file()
     assert file.read_text().strip() == "[section]"
@@ -509,6 +513,27 @@ def test_add_before_after_option():
     updater["section"]["key1"].add_before.option("key0", 0)
     updater["section"]["key1"].add_after.option("key2")
     assert str(updater) == test4_cfg_out
+
+
+def test_add_option_with_delimiter_and_spaces():
+    updater = ConfigUpdater(delimiters=("=", ":"), space_around_delimiters=False)
+    updater.read_string("[section]\nkey1=1\n")
+    builder = updater["section"]["key1"].add_after
+    builder.option("key2", "2", delimiter=":")
+    builder.option("key3", "3", space_around_delimiters=True)
+    builder.option("key4", "4")
+    assert str(updater) == "[section]\nkey1=1\nkey2:2\nkey3 = 3\nkey4=4\n"
+    parser = ConfigParser(delimiters=("=", ":"))
+    parser.read_string(str(updater))
+    assert dict(parser["section"]) == {
+        "key1": "1",
+        "key2": "2",
+        "key3": "3",
+        "key4": "4",
+    }
+    # Other keyword arguments of Option make no sense here and used to be ignored
+    with pytest.raises(TypeError, match="unexpected keyword argument 'line'"):
+        builder.option("key5", "5", line="key5 = 5\n")
 
 
 test5_cfg_in = """
@@ -1685,3 +1710,35 @@ def test_container_idx_errors_for_missing_blocks(block_type):
         _ = block_type().container_idx
     with pytest.raises(ValueError, match="is not in the container"):
         _ = block_type(container=ConfigUpdater()).container_idx
+
+
+def _message_under_python_OO(error, code):
+    # ``python -OO`` strips docstrings, which the messages must not depend on
+    script = (
+        "import warnings, configupdater\n"
+        "warnings.simplefilter('error')\n"
+        "try:\n"
+        f"    {code}\n"
+        f"except configupdater.{error.__name__} as ex:\n"
+        "    print(ex, end='')\n"
+    )
+    cmd = [sys.executable, "-OO", "-c", script]
+    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    assert result.returncode == 0, result.stderr
+    return result.stdout
+
+
+@pytest.mark.parametrize(
+    "error", [NotAttachedError, AlreadyAttachedError, AssignMultilineValueError]
+)
+def test_error_messages_without_docstrings(error):
+    code = f"raise configupdater.{error.__name__}(configupdater.Option('key'))"
+    assert _message_under_python_OO(error, code) == str(error(Option("key")))
+
+
+def test_none_value_disallowed_message_without_docstrings():
+    with pytest.warns(NoneValueDisallowed) as record:
+        NoneValueDisallowed.warn("key")
+    code = "configupdater.NoneValueDisallowed.warn('key')"
+    message = _message_under_python_OO(NoneValueDisallowed, code)
+    assert message == str(record[0].message)
