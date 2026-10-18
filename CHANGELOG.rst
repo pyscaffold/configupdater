@@ -6,6 +6,7 @@ Version 4.0 (unreleased)
 ========================
 
 - Drop support for Python < 3.11, the minimum supported version is now Python 3.11
+- Add support for Python 3.15
 - Simplify type hints using Python 3.11 features (``typing.Self``, ``X | Y`` unions)
   and remove compatibility code for older Python versions
 - Added ``add_before_skip_comments`` to ``Section`` for inserting blocks before the

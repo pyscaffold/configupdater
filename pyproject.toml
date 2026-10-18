@@ -23,6 +23,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
 ]
@@ -201,11 +202,11 @@ base = ["docs"]
 description = "Check for broken links in the documentation"
 set_env = { BUILD = "linkcheck" }
 
-# Generates the envs diff-py311 … diff-py314. Pipe their output to `delta` or `bat`
+# Generates the envs diff-py311 … diff-py315. Pipe their output to `delta` or `bat`
 # for highlighting, e.g. `tox -qe diff-py311 | delta --side-by-side` or
 # `tox -qe diff-py311 | bat -l diff`.
 [tool.tox.env_base.diff]
-factors = [{ prefix = "py3", start = 11, stop = 14 }]
+factors = [{ prefix = "py3", start = 11, stop = 15 }]
 description = "Display differences between stdlib's ConfigParser and ConfigUpdater"
 package = "editable"
 dependency_groups = []
