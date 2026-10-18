@@ -245,10 +245,12 @@ class Parser:
 
         Args:
             filename (str): path to file
-            encoding (Optional[str]): encoding of file, default None
+            encoding (Optional[str]): encoding of file, default None, i.e. the locale
+                encoding (UTF-8 in UTF-8 mode) like in :func:`open`
             into (Optional[Document]): object to be populated with the parsed config
         """
         document = Document() if into is None else into
+        encoding = io.text_encoding(encoding)
         with open(filename, encoding=encoding) as fp:
             self._read(fp, str(filename), document)
         self._filename = os.path.abspath(filename)

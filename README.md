@@ -79,11 +79,11 @@ with:
 print(updater)
 ```
 
-To update the read-in file just call `updater.update_file()` or
-`updater.write(open('filename','w'))` to write the changed configuration
-file to another destination. Before actually writing, ConfigUpdater will
-automatically check that the updated configuration file is still valid
-by parsing it with the help of ConfigParser.
+To update the read-in file, with the encoding it was read with, just call
+`updater.update_file()` or `updater.write(open('filename','w'))` to write
+the changed configuration file to another destination. Before actually
+writing, ConfigUpdater will automatically check that the updated
+configuration file is still valid by parsing it with the help of ConfigParser.
 
 Many of ConfigParser\'s methods still exists and it\'s best to look them
 up in the [module reference]. Let\'s look at some examples.

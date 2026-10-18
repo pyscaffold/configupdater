@@ -66,8 +66,9 @@ At any point we can print the current state of the configuration file with:
     name = my_project
     author = Alan Turing
 
-To update the read-in file just call ``updater.update_file()`` or ``updater.write(fp)``
-with a file object ``fp`` to write the changed configuration file to another destination.
+To update the read-in file, with the encoding it was read with, just call
+``updater.update_file()`` or ``updater.write(fp)`` with a file object ``fp`` to write the
+changed configuration file to another destination.
 Before actually writing, ConfigUpdater will automatically check that the updated
 configuration file is still valid by parsing it with the help of ConfigParser.
 

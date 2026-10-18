@@ -9,6 +9,7 @@ content.
 
 from __future__ import annotations
 
+import io
 from collections.abc import Iterable, Mapping
 from configparser import Error
 from types import MappingProxyType as ReadOnlyMapping
@@ -101,6 +102,7 @@ class ConfigUpdater(Document):
         }
         self._syntax_options = ReadOnlyMapping(self._parser_opts)
         self._filename: PathLike | None = None
+        self._encoding: str | None = None
         super().__init__()
 
     def _instantiate_copy(self) -> Self:
@@ -108,6 +110,7 @@ class ConfigUpdater(Document):
         clone = self.__class__(**self._parser_opts)
         clone.optionxform = self.optionxform  # type: ignore[method-assign]
         clone._filename = self._filename
+        clone._encoding = self._encoding
         return clone
 
     def _parser(self, **kwargs: Any) -> Parser:
@@ -121,12 +124,18 @@ class ConfigUpdater(Document):
     def read(self, filename: PathLike, encoding: str | None = None) -> Self:
         """Read and parse a filename.
 
+        ``filename`` and ``encoding`` are remembered, so that :meth:`update_file`
+        writes the file back with the encoding it was read with.
+
         Args:
             filename (str): path to file
-            encoding (str): encoding of file, default None
+            encoding (str): encoding of file, default None, i.e. the locale encoding
+                (UTF-8 in UTF-8 mode) like in :func:`open`
         """
+        encoding = io.text_encoding(encoding)
         self.clear()
         self._filename = filename
+        self._encoding = encoding
         return self._parser().read(filename, encoding=encoding, into=self)
 
     def read_file(self, f: Iterable[str], source: str | None = None) -> Self:
@@ -137,6 +146,11 @@ class ConfigUpdater(Document):
         file being read. If not given, it is taken from f.name. If ``f`` has no
         ``name`` attribute, ``<???>`` is used.
 
+        If ``f`` has a ``name`` attribute, like a file opened with :func:`open`,
+        :meth:`update_file` writes to this file using ``f.encoding`` (the default
+        encoding if ``f`` has none). Otherwise, the file and encoding of a previous
+        ``read*`` call are kept for :meth:`update_file`.
+
         Args:
             f: file like object
             source (str): reference name for file object, default None
@@ -144,10 +158,14 @@ class ConfigUpdater(Document):
         self.clear()
         if hasattr(f, "name"):
             self._filename = f.name
+            self._encoding = getattr(f, "encoding", None)
         return self._parser().read_file(f, source, self)
 
     def read_string(self, string: str, source: str = "<string>") -> Self:
         """Read configuration from a given string.
+
+        The file and encoding of a previous ``read*`` call are kept for
+        :meth:`update_file`.
 
         Args:
             string (str): string containing a configuration
@@ -171,6 +189,9 @@ class ConfigUpdater(Document):
     def update_file(self, validate: bool = True) -> Self:
         """Update the read-in configuration file.
 
+        The file is written with the encoding it was read with, see :meth:`read` and
+        :meth:`read_file`.
+
         Args:
             validate (Boolean): validate format before writing
         """
@@ -178,7 +199,8 @@ class ConfigUpdater(Document):
             raise NoConfigFileReadError()
         if validate:  # validate BEFORE opening the file!
             self.validate_format()
-        with open(self._filename, "w") as fb:
+        encoding = io.text_encoding(self._encoding)
+        with open(self._filename, "w", encoding=encoding) as fb:
             self.write(fb, validate=False)
         return self
 
