@@ -110,3 +110,60 @@ def test_existing_option_keeps_its_delimiter_after_assignment():
     cfg = ConfigUpdater(delimiters=("=", ":")).read_string("[options]\nColor : red\n")
     cfg["options"]["Color"] = "blue"
     assert str(cfg) == "[options]\nColor : blue\n"
+
+
+@pytest.mark.parametrize("spaces", [True, False])
+def test_explicit_space_around_delimiters_takes_precedence(spaces):
+    cfg = ConfigUpdater(space_around_delimiters=not spaces)
+    cfg.read_string("[section]\nkey0 = 0\n")
+    section = cfg["section"]
+    section["key1"] = Option("key1", "1", space_around_delimiters=spaces)
+    section["key1"].add_after.option("key2", "2", space_around_delimiters=spaces)
+    section.add_option(
+        section.create_option("key3", "3", space_around_delimiters=spaces)
+    )
+    delim = " = " if spaces else "="
+    lines = [f"key{i}{delim}{i}\n" for i in (1, 2, 3)]
+    assert str(cfg) == "[section]\nkey0 = 0\n" + "".join(lines)
+    # The option keeps its setting when it is copied
+    assert str(deepcopy(section["key1"])) == lines[0]
+    parser = ConfigParser()
+    parser.read_string(str(cfg))
+    assert dict(parser["section"]) == {f"key{i}": str(i) for i in range(4)}
+
+
+def test_space_around_delimiters_false_in_default_updater():
+    cfg = ConfigUpdater().read_string("[section]\nkey0 = 0\n")
+    section = cfg["section"]
+    section["key1"] = Option("key1", "1", space_around_delimiters=False)
+    section["key0"].add_after.option("key2", "2", space_around_delimiters=False)
+    assert str(cfg) == "[section]\nkey0 = 0\nkey2=2\nkey1=1\n"
+
+
+@pytest.mark.parametrize("spaces", [True, False])
+def test_options_without_explicit_spaces_follow_the_document(spaces):
+    cfg = ConfigUpdater(space_around_delimiters=spaces).read_string("[section]\n")
+    section = cfg["section"]
+    section["key1"] = Option("key1", "1")
+    section["key1"].add_after.option("key2", "2")
+    section["key3"] = "3"
+    delim = " = " if spaces else "="
+    assert str(cfg) == "[section]\n" + "".join(f"key{i}{delim}{i}\n" for i in (1, 2, 3))
+    # A copy follows the document it is moved to and uses spaces when orphaned
+    other = ConfigUpdater(space_around_delimiters=not spaces).read_string("[section]")
+    for key in section:
+        other["section"][key] = deepcopy(section[key])
+    other_delim = "=" if spaces else " = "
+    assert str(other) == "[section]\n" + "".join(
+        f"key{i}{other_delim}{i}\n" for i in (1, 2, 3)
+    )
+    assert str(deepcopy(section["key1"])) == "key1 = 1\n"
+
+
+def test_parsed_option_keeps_parser_spaces_when_copied():
+    doc = Parser(space_around_delimiters=False).read_string("[section]\nkey=1\n")
+    cfg = ConfigUpdater().read_string("[section]\n")
+    cfg["section"]["key"] = deepcopy(doc["section"]["key"])
+    cfg["section"]["key"].value = "2"
+    assert str(cfg) == "[section]\nkey=2\n"
+    assert str(doc) == "[section]\nkey=1\n"

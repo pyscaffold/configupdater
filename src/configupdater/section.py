@@ -308,7 +308,8 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
         the parent ConfigUpdater object (e.g. ``space_around_delimiters``).
 
         ``delimiter`` and ``space_around_delimiters`` override the syntax options
-        unless they are ``None``.
+        unless they are ``None``. With ``space_around_delimiters=None`` the option
+        keeps following the syntax options of the ConfigUpdater it belongs to.
 
         Warning:
             This is a low level API, not intended for public use.
@@ -317,8 +318,6 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
         syntax_opts = getattr(self._container, "syntax_options", {})
         if delimiter is None:
             delimiter = next(iter(syntax_opts.get("delimiters", [])), None)
-        if space_around_delimiters is None:
-            space_around_delimiters = syntax_opts.get("space_around_delimiters")
         kwargs_: dict[str, Any] = {
             "value": value,
             "container": self,

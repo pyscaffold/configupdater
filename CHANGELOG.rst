@@ -30,6 +30,15 @@ Version 4.0 (unreleased)
 - ``add_before.option`` and ``add_after.option`` pass ``delimiter`` and
   ``space_around_delimiters`` on to the new option instead of silently ignoring all
   keyword arguments. Other keyword arguments now raise a ``TypeError``, PR #163
+- **Breaking:** An explicit ``space_around_delimiters`` of an ``Option`` (also given
+  to ``add_before.option``, ``add_after.option`` or ``Section.create_option``) now
+  takes precedence over the syntax options of the ``ConfigUpdater``, so ``False``
+  writes ``key=value`` even with the default ``space_around_delimiters=True``.
+  ``Option`` defaults to ``space_around_delimiters=None``, i.e. it follows the
+  ``ConfigUpdater`` it belongs to: ``Option("key", "value")`` now writes
+  ``key=value`` into a ``ConfigUpdater(space_around_delimiters=False)`` instead of
+  ``key = value``. Options created with ``section[key] = value`` or ``set`` keep
+  following the ``ConfigUpdater`` they are copied to
 - **Breaking:** ``key in section``, ``section.has_option(key)`` and
   ``section.get(key)`` now apply ``optionxform`` to ``key``, like ``section[key]``
   and ConfigParser do. With the default ``str.lower``, ``"KEY" in section`` is now

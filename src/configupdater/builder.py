@@ -109,7 +109,6 @@ class BlockBuilder:
                 :class:`~configupdater.ConfigUpdater`
             space_around_delimiters (bool or None): surround the delimiter with
                 spaces, by default as given to :class:`~configupdater.ConfigUpdater`.
-                Spaces are always added if it has ``space_around_delimiters=True``.
 
         Returns:
             self for chaining
