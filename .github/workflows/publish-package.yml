@@ -1,9 +1,14 @@
-# Builds the package and uploads it to PyPI when a `v*` tag is pushed.
-# Uses trusted publishing (OIDC), so no API token is stored in the repository. See
-# https://docs.pypi.org/trusted-publishers/ for the PyPI side of the setup.
-# A manual run (workflow_dispatch) only builds and inspects the package.
+# Releases a `v*` tag: runs the whole CI (ci.yml) on the tagged commit, uploads the
+# sdist and wheel that the CI built and tested to PyPI, and creates a GitHub release
+# with the version's section of CHANGELOG.rst as notes (tools/release_notes.py).
+# Before tagging a final release, drop "(unreleased)" from its changelog heading;
+# otherwise the run stops before anything is uploaded.
+# The upload uses trusted publishing (OIDC), so no API token is stored in the
+# repository. See https://docs.pypi.org/trusted-publishers/ for the PyPI side of the
+# setup, which refers to this file by name. A manual run (workflow_dispatch) only
+# runs the CI.
 
-name: Publish to PyPI
+name: Release
 
 on:
   push:
@@ -17,21 +22,38 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
-    name: Build & inspect package
+  ci:
+    name: CI
+    uses: $/.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  release-notes:
+    name: Extract release notes
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    outputs:
+      notes: ${{ steps.notes.outputs.notes }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0 # setuptools-scm needs the tags
           persist-credentials: false
-      - uses: hynek/build-and-inspect-python-package@2abe76da66d0a6a4a227101f9348ee855797cfa5 # v3.0.1
+      - name: Read the version's section of CHANGELOG.rst
+        id: notes
+        run: |
+          notes=$(python3 tools/release_notes.py "${GITHUB_REF_NAME#v}")
+          {
+            echo "notes<<RELEASE_NOTES_EOF"
+            echo "$notes"
+            echo "RELEASE_NOTES_EOF"
+          } >> "$GITHUB_OUTPUT"
+          echo "$notes" >> "$GITHUB_STEP_SUMMARY"
 
   publish:
     name: Upload to PyPI
-    needs: build
+    needs: [ci, release-notes]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     environment:
@@ -42,6 +64,28 @@ jobs:
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: Packages
+          name: Packages # built by the `build` job of the CI
           path: dist
       - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+
+  github-release:
+    name: Create GitHub release
+    needs: [release-notes, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the release and attach the packages
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: Packages
+          path: dist
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NOTES: ${{ needs.release-notes.outputs.notes }}
+        run: |
+          # Keep pre-releases such as v4.0b1 from becoming the latest release
+          prerelease=()
+          if [[ $GITHUB_REF_NAME =~ (a|b|rc)[0-9]+$ ]]; then prerelease=(--prerelease); fi
+          gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" \
+            --verify-tag --notes "$NOTES" "${prerelease[@]}"
