@@ -30,6 +30,7 @@
       "Bash(ruff format --diff *)",
       "Bash(pre-commit run *)",
       "Bash(python -m tools.stdlib_diff *)",
+      "Bash(python3 tools/release_notes.py *)",
       "Bash(git status *)",
       "Bash(git diff *)",
       "Bash(git log *)",
