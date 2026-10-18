@@ -14,7 +14,7 @@ Note:
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator, MutableMapping
-from typing import TYPE_CHECKING, Self, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, Self, TypeVar, cast, overload
 
 if TYPE_CHECKING:
     from .document import Document
@@ -141,7 +141,7 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
         clone._raw_comment = self._raw_comment
         return clone
 
-    def __deepcopy__(self, memo: dict) -> Self:
+    def __deepcopy__(self, memo: dict[int, Any]) -> Self:
         clone = Block.__deepcopy__(self, memo)  # specific due to multi-inheritance
         return clone._copy_structure(self._structure, memo)
 
@@ -152,7 +152,7 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
             raise KeyError(f"No option `{key}` found", {"key": key})
         return option
 
-    def __setitem__(self, key: str, value: Value | None = None):
+    def __setitem__(self, key: str, value: Value | None = None) -> None:
         """Set the value of an option.
 
         Please notice that this method uses
@@ -187,7 +187,7 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
             option.attach(self)
             self._structure.append(option)
 
-    def __delitem__(self, key: str):
+    def __delitem__(self, key: str) -> None:
         key = self.document.optionxform(key)
         try:
             idx = self._get_option_idx(key=key)
@@ -195,9 +195,9 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
         except StopIteration as ex:
             raise KeyError(f"No option `{key}` found", {"key": key}) from ex
 
-    # MutableMapping[str, Option] for some reason accepts key: object
-    # it actually doesn't matter for the implementation, so we omit the typing
-    def __contains__(self, key) -> bool:
+    # MutableMapping[str, Option] accepts key: object. As in ConfigParser, the key is
+    # passed to optionxform, which usually expects a string.
+    def __contains__(self, key: object) -> bool:
         """Returns whether the given option exists.
 
         Like ``section[key]``, this applies
@@ -209,10 +209,9 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
         Returns:
             bool: whether the option exists
         """
-        return self._find_option(self.document.optionxform(key)) is not None
+        return self._find_option(self.document.optionxform(cast(str, key))) is not None
 
-    # Omit typing so it can represent any object
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             return self.name == other.name and self._structure == other._structure
         else:
@@ -257,17 +256,17 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
         return self._name
 
     @name.setter
-    def name(self, value: str):
+    def name(self, value: str) -> None:
         self._name = str(value)
         self._updated = True
 
     @property
-    def raw_comment(self):
+    def raw_comment(self) -> str:
         """Raw comment (includes comment mark) inline with the section header"""
         return self._raw_comment
 
     @raw_comment.setter
-    def raw_comment(self, value: str):
+    def raw_comment(self, value: str) -> None:
         """Add/replace a single comment inline with the section header.
         The given value should be a raw comment, i.e. it needs to contain the
         comment mark.
@@ -306,7 +305,7 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
             Prefer :meth:`set` or :meth:`__setitem__`.
         """
         syntax_opts = getattr(self._container, "syntax_options", {})
-        kwargs_: dict = {
+        kwargs_: dict[str, Any] = {
             "value": value,
             "container": self,
             "space_around_delimiters": syntax_opts.get("space_around_delimiters"),
@@ -321,7 +320,7 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
     @overload
     def get(self, key: str, default: T) -> Option | T: ...
 
-    def get(self, key, default=None):
+    def get(self, key: str, default: T | None = None) -> Option | T | None:
         """This method works similarly to :meth:`dict.get`, and allows you
         to retrieve an option object by its key.
 
@@ -351,7 +350,7 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
         """
         return BlockBuilder(self, idx)
 
-    def clear(self):
+    def clear(self) -> None:
         for block in self._structure:
             block.detach()
         self._structure.clear()

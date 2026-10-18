@@ -5,7 +5,7 @@ easier.
 from __future__ import annotations
 
 from configparser import DuplicateOptionError, DuplicateSectionError
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Any, Self
 
 if TYPE_CHECKING:
     from .block import Block
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 class BlockBuilder:
     """Builder that injects blocks at a given index position."""
 
-    def __init__(self, container: Container, idx: int):
+    def __init__(self, container: Container[Any], idx: int) -> None:
         self._container = container
         self._idx = idx
 
@@ -25,7 +25,7 @@ class BlockBuilder:
         self._idx += 1
         return self
 
-    def comment(self, text: str, comment_prefix="#") -> Self:
+    def comment(self, text: str, comment_prefix: str = "#") -> Self:
         """Creates a comment block
 
         Args:
@@ -64,8 +64,10 @@ class BlockBuilder:
             # create a new section
             section = Section(section)
         elif not isinstance(section, Section):
-            msg = "Parameter must be a string or Section type!"
-            raise ValueError(msg, {"container": section})
+            # Runtime check for callers that ignore the type hints
+            raise ValueError(
+                "Parameter must be a string or Section type!", {"container": section}
+            )
 
         if container.has_section(section.name):
             raise DuplicateSectionError(section.name)
@@ -89,7 +91,7 @@ class BlockBuilder:
             space.add_line("\n")
         return self._insert(space)
 
-    def option(self, key, value: str | None = None, **kwargs) -> Self:
+    def option(self, key: str, value: str | None = None, **kwargs: Any) -> Self:
         """Creates a new option inside a section
 
         Args:

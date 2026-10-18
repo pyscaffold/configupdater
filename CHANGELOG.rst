@@ -23,6 +23,8 @@ Version 4.0 (unreleased)
   wheel is now tagged ``py3-none-any`` (instead of ``py2.py3-none-any``), and the
   license is declared as a PEP 639 expression. The ``testing`` extra is removed;
   development dependencies are dependency groups, e.g. ``uv sync``, PR #156
+- Complete the type annotations of the public API, now checked with mypy in strict
+  mode, and fix the ``NoneValueDisallowed`` warning under ``python -OO``, PR #158
 - **Breaking:** ``key in section``, ``section.has_option(key)`` and
   ``section.get(key)`` now apply ``optionxform`` to ``key``, like ``section[key]``
   and ConfigParser do. With the default ``str.lower``, ``"KEY" in section`` is now
