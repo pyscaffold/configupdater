@@ -25,40 +25,46 @@ def _short_repr(block: object) -> str:
     return f"<{block.__class__.__name__}{name}>"
 
 
-# The messages of the following exceptions double as their docstrings. They are
-# assigned to ``__doc__`` explicitly since ``python -OO`` strips real docstrings.
-
-
 class NotAttachedError(Exception):
-    _template = "{block} is not attached to a container yet. Try to insert it first."
-    __doc__ = _template
+    """Raised when a block needs a container but is not attached to one.
+
+    Insert the block first, e.g. with ``section[key] = option`` or one of the
+    ``add_before``/``add_after`` builders.
+    """
 
     def __init__(self, block: str | Block = "The block"):
-        super().__init__(self._template.format(block=_short_repr(block)))
+        super().__init__(
+            f"{_short_repr(block)} is not attached to a container yet. "
+            "Try to insert it first."
+        )
 
 
 class AlreadyAttachedError(Exception):
-    _template = (
-        "{block} has been already attached to a container.\n"
-        "\n"
-        "Try to remove it first using ``detach`` or create a copy using stdlib's\n"
-        "``copy.deepcopy``."
-    )
-    __doc__ = _template
+    """Raised when a block is inserted while it is attached to another container.
+
+    A block belongs to exactly one container. Remove it from the old one first with
+    ``detach`` or insert a copy made with :func:`copy.deepcopy`.
+    """
 
     def __init__(self, block: str | Block = "The block"):
-        super().__init__(self._template.format(block=_short_repr(block)))
+        super().__init__(
+            f"{_short_repr(block)} has been already attached to a container. "
+            "Try to remove it first using ``detach`` or create a copy using "
+            "stdlib's ``copy.deepcopy``."
+        )
 
 
 class AssignMultilineValueError(Exception):
-    _template = (
-        "Trying to assign a multi-line value to {block}.\n"
-        "Use the ``set_values`` or ``append`` method to accomplish that."
-    )
-    __doc__ = _template
+    """Raised when a multi-line value is assigned to an option's ``value``.
+
+    Use the option's ``set_values`` or ``append`` method for multi-line values.
+    """
 
     def __init__(self, block: str | Block = "The block"):
-        super().__init__(self._template.format(block=_short_repr(block)))
+        super().__init__(
+            f"Trying to assign a multi-line value to {_short_repr(block)}. "
+            "Use the ``set_values`` or ``append`` method to accomplish that."
+        )
 
 
 class Block:

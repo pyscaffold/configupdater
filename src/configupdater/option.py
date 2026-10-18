@@ -33,17 +33,20 @@ def is_multi_line(value: Any) -> bool:
 
 
 class NoneValueDisallowed(SyntaxWarning):
-    # The message doubles as docstring. It is assigned to ``__doc__`` explicitly
-    # since ``python -OO`` strips real docstrings.
-    _template = (
-        "Cannot represent <{option} = None>, it will be converted to <{option} = ''>."
-        "\nPlease use ``allow_no_value=True`` with ``ConfigUpdater``."
-    )
-    __doc__ = _template
+    """Warns that an option without a value cannot be written.
+
+    This happens when such an option is converted to a string while the
+    :class:`~configupdater.ConfigUpdater` does not use ``allow_no_value=True``.
+    """
 
     @classmethod
     def warn(cls, option: str) -> None:
-        warnings.warn(cls._template.format(option=option), cls, stacklevel=2)
+        msg = (
+            f"Cannot represent <{option} = None>, it will be converted to "
+            f"<{option} = ''>. Please use ``allow_no_value=True`` with "
+            "``ConfigUpdater``."
+        )
+        warnings.warn(msg, cls, stacklevel=2)
 
 
 class Option(Block):
