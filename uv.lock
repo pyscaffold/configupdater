@@ -132,7 +132,7 @@ dev = [
     { name = "pytest-cov", specifier = ">=7" },
     { name = "pytest-randomly" },
     { name = "pytest-xdist" },
-    { name = "tox", specifier = ">=4.22" },
+    { name = "tox", specifier = ">=4.46" },
     { name = "tox-uv", specifier = ">=1.17" },
 ]
 test = [

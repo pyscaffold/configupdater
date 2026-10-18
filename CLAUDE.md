@@ -19,7 +19,7 @@ from the installed metadata. Development dependencies are PEP 735 dependency gro
 
 The project is managed with uv. `uv sync` creates `.venv` with the `dev` group
 (tests, mypy, tox, pre-commit); uv picks a Python ≥ 3.11 on its own. Tasks are
-defined in `tox.ini` and run with tox-uv:
+defined in `[tool.tox]` in `pyproject.toml` and run with tox-uv:
 
 ```bash
 uv run tox -e default            # tests with coverage
@@ -28,7 +28,7 @@ uv run tox -e typecheck          # mypy src tools
 uv run tox -e lint               # pre-commit run --all-files
 uv run tox -e docs               # sphinx html → docs/_build/html
 uv run tox -e doctests
-uv run tox -e py312-diff         # diff vs. stdlib ConfigParser (tools/stdlib_diff.py)
+uv run tox -e diff-py312         # diff vs. stdlib ConfigParser (tools/stdlib_diff.py)
 uv run pytest                    # quick test run in .venv, without coverage
 uv build                         # sdist + wheel in dist/
 ```
@@ -109,12 +109,12 @@ ConfigParser counterparts. It is useful when porting upstream parser fixes.
 
 The minimum is Python 3.11 (since 4.0), so 3.11 features such as `typing.Self` and
 `X | Y` unions are fine. The supported versions are set in several places that must
-stay in sync: `requires-python` and the classifiers in `pyproject.toml` and the
-`py{…}-diff` envs in `tox.ini`. Ruff (including its pyupgrade rules) reads its target
-version from `requires-python`, and the CI test matrix is derived from the
-classifiers. A mismatch lets pre-commit.ci autofixes introduce syntax newer than the
-minimum, which is how commit `99c0a76` broke imports on Python < 3.11 before the
-minimum was raised.
+stay in sync: `requires-python`, the classifiers and the `diff-py3…` envs
+(`[tool.tox.env_base.diff]`) in `pyproject.toml`. Ruff (including its pyupgrade rules)
+reads its target version from `requires-python`, and the CI test matrix is derived
+from the classifiers. A mismatch lets pre-commit.ci autofixes introduce syntax newer
+than the minimum, which is how commit `99c0a76` broke imports on Python < 3.11 before
+the minimum was raised.
 
 ## Conventions
 
