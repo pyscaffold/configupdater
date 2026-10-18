@@ -9,7 +9,10 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE.txt"]
-authors = [{ name = "Florian Wilhelm", email = "florian.wilhelm@gmail.com" }]
+authors = [
+    { name = "Florian Wilhelm", email = "florian.wilhelm@gmail.com" },
+    { name = "Anderson Bravalheri", email = "andersonbravalheri@gmail.com" },
+]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
