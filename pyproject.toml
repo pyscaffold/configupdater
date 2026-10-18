@@ -118,10 +118,30 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 
 # Ruff infers the oldest supported Python from `requires-python`
+[tool.ruff]
+show-fixes = true
+
 [tool.ruff.lint]
+# On top of ruff's default rule set
+extend-select = [
+    "I",    # isort
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "C4",   # flake8-comprehensions
+    "PIE",  # flake8-pie
+    "PT",   # flake8-pytest-style
+    "PGH",  # pygrep-hooks
+    "RUF",  # ruff-specific rules
+    "PERF", # perflint
+    "FURB", # refurb
+]
 # TRY004: raising TypeError instead of ValueError/RuntimeError on type checks would
 # break callers that catch the current exceptions.
 ignore = ["TRY004"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["configupdater"]
 
 # ---- tox ----
 # Run tox through uv, e.g. `uv run tox -e default` or `uvx --with tox-uv tox -e default`.

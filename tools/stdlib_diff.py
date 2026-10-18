@@ -28,7 +28,7 @@ from difflib import SequenceMatcher
 from inspect import getmembers, getsourcefile, getsourcelines
 
 try:
-    import configupdater  # noqa
+    import configupdater  # noqa: F401
 except ImportError:
     repo = os.path.dirname(os.path.dirname(__file__))
     sys.path.append(os.path.join(repo, "src"))
