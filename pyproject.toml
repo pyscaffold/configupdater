@@ -1,9 +1,216 @@
 [build-system]
-# AVOID CHANGING REQUIRES: IT WILL BE UPDATED BY PYSCAFFOLD!
-requires = ["setuptools>=46.1.0", "setuptools_scm[toml]>=5"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.27", "hatch-vcs>=0.5"]
+build-backend = "hatchling.build"
 
-[tool.setuptools_scm]
-# For smarter version schemes and other configuration options,
-# check out https://github.com/pypa/setuptools_scm
-version_scheme = "no-guess-dev"
+[project]
+name = "ConfigUpdater"
+description = "Parser like ConfigParser but for updating configuration files"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE.txt"]
+authors = [
+    { name = "Florian Wilhelm", email = "florian.wilhelm@gmail.com" },
+    { name = "Anderson Bravalheri", email = "andersonbravalheri@gmail.com" },
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dynamic = ["version"]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/pyscaffold/configupdater"
+Documentation = "https://configupdater.readthedocs.io/"
+Source = "https://github.com/pyscaffold/configupdater/"
+Issues = "https://github.com/pyscaffold/configupdater/issues"
+Changelog = "https://configupdater.readthedocs.io/en/latest/changelog.html"
+Download = "https://pypi.org/project/configupdater/#files"
+Conda-Forge = "https://anaconda.org/conda-forge/configupdater"
+
+[dependency-groups]
+test = [
+    "pytest>=9",
+    "pytest-cov>=7",
+    "pytest-randomly",
+    # Opt in to distributed tests with, e.g., `-n auto`
+    "pytest-xdist",
+]
+typing = ["mypy>=2"]
+docs = ["sphinx>=8", "furo", "sphinx-copybutton"]
+dev = [
+    { include-group = "test" },
+    { include-group = "typing" },
+    "pre-commit",
+    "tox>=4.46",
+    "tox-uv>=1.17",
+]
+
+# ---- Build ----
+
+[tool.hatch.version]
+source = "vcs"
+raw-options = { version_scheme = "no-guess-dev" }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/configupdater"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+    "/tools",
+    "/docs",
+    "/AUTHORS.rst",
+    "/CHANGELOG.rst",
+    "/CONTRIBUTING.rst",
+]
+
+# ---- Tests ----
+
+[tool.pytest]
+minversion = "9.0"
+addopts = ["-ra", "--verbose"]
+testpaths = ["tests"]
+strict = true
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+branch = true
+source_pkgs = ["configupdater"]
+
+[tool.coverage.paths]
+source = ["src/", "*/site-packages/"]
+
+[tool.coverage.report]
+show_missing = true
+exclude_also = [
+    # Ellipsis, e.g. in overloaded methods
+    '\.\.\.',
+    # Debug-only code
+    'def __repr__',
+    'if self\.debug',
+    # Defensive assertion code
+    'raise AssertionError',
+    'raise NotImplementedError',
+    # Non-runnable code
+    'if 0:',
+    'if __name__ == .__main__.:',
+    'if TYPE_CHECKING:',
+]
+
+# ---- Static analysis ----
+
+[tool.mypy]
+strict = true
+warn_unreachable = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+pretty = true
+show_error_context = true
+show_traceback = true
+
+# Ruff infers the oldest supported Python from `requires-python`
+[tool.ruff]
+show-fixes = true
+
+[tool.ruff.lint]
+# On top of ruff's default rule set
+extend-select = [
+    "I",    # isort
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "C4",   # flake8-comprehensions
+    "PIE",  # flake8-pie
+    "PT",   # flake8-pytest-style
+    "PGH",  # pygrep-hooks
+    "RUF",  # ruff-specific rules
+    "PERF", # perflint
+    "FURB", # refurb
+]
+# TRY004: raising TypeError instead of ValueError/RuntimeError on type checks would
+# break callers that catch the current exceptions.
+ignore = ["TRY004"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["configupdater"]
+
+# ---- tox ----
+# Run tox through uv, e.g. `uv run tox -e default` or `uvx --with tox-uv tox -e default`.
+# For distributed tests, pass `-n NUMBER` (pytest-xdist) after `--`.
+
+[tool.tox]
+requires = ["tox>=4.46", "tox-uv>=1.17"]
+env_list = ["default"]
+
+[tool.tox.env_run_base]
+description = "Invoke pytest to run automated tests"
+dependency_groups = ["test"]
+commands = [[
+    "pytest", "--cov", "--cov-report", "term-missing",
+    { replace = "posargs", extend = true },
+]]
+
+[tool.tox.env.lint]
+description = "Perform static analysis and style checks"
+skip_install = true
+dependency_groups = []
+deps = ["pre-commit"]
+pass_env = ["HOMEPATH", "PROGRAMDATA"]
+commands = [[
+    "pre-commit", "run", "--all-files",
+    { replace = "posargs", default = ["--show-diff-on-failure"], extend = true },
+]]
+
+[tool.tox.env.typecheck]
+description = "Invoke mypy to typecheck the source code"
+dependency_groups = ["typing"]
+commands = [[
+    "mypy",
+    { replace = "posargs", default = ["src", "tools"], extend = true },
+]]
+
+[tool.tox.env.docs]
+description = "Invoke sphinx-build to build the docs"
+dependency_groups = ["docs"]
+set_env = { BUILD = "html" }
+commands = [[
+    "sphinx-build", "--color", "-b", "{env:BUILD}",
+    "-d", "{tox_root}/docs/_build/doctrees",
+    "{tox_root}/docs", "{tox_root}/docs/_build/{env:BUILD}",
+    { replace = "posargs", extend = true },
+]]
+
+[tool.tox.env.doctests]
+base = ["docs"]
+description = "Invoke sphinx-build to run doctests"
+set_env = { BUILD = "doctest" }
+
+[tool.tox.env.linkcheck]
+base = ["docs"]
+description = "Check for broken links in the documentation"
+set_env = { BUILD = "linkcheck" }
+
+# Generates the envs diff-py311 … diff-py315. Pipe their output to `delta` or `bat`
+# for highlighting, e.g. `tox -qe diff-py311 | delta --side-by-side` or
+# `tox -qe diff-py311 | bat -l diff`.
+[tool.tox.env_base.diff]
+factors = [{ prefix = "py3", start = 11, stop = 15 }]
+description = "Display differences between stdlib's ConfigParser and ConfigUpdater"
+package = "editable"
+dependency_groups = []
+commands = [[
+    "python", "-m", "tools.stdlib_diff",
+    { replace = "posargs", extend = true },
+]]

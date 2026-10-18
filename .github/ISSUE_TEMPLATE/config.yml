@@ -1,0 +1,7 @@
+contact_links:
+  - name: Documentation
+    url: https://configupdater.readthedocs.io/
+    about: The usage guide and the API reference.
+  - name: Report a security vulnerability
+    url: https://github.com/pyscaffold/configupdater/security/advisories/new
+    about: Please report security issues privately, not as a public issue.

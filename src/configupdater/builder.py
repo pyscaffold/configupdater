@@ -2,30 +2,30 @@
 easier.
 """
 
+from __future__ import annotations
+
 from configparser import DuplicateOptionError, DuplicateSectionError
-from typing import TYPE_CHECKING, Self, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Self
 
 if TYPE_CHECKING:
     from .block import Block
     from .container import Container
     from .section import Section
 
-T = TypeVar("T", bound="BlockBuilder")
-
 
 class BlockBuilder:
     """Builder that injects blocks at a given index position."""
 
-    def __init__(self, container: "Container", idx: int):
+    def __init__(self, container: Container[Any], idx: int) -> None:
         self._container = container
         self._idx = idx
 
-    def _insert(self, block: "Block") -> Self:
+    def _insert(self, block: Block) -> Self:
         self._container.structure.insert(self._idx, block)
         self._idx += 1
         return self
 
-    def comment(self, text: str, comment_prefix="#") -> Self:
+    def comment(self, text: str, comment_prefix: str = "#") -> Self:
         """Creates a comment block
 
         Args:
@@ -44,7 +44,7 @@ class BlockBuilder:
             text = "{}{}".format(text, "\n")
         return self._insert(comment.add_line(text))
 
-    def section(self, section: Union[str, "Section"]) -> Self:
+    def section(self, section: str | Section) -> Self:
         """Creates a section block
 
         Args:
@@ -64,8 +64,10 @@ class BlockBuilder:
             # create a new section
             section = Section(section)
         elif not isinstance(section, Section):
-            msg = "Parameter must be a string or Section type!"
-            raise ValueError(msg, {"container": section})
+            # Runtime check for callers that ignore the type hints
+            raise ValueError(
+                "Parameter must be a string or Section type!", {"container": section}
+            )
 
         if container.has_section(section.name):
             raise DuplicateSectionError(section.name)
@@ -89,13 +91,24 @@ class BlockBuilder:
             space.add_line("\n")
         return self._insert(space)
 
-    def option(self, key, value: str | None = None, **kwargs) -> Self:
+    def option(
+        self,
+        key: str,
+        value: str | None = None,
+        *,
+        delimiter: str | None = None,
+        space_around_delimiters: bool | None = None,
+    ) -> Self:
         """Creates a new option inside a section
 
         Args:
             key (str): key of the option
             value (str or None): value of the option
-            **kwargs: are passed to the constructor of :class:`Option`
+            delimiter (str or None): delimiter between key and value, by default
+                the first of the ``delimiters`` given to
+                :class:`~configupdater.ConfigUpdater`
+            space_around_delimiters (bool or None): surround the delimiter with
+                spaces, by default as given to :class:`~configupdater.ConfigUpdater`.
 
         Returns:
             self for chaining
@@ -106,7 +119,12 @@ class BlockBuilder:
             msg = "Options can only be added inside a section!"
             raise ValueError(msg, {"container": self._container})
         section = self._container
-        option = section.create_option(key, value)
+        option = section.create_option(
+            key,
+            value,
+            delimiter=delimiter,
+            space_around_delimiters=space_around_delimiters,
+        )
         if option.key in section.options():
             raise DuplicateOptionError(section.name, option.key)
         option.value = value

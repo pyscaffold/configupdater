@@ -5,23 +5,17 @@ The :class:`Container` is the parent class of everything that can contain config
 blocks, e.g. a section or the entire file itself.
 """
 
-import sys
+from __future__ import annotations
+
+from collections.abc import Iterator
 from copy import deepcopy
 from textwrap import indent
-from typing import TYPE_CHECKING, Generic, Self, TypeVar
-
-if sys.version_info[:2] >= (3, 9):  # pragma: no cover
-    from collections.abc import Iterator
-
-    List = list
-else:  # pragma: no cover
-    from collections.abc import Iterator
+from typing import TYPE_CHECKING, Any, Generic, Self, TypeVar
 
 if TYPE_CHECKING:
     from .block import Block
 
 T = TypeVar("T", bound="Block")
-C = TypeVar("C", bound="Container")
 
 
 class Container(Generic[T]):
@@ -29,7 +23,7 @@ class Container(Generic[T]):
 
     _structure: list[T]
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._structure = []
 
     def _repr_blocks(self) -> str:
@@ -40,12 +34,12 @@ class Container(Generic[T]):
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} {self._repr_blocks()}>"
 
-    def __deepcopy__(self, memo: dict) -> Self:
+    def __deepcopy__(self, memo: dict[int, Any]) -> Self:
         clone = self._instantiate_copy()
         memo[id(self)] = clone
         return clone._copy_structure(self._structure, memo)
 
-    def _copy_structure(self, structure: list[T], memo: dict) -> Self:
+    def _copy_structure(self, structure: list[T], memo: dict[int, Any]) -> Self:
         """``__deepcopy__`` auxiliary method also useful with multi-inheritance"""
         self._structure = [b.attach(self) for b in deepcopy(structure, memo)]
         return self

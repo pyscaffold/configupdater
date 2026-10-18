@@ -1,0 +1,2 @@
+# Lets hatch-vcs determine the version from `git archive` tarballs (e.g. GitHub's)
+.git_archival.txt  export-subst

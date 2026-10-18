@@ -5,25 +5,19 @@ The :class:`Block` is the parent class of everything that can be nested inside a
 configuration file, e.g. comments, sections, options and even sequences of white space.
 """
 
-import sys
-from copy import deepcopy
-from inspect import cleandoc
-from typing import TYPE_CHECKING, Optional, Self, TypeVar, Union, cast
+from __future__ import annotations
 
-if sys.version_info[:2] >= (3, 9):  # pragma: no cover
-    List = list
-else:  # pragma: no cover
-    pass
+from copy import deepcopy
+from typing import TYPE_CHECKING, Any, Self, TypeVar
 
 if TYPE_CHECKING:
     from .builder import BlockBuilder
     from .container import Container
 
 T = TypeVar("T")
-B = TypeVar("B", bound="Block")
 
 
-def _short_repr(block) -> str:
+def _short_repr(block: object) -> str:
     if isinstance(block, str):
         return block
     name = getattr(block, "raw_key", None) or getattr(block, "name", None)
@@ -32,36 +26,45 @@ def _short_repr(block) -> str:
 
 
 class NotAttachedError(Exception):
-    """{block} is not attached to a container yet. Try to insert it first."""
+    """Raised when a block needs a container but is not attached to one.
 
-    def __init__(self, block: Union[str, "Block"] = "The block"):
-        doc = cleandoc(cast(str, self.__class__.__doc__))
-        msg = doc.format(block=_short_repr(block))
-        super().__init__(msg)
+    Insert the block first, e.g. with ``section[key] = option`` or one of the
+    ``add_before``/``add_after`` builders.
+    """
+
+    def __init__(self, block: str | Block = "The block"):
+        super().__init__(
+            f"{_short_repr(block)} is not attached to a container yet. "
+            "Try to insert it first."
+        )
 
 
 class AlreadyAttachedError(Exception):
-    """{block} has been already attached to a container.
+    """Raised when a block is inserted while it is attached to another container.
 
-    Try to remove it first using ``detach`` or create a copy using stdlib's
-    ``copy.deepcopy``.
+    A block belongs to exactly one container. Remove it from the old one first with
+    ``detach`` or insert a copy made with :func:`copy.deepcopy`.
     """
 
-    def __init__(self, block: Union[str, "Block"] = "The block"):
-        doc = cleandoc(cast(str, self.__class__.__doc__))
-        msg = doc.format(block=_short_repr(block))
-        super().__init__(msg)
+    def __init__(self, block: str | Block = "The block"):
+        super().__init__(
+            f"{_short_repr(block)} has been already attached to a container. "
+            "Try to remove it first using ``detach`` or create a copy using "
+            "stdlib's ``copy.deepcopy``."
+        )
 
 
 class AssignMultilineValueError(Exception):
-    """Trying to assign a multi-line value to {block}.
-    Use the ``set_values`` or ``append`` method to accomplish that.
+    """Raised when a multi-line value is assigned to an option's ``value``.
+
+    Use the option's ``set_values`` or ``append`` method for multi-line values.
     """
 
-    def __init__(self, block: Union[str, "Block"] = "The block"):
-        doc = cleandoc(cast(str, self.__class__.__doc__))
-        msg = doc.format(block=_short_repr(block))
-        super().__init__(msg)
+    def __init__(self, block: str | Block = "The block"):
+        super().__init__(
+            f"Trying to assign a multi-line value to {_short_repr(block)}. "
+            "Use the ``set_values`` or ``append`` method to accomplish that."
+        )
 
 
 class Block:
@@ -74,7 +77,7 @@ class Block:
     inside the container.
     """
 
-    def __init__(self, container: Optional["Container"] = None):
+    def __init__(self, container: Container[Any] | None = None) -> None:
         self._container = container
         self._lines: list[str] = []
         self._updated = False
@@ -85,13 +88,13 @@ class Block:
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}: {str(self)!r}>"
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             return str(self) == str(other)
         else:
             return False
 
-    def __deepcopy__(self, memo: dict) -> Self:
+    def __deepcopy__(self, memo: dict[int, Any]) -> Self:
         clone = self._instantiate_copy()
         clone._lines = deepcopy(self._lines, memo)
         clone._updated = self._updated
@@ -120,7 +123,7 @@ class Block:
         return self._lines
 
     @property
-    def container(self) -> "Container":
+    def container(self) -> Container[Any]:
         """Container holding the block"""
         if self._container is None:
             raise NotAttachedError(self)
@@ -140,36 +143,38 @@ class Block:
         # if no lines were added, treat it as updated since we added it
         return self._updated or not self._lines
 
-    def _builder(self, idx: int) -> "BlockBuilder":
+    def _builder(self, idx: int) -> BlockBuilder:
         from .builder import BlockBuilder
 
         return BlockBuilder(self.container, idx)
 
     @property
-    def add_before(self) -> "BlockBuilder":
+    def add_before(self) -> BlockBuilder:
         """Block builder inserting a new block before the current block"""
         return self._builder(self.container_idx)
 
     @property
-    def add_after(self) -> "BlockBuilder":
+    def add_after(self) -> BlockBuilder:
         """Block builder inserting a new block after the current block"""
         return self._builder(self.container_idx + 1)
 
     @property
-    def next_block(self) -> Optional["Block"]:
+    def next_block(self) -> Block | None:
         """Next block in the current container"""
         idx = self.container_idx + 1
         if idx < len(self.container):
-            return self.container.structure[idx]
+            block: Block = self.container.structure[idx]
+            return block
         else:
             return None
 
     @property
-    def previous_block(self) -> Optional["Block"]:
+    def previous_block(self) -> Block | None:
         """Previous block in the current container"""
         idx = self.container_idx - 1
         if idx >= 0:
-            return self.container.structure[idx]
+            block: Block = self.container.structure[idx]
+            return block
         else:
             return None
 
@@ -183,7 +188,7 @@ class Block:
         """Checks if this block has a container attached"""
         return self._container is not None
 
-    def attach(self, container: "Container") -> Self:
+    def attach(self, container: Container[Any]) -> Self:
         """PRIVATE: Don't use this as a user!
 
         Rather use `add_*` or the bracket notation

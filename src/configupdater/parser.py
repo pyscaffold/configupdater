@@ -30,11 +30,13 @@ configuration file.
    see the file LICENSE for details.
 """
 
+from __future__ import annotations
+
 import io
 import os
 import re
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Iterable, Mapping
 from configparser import (
     DuplicateOptionError,
     DuplicateSectionError,
@@ -44,18 +46,10 @@ from configparser import (
     ParsingError,
 )
 from types import MappingProxyType as ReadOnlyMapping
-from typing import TypeVar, Union, cast, overload
-
-if sys.version_info[:2] >= (3, 9):  # pragma: no cover
-    from collections.abc import Iterable, Mapping
-
-    List = list
-    Dict = dict
-else:  # pragma: no cover
-    from collections.abc import Iterable, Mapping
+from typing import Any, TypeVar, cast, overload
 
 from .block import Comment, Space
-from .document import Document
+from .document import ConfigContent, Document
 from .option import Option
 from .section import Section
 
@@ -74,12 +68,7 @@ T = TypeVar("T")
 E = TypeVar("E", bound=Exception)
 D = TypeVar("D", bound=Document)
 
-if sys.version_info[:2] >= (3, 7):  # pragma: no cover
-    PathLike = Union[str, bytes, os.PathLike]
-else:  # pragma: no cover
-    PathLike = Union[str, os.PathLike]
-
-ConfigContent = Union["Section", "Comment", "Space"]
+PathLike = str | bytes | os.PathLike[str] | os.PathLike[bytes]
 
 
 class InconsistentStateError(Exception):  # pragma: no cover (not expected to happen)
@@ -87,11 +76,13 @@ class InconsistentStateError(Exception):  # pragma: no cover (not expected to ha
     and the internal state machine ended up in an unpredicted state.
     """
 
-    def __init__(self, msg, fpname="<???>", lineno: int = -1, line: str = "???"):
+    def __init__(
+        self, msg: str, fpname: str = "<???>", lineno: int = -1, line: str = "???"
+    ) -> None:
         super().__init__(msg)
         self.args = (msg, fpname, lineno, line)
 
-    def __str__(self):
+    def __str__(self) -> str:
         (msg, fpname, lineno, line) = self.args
         return f"{msg}\n{fpname}({lineno}): {line!r}"
 
@@ -122,8 +113,13 @@ class Parser:
         \]                                 # ]
         (?P<raw_comment>.*)                # match any suffix
         """
+    # The option templates are taken from Python 3.15's configparser, whose negative
+    # lookaheads avoid quadratic backtracking on long lines (CPython gh-146333)
     _OPT_TMPL: str = r"""
-        (?P<option>.*?)                    # very permissive!
+        (?P<option>                        # very permissive!
+            (?:(?!{delim})\S)*             # non-delimiter non-whitespace
+            (?:(?:(?!{delim})\s)+          # optionally more
+             (?:(?!{delim})\S)+)*)         #   space-separated words
         \s*(?P<vi>{delim})\s*              # any number of space/tab,
                                            # followed by any of the
                                            # allowed delimiters,
@@ -131,7 +127,10 @@ class Parser:
         (?P<value>.*)$                     # everything up to eol
         """
     _OPT_NV_TMPL: str = r"""
-        (?P<option>.*?)                    # very permissive!
+        (?P<option>                        # very permissive!
+            (?:(?!{delim})\S)*             # non-delimiter non-whitespace
+            (?:(?:(?!{delim})\s)+          # optionally more
+             (?:(?!{delim})\S)+)*)         #   space-separated words
         \s*(?:                             # any number of space/tab,
         (?P<vi>{delim})\s*                 # optionally followed by
                                            # any of the allowed
@@ -151,7 +150,7 @@ class Parser:
 
     def __init__(
         self,
-        allow_no_value=False,
+        allow_no_value: bool = False,
         *,
         delimiters: tuple[str, ...] = ("=", ":"),
         comment_prefixes: tuple[str, ...] = ("#", ";"),
@@ -160,7 +159,7 @@ class Parser:
         empty_lines_in_values: bool = True,
         space_around_delimiters: bool = True,
         optionxform: Callable[[str], str] = str,
-    ):
+    ) -> None:
         """Constructor of the Parser
 
         Args:
@@ -182,7 +181,7 @@ class Parser:
         self._lineno = -1
         self._fpname = "<???>"
 
-        self._filename: str | None = None
+        self._filename: str | bytes | None = None
         self._space_around_delimiters: bool = space_around_delimiters
 
         self._dict = dict  # no reason to let the user change this
@@ -206,7 +205,7 @@ class Parser:
         self._allow_no_value = allow_no_value
         self._empty_lines_in_values = empty_lines_in_values
 
-    def _get_args(self) -> dict:
+    def _get_args(self) -> dict[str, Any]:
         args = (
             "allow_no_value",
             "delimiters",
@@ -222,7 +221,7 @@ class Parser:
         return f"<{self.__class__.__name__}: {self._get_args()!r}>"
 
     @property
-    def syntax_options(self) -> Mapping:
+    def syntax_options(self) -> Mapping[str, Any]:
         return ReadOnlyMapping(self._get_args())
 
     @overload
@@ -236,15 +235,22 @@ class Parser:
         self, filename: PathLike, *, into: D, encoding: str | None = None
     ) -> D: ...
 
-    def read(self, filename, encoding=None, into=None):
+    def read(
+        self,
+        filename: PathLike,
+        encoding: str | None = None,
+        into: Document | None = None,
+    ) -> Document:
         """Read and parse a filename.
 
         Args:
             filename (str): path to file
-            encoding (Optional[str]): encoding of file, default None
+            encoding (Optional[str]): encoding of file, default None, i.e. the locale
+                encoding (UTF-8 in UTF-8 mode) like in :func:`open`
             into (Optional[Document]): object to be populated with the parsed config
         """
         document = Document() if into is None else into
+        encoding = io.text_encoding(encoding)
         with open(filename, encoding=encoding) as fp:
             self._read(fp, str(filename), document)
         self._filename = os.path.abspath(filename)
@@ -261,7 +267,12 @@ class Parser:
         self, f: Iterable[str], *, into: D, source: str | None = None
     ) -> D: ...
 
-    def read_file(self, f, source=None, into=None):
+    def read_file(
+        self,
+        f: Iterable[str],
+        source: str | None = None,
+        into: Document | None = None,
+    ) -> Document:
         """Like read() but the argument must be a file-like object.
 
         The ``f`` argument must be iterable, returning one line at a time.
@@ -294,7 +305,9 @@ class Parser:
     @overload
     def read_string(self, string: str, *, into: D, source: str = "<string>") -> D: ...
 
-    def read_string(self, string, source="<string>", into=None):
+    def read_string(
+        self, string: str, source: str = "<string>", into: Document | None = None
+    ) -> Document:
         """Read configuration from a given string.
 
         Args:
@@ -303,6 +316,8 @@ class Parser:
             into (Optional[Document]): object to be populated with the parsed config
         """
         sfile = io.StringIO(string)
+        if into is None:
+            return self.read_file(sfile, source)
         return self.read_file(sfile, source, into)
 
     def optionxform(self, string: str) -> str:
@@ -310,7 +325,7 @@ class Parser:
         return fn(string)
 
     @property
-    def _last_block(self):
+    def _last_block(self) -> ConfigContent | None:
         return self._document.last_block
 
     def _update_curr_block(self, block_type: type[Comment | Space]) -> Comment | Space:
@@ -321,20 +336,22 @@ class Parser:
             self._document.append(new_block)
             return new_block
 
-    def _add_comment(self, line: str):
+    def _add_comment(self, line: str) -> None:
         if isinstance(self._last_block, Section):
             self._last_block.add_comment(line)
         else:
             self._update_curr_block(Comment).add_line(line)
 
-    def _add_section(self, sectname: str, raw_comment: str, line: str):
+    def _add_section(self, sectname: str, raw_comment: str, line: str) -> None:
         new_section = Section(
             sectname, container=self._document, raw_comment=raw_comment
         )
         new_section.add_line(line)
         self._document.append(new_section)
 
-    def _add_option(self, key: str, vi: str, value: str | None, line: str):
+    def _add_option(
+        self, key: str, vi: str | None, value: str | None, line: str
+    ) -> None:
         if not isinstance(self._last_block, Section):  # pragma: no cover
             msg = f"{self._last_block!r} should be Section"
             raise InconsistentStateError(msg, self._fpname, self._lineno, line)
@@ -344,7 +361,7 @@ class Parser:
         entry = Option(
             key,
             value=None,
-            delimiter=vi,
+            delimiter=vi or "",  # vi is only None if there are no delimiters
             container=self._last_block,
             space_around_delimiters=self._space_around_delimiters,
             line=line,
@@ -353,7 +370,7 @@ class Parser:
         entry.add_value(value)
         self._last_block.add_option(entry)
 
-    def _add_option_line(self, line: str):
+    def _add_option_line(self, line: str) -> None:
         last_section = self._last_block
         if not isinstance(last_section, Section):  # pragma: no cover
             msg = f"{last_section!r} should be Section"
@@ -378,13 +395,13 @@ class Parser:
             raise InconsistentStateError(msg, self._fpname, self._lineno, line)
         last_option.add_line(line)
 
-    def _add_space(self, line: str):
+    def _add_space(self, line: str) -> None:
         if isinstance(self._last_block, Section):
             self._last_block.add_space(line)
         else:
             self._update_curr_block(Space).add_line(line)
 
-    def _read(self, fp: Iterable[str], fpname: str, into: Document):
+    def _read(self, fp: Iterable[str], fpname: str, into: Document) -> None:
         """Parse a sectioned configuration file.
 
         Each section in a configuration file contains a header, indicated by
@@ -406,7 +423,7 @@ class Parser:
         this german pun) for consistency reasons and later upgrades.
         """
         self._document = into
-        elements_added: set = set()
+        elements_added: set[str | tuple[str, str]] = set()
         cursect: dict[str, list[str]] | None = None  # None or dict
         sectname: str | None = None
         optname: str | None = None
@@ -418,7 +435,7 @@ class Parser:
             self._lineno = lineno
             comment_start: int | None = sys.maxsize
             # strip inline comments
-            inline_prefixes = {p: -1 for p in self._inline_comment_prefixes}
+            inline_prefixes = {p: -1 for p in self._inline_comment_prefixes}  # noqa: C420
             while comment_start == sys.maxsize and inline_prefixes:
                 next_prefixes = {}
                 for prefix, index in inline_prefixes.items():
@@ -541,16 +558,15 @@ class Parser:
             # ^  the typechecker cannot handle hasattr
         return e
 
-    def _check_values_with_blank_lines(self):
+    def _check_values_with_blank_lines(self) -> None:
         for section in self._document.section_blocks():
             for option in section.option_blocks():
                 next_block = option.next_block
-                if isinstance(next_block, Space):
-                    # check if space is part of a multi-line value with blank lines
-                    if "".join(next_block.lines).strip():
-                        self._merge_option_with_space(option, next_block)
+                # check if space is part of a multi-line value with blank lines
+                if isinstance(next_block, Space) and "".join(next_block.lines).strip():
+                    self._merge_option_with_space(option, next_block)
 
-    def _merge_option_with_space(self, option: Option, space: Space):
+    def _merge_option_with_space(self, option: Option, space: Space) -> None:
         last_val_idx = max(i for i, line in enumerate(space.lines) if line.strip())
         value_lines = space.lines[: last_val_idx + 1]
         merge_vals = "".join(line.lstrip(" ") for line in value_lines)

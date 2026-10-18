@@ -7,7 +7,7 @@
 |---------|------------------------------------|
 | CI/CD   | [![Tests][Tests-image]][Tests-link] [![Coverage][Coverage-image]][Coverage-link] [![Publish Package][Publish-image]][Publish-link] [![GitHub Sponsors][sponsor-image]][sponsor-link]  |
 | Package | [![PyPI - Version][PyPI_ver-image]][PyPI_ver-link] [![Conda - Version][Conda-image]][Conda-link] [![PyPI - Downloads][PyPI_down-image]][PyPI_down-link] [![PyPI - Python Version][PyPI_py-image]][PyPI_py-link] |
-| Details | [![Setuptools project][setuptools-image]][setuptools-link] [![Linting - Ruff][ruff-image]][ruff-link] [![test - pytest][pytest-image]][pytest-link] [![Pre-Commit][precommit-image]][precommit-link] [![Types - Mypy][mypy-image]][mypy-link] [![License - MIT][MIT-image]][MIT-link] [![Docs - RTD][rtd-image]][rtd-link] |
+| Details | [![Hatch project][hatch-image]][hatch-link] [![uv][uv-image]][uv-link] [![Linting - Ruff][ruff-image]][ruff-link] [![test - pytest][pytest-image]][pytest-link] [![Pre-Commit][precommit-image]][precommit-link] [![Types - Mypy][mypy-image]][mypy-link] [![License - MIT][MIT-image]][MIT-link] [![Docs - RTD][rtd-image]][rtd-link] |
 
 The sole purpose of [ConfigUpdater] is to easily
 update an INI config file with no changes to the original file except
@@ -43,6 +43,12 @@ First install the package with either:
 pip install configupdater
 ```
 
+or add it to a project managed with [uv]:
+
+```console
+uv add configupdater
+```
+
 or:
 
 ```console
@@ -73,11 +79,11 @@ with:
 print(updater)
 ```
 
-To update the read-in file just call `updater.update_file()` or
-`updater.write(open('filename','w'))` to write the changed configuration
-file to another destination. Before actually writing, ConfigUpdater will
-automatically check that the updated configuration file is still valid
-by parsing it with the help of ConfigParser.
+To update the read-in file, with the encoding it was read with, just call
+`updater.update_file()` or `updater.write(open('filename','w'))` to write
+the changed configuration file to another destination. Before actually
+writing, ConfigUpdater will automatically check that the updated
+configuration file is still valid by parsing it with the help of ConfigParser.
 
 Many of ConfigParser\'s methods still exists and it\'s best to look them
 up in the [module reference]. Let\'s look at some examples.
@@ -133,7 +139,7 @@ which would result in:
 author = Ada Lovelace
 # Ada would have loved MIT
 license = MIT
-summary = Analytical Engine calculating the Bernoulli numbers
+summary = The Analytical Engine
 ```
 
 Using `add_after` would give the same result and looks like:
@@ -148,8 +154,8 @@ updater.read_string(cfg)
 )
 ```
 
-Let\'s say we want to rename [summary]{.title-ref} to the more common
-\`description\`:
+Let\'s say we want to rename `summary` to the more common
+`description`:
 
 ```python
 updater = ConfigUpdater()
@@ -172,8 +178,8 @@ updater = ConfigUpdater()
 updater.read_string(cfg)
 (
     updater["metadata"]
-    .add_before.section("options")
-    .comment("Some specific project options")
+    .add_before.comment("Some specific project options")
+    .section("options")
     .space(2)
 )
 ```
@@ -181,8 +187,8 @@ updater.read_string(cfg)
 As expected, this results in:
 
 ```ini
-[options]
 # Some specific project options
+[options]
 
 
 [metadata]
@@ -245,6 +251,13 @@ stdlib\'s `copy.deepcopy` function instead of `detach`:
 ```python
 from copy import deepcopy
 
+sphinx = ConfigUpdater()
+sphinx.read_string(sphinx_sect_str)
+sphinx_sect = sphinx["build_sphinx"]
+
+updater = ConfigUpdater()
+updater.read_string(cfg)
+
 (updater["metadata"].add_after.space().section(deepcopy(sphinx_sect)))
 ```
 
@@ -267,11 +280,12 @@ ConfigUpdater was mainly developed for [PyScaffold].
 [ConfigUpdater]: https://configupdater.readthedocs.io/
 [ConfigParser]: https://docs.python.org/3/library/configparser.html
 [PyScaffold]: https://pyscaffold.org/
+[uv]: https://docs.astral.sh/uv/
 [module reference]: https://configupdater.readthedocs.io/en/latest/api.html#configupdater.configupdater.ConfigUpdater
 [unit tests]: https://github.com/pyscaffold/configupdater/blob/main/tests/test_configupdater.py
 
-[Tests-image]: https://api.cirrus-ci.com/github/pyscaffold/configupdater.svg?branch=main
-[Tests-link]: https://cirrus-ci.com/github/pyscaffold/configupdater
+[Tests-image]: https://github.com/pyscaffold/configupdater/actions/workflows/ci.yml/badge.svg
+[Tests-link]: https://github.com/pyscaffold/configupdater/actions/workflows/ci.yml
 [Coverage-image]: https://img.shields.io/coveralls/github/pyscaffold/configupdater/main.svg
 [Coverage-link]: https://coveralls.io/r/pyscaffold/configupdater
 [Publish-image]: https://github.com/pyscaffold/configupdater/actions/workflows/publish-package.yml/badge.svg
@@ -284,8 +298,10 @@ ConfigUpdater was mainly developed for [PyScaffold].
 [PyPI_down-link]: https://pepy.tech/project/configupdater
 [PyPI_py-image]: https://img.shields.io/pypi/pyversions/configupdater.svg?logo=python&label=Python&logoColor=gold
 [PyPI_py-link]: https://pypi.org/project/configupdater/
-[setuptools-image]: https://img.shields.io/badge/-setuptools-E5B62F?logo=python
-[setuptools-link]: https://github.com/pypa/setuptools
+[hatch-image]: https://img.shields.io/badge/%F0%9F%A5%9A-Hatch-4051b5.svg
+[hatch-link]: https://github.com/pypa/hatch
+[uv-image]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json
+[uv-link]: https://github.com/astral-sh/uv
 [ruff-image]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
 [ruff-link]: https://github.com/charliermarsh/ruff
 [mypy-image]: https://img.shields.io/badge/Types-mypy-blue.svg

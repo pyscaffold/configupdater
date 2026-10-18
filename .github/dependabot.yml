@@ -1,0 +1,24 @@
+version: 2
+updates:
+  # Keeps the SHA-pinned actions in .github/workflows up to date.
+  # Hooks in .pre-commit-config.yaml are updated by pre-commit.ci.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  # Keeps the development tools locked in uv.lock up to date.
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      dev-dependencies:
+        patterns: ["*"]

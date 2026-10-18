@@ -5,7 +5,9 @@ Differently from :mod:`configparser`, the different aspects of the ConfigUpdater
 split between several modules.
 """
 
-import sys
+from __future__ import annotations
+
+from collections.abc import Iterable, Iterator, MutableMapping
 from configparser import (
     ConfigParser,
     DuplicateSectionError,
@@ -13,16 +15,7 @@ from configparser import (
     NoSectionError,
 )
 from enum import Enum
-from typing import Self, Tuple, TypeVar, Union, overload
-
-if sys.version_info[:2] >= (3, 9):  # pragma: no cover
-    from collections.abc import Iterable, Iterator, MutableMapping
-
-    List = list
-    Dict = dict
-else:  # pragma: no cover
-    from collections.abc import Iterable, Iterator, MutableMapping
-    from typing import List
+from typing import Any, Self, TypeVar, overload
 
 from .block import Comment, Space
 from .container import Container
@@ -36,10 +29,8 @@ _UniqueValues = Enum("_UniqueValues", "_UNSET")
 _UNSET = _UniqueValues._UNSET
 
 T = TypeVar("T")
-D = TypeVar("D", bound="Document")
 
-ConfigContent = Union["Section", "Comment", "Space"]
-Value = Union["Option", str]
+ConfigContent = Section | Comment | Space
 
 
 class Document(Container[ConfigContent], MutableMapping[str, Section]):
@@ -71,7 +62,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
             if isinstance(entry, Section) and entry.name == name
         )
 
-    def optionxform(self, optionstr) -> str:
+    def optionxform(self, optionstr: str) -> str:
         """Converts an option key for unification
 
         By default it uses :meth:`str.lower`, which means that ConfigUpdater will
@@ -79,6 +70,15 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
 
         This implementation mimics ConfigParser API, and can be configured as described
         in :meth:`configparser.ConfigParser.optionxform`.
+
+        Warning:
+            As in ConfigParser, a custom ``optionxform`` must be idempotent, i.e.
+            ``optionxform(optionxform(key)) == optionxform(key)``. The keys that
+            ConfigUpdater returns, e.g. when iterating over a section, are already
+            transformed and are transformed again when they are used for a lookup.
+            :meth:`str.lower`, :meth:`str.upper` and :class:`str` (to keep keys
+            case-sensitive) satisfy this, while something like
+            ``lambda key: "prefix_" + key`` does not.
 
         Args:
              optionstr (str): key name
@@ -88,7 +88,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         """
         return optionstr.lower()
 
-    def validate_format(self, **kwargs):
+    def validate_format(self, **kwargs: Any) -> bool:
         """Call ConfigParser to validate config
 
         Args:
@@ -131,17 +131,17 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
     def __str__(self) -> str:
         return "".join(str(block) for block in self._structure)
 
-    def __getitem__(self, key) -> Section:
+    def __getitem__(self, key: str) -> Section:
         for section in self.section_blocks():
             if section.name == key:
                 return section
 
         raise KeyError(f"No section `{key}` found", {"key": key})
 
-    def __setitem__(self, key: str, value: Section):
+    def __setitem__(self, key: str, value: Section) -> None:
         if not isinstance(value, Section):
             raise ValueError("Value must be of type Section!")
-        if isinstance(key, str) and key in self:
+        if key in self:
             idx = self._get_section_idx(key)
             self.__getitem__(key).detach()
             value.attach(self)
@@ -153,13 +153,13 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
                 )
             self.add_section(value)
 
-    def __delitem__(self, key: str):
+    def __delitem__(self, key: str) -> None:
         if not self.remove_section(key):
             raise KeyError(f"No section `{key}` found", {"key": key})
 
-    # MutableMapping[str, Section] for some reason accepts key: object
-    # it actually doesn't matter for the implementation, so we omit the typing
-    def __contains__(self, key) -> bool:
+    # MutableMapping[str, Section] accepts key: object, which is fine here since
+    # the key is only compared with the section names
+    def __contains__(self, key: object) -> bool:
         """Returns whether the given section exists.
 
         Args:
@@ -172,18 +172,18 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
 
     has_section = __contains__
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             return self._structure == other._structure
         else:
             return False
 
-    def clear(self):
+    def clear(self) -> None:
         for block in self._structure:
             block.detach()
         self._structure.clear()
 
-    def add_section(self, section: str | Section):
+    def add_section(self, section: str | Section) -> None:
         """Create a new section in the configuration.
 
         Raise DuplicateSectionError if a section by the specified name
@@ -234,10 +234,11 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
     def get(self, section: str, option: str) -> Option: ...
 
     @overload
-    def get(self, section: str, option: str, fallback: T) -> Union[Option, T]:  # noqa
-        ...
+    def get(self, section: str, option: str, fallback: T) -> Option | T: ...
 
-    def get(self, section, option, fallback=_UNSET):
+    def get(
+        self, section: str, option: str, fallback: T | _UniqueValues = _UNSET
+    ) -> Option | T:
         """Gets an option object for a given section or a fallback value.
 
         Warning:
@@ -283,12 +284,11 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         if section_obj is _UNSET:
             raise NoSectionError(section) from None
 
-        option = self.optionxform(option)
         value = section_obj.get(option, fallback)
         # ^  we checked section_obj against _UNSET, so we are sure about its type
 
         if value is _UNSET:
-            raise NoOptionError(option, section)
+            raise NoOptionError(self.optionxform(option), section)
 
         return value
 
@@ -298,7 +298,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
     @overload
     def get_section(self, name: str, default: T) -> Section | T: ...
 
-    def get_section(self, name, default=None):
+    def get_section(self, name: str, default: T | None = None) -> Section | T | None:
         """This method works similarly to :meth:`dict.get`, and allows you
         to retrieve an entire section by its name, or provide a ``default`` value in
         case it cannot be found.
@@ -312,10 +312,11 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
     def items(self) -> list[tuple[str, Section]]: ...
 
     @overload
-    def items(self, section: str) -> List[Tuple[str, Option]]:  # noqa
-        ...
+    def items(self, section: str) -> list[tuple[str, Option]]: ...
 
-    def items(self, section=_UNSET):
+    def items(
+        self, section: str | _UniqueValues = _UNSET
+    ) -> list[tuple[str, Section]] | list[tuple[str, Option]]:
         """Return a list of (name, value) tuples for options or sections.
 
         If section is given, return a list of tuples with (name, value) for
@@ -331,8 +332,8 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         if section is _UNSET:
             return [(sect.name, sect) for sect in self.iter_sections()]
 
-        section = self.__getitem__(section)
-        return [(opt.key, opt) for opt in section.iter_options()]
+        section_obj = self.__getitem__(section)
+        return [(opt.key, opt) for opt in section_obj.iter_options()]
 
     def has_option(self, section: str, option: str) -> bool:
         """Checks for the existence of a given option in a given section.
@@ -344,16 +345,20 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         Returns:
             bool: whether the option exists in the given section
         """
-        key = self.optionxform(option)
-        return key in self.get_section(section, {})
+        return option in self.get_section(section, {})
 
     def set(
         self,
         section: str,
         option: str,
-        value: None | str | Iterable[str] = None,
+        value: str | Iterable[str] | None = None,
     ) -> Self:
         """Set an option.
+
+        A new option keeps the given ``option`` name as
+        :attr:`~configupdater.Option.raw_key`, see :meth:`~configupdater.Section.set`.
+        Unlike :meth:`configparser.ConfigParser.set`, which writes the key transformed
+        by ``optionxform`` (lowercase by default), the file gets the given spelling.
 
         Args:
             section: section name
@@ -364,7 +369,6 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
             section_obj = self.__getitem__(section)
         except KeyError:
             raise NoSectionError(section) from None
-        option = self.optionxform(option)
         section_obj.set(option, value)
         return self
 
@@ -382,11 +386,11 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
             section_obj = self.__getitem__(section)
         except KeyError:
             raise NoSectionError(section) from None
-        option = self.optionxform(option)
-        existed = option in section_obj.options()
-        if existed:
+        try:
             del section_obj[option]
-        return existed
+        except KeyError:
+            return False
+        return True
 
     def remove_section(self, name: str) -> bool:
         """Remove a file section.
