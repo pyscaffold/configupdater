@@ -38,7 +38,7 @@ Version 4.0 (unreleased)
   ``ConfigUpdater`` it belongs to: ``Option("key", "value")`` now writes
   ``key=value`` into a ``ConfigUpdater(space_around_delimiters=False)`` instead of
   ``key = value``. Options created with ``section[key] = value`` or ``set`` keep
-  following the ``ConfigUpdater`` they are copied to
+  following the ``ConfigUpdater`` they are copied to, PR #166
 - **Breaking:** ``key in section``, ``section.has_option(key)`` and
   ``section.get(key)`` now apply ``optionxform`` to ``key``, like ``section[key]``
   and ConfigParser do. With the default ``str.lower``, ``"KEY" in section`` is now
