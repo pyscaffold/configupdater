@@ -1,54 +1,59 @@
-# Temporary and binary files
-*~
+# Byte-compiled files and caches
+__pycache__/
 *.py[cod]
 *.so
-*.cfg
-!.isort.cfg
-!setup.cfg
-*.orig
-*.log
-*.pot
-__pycache__/*
-.cache/*
-.*.swp
-*/.ipynb_checkpoints/*
-.DS_Store
-
-# Project files
-.ropeproject
-.project
-.pydevproject
-.settings
-.idea
-.vscode
-tags
-
-# Package files
-*.egg
-*.eggs/
-.installed.cfg
-*.egg-info
-
-# Unittest and coverage
-htmlcov/*
-.coverage
-.coverage.*
-.tox
-junit*.xml
-coverage.xml
+.cache/
+.mypy_cache/
 .pytest_cache/
+.ruff_cache/
 
-# Build and docs folder/files
-build/*
-dist/*
-sdist/*
-docs/api/*
-docs/_rst/*
-docs/_build/*
-cover/*
-MANIFEST
-
-# Per-project virtualenvs
+# Virtual environments
 .venv*/
 .conda*/
+.tox/
 .python-version
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+
+# Coverage and test reports
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+coverage.lcov
+junit*.xml
+
+# Docs
+docs/_build/
+docs/api/
+docs/_rst/
+docs/html/
+site/
+
+# Editors and OS files
+.idea/
+.vscode/
+.project
+.pydevproject
+.settings/
+.ropeproject
+tags
+*~
+.*.swp
+.DS_Store
+*/.ipynb_checkpoints/
+
+# Claude Code (local only)
+.claude/worktrees/
+.claude/settings.local.json
+
+# Temporary files
+*.orig
+*.bak
+*.log
+*.pot

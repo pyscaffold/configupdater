@@ -7,7 +7,7 @@
 |---------|------------------------------------|
 | CI/CD   | [![Tests][Tests-image]][Tests-link] [![Coverage][Coverage-image]][Coverage-link] [![Publish Package][Publish-image]][Publish-link] [![GitHub Sponsors][sponsor-image]][sponsor-link]  |
 | Package | [![PyPI - Version][PyPI_ver-image]][PyPI_ver-link] [![Conda - Version][Conda-image]][Conda-link] [![PyPI - Downloads][PyPI_down-image]][PyPI_down-link] [![PyPI - Python Version][PyPI_py-image]][PyPI_py-link] |
-| Details | [![Setuptools project][setuptools-image]][setuptools-link] [![Linting - Ruff][ruff-image]][ruff-link] [![test - pytest][pytest-image]][pytest-link] [![Pre-Commit][precommit-image]][precommit-link] [![Types - Mypy][mypy-image]][mypy-link] [![License - MIT][MIT-image]][MIT-link] [![Docs - RTD][rtd-image]][rtd-link] |
+| Details | [![Hatch project][hatch-image]][hatch-link] [![uv][uv-image]][uv-link] [![Linting - Ruff][ruff-image]][ruff-link] [![test - pytest][pytest-image]][pytest-link] [![Pre-Commit][precommit-image]][precommit-link] [![Types - Mypy][mypy-image]][mypy-link] [![License - MIT][MIT-image]][MIT-link] [![Docs - RTD][rtd-image]][rtd-link] |
 
 The sole purpose of [ConfigUpdater] is to easily
 update an INI config file with no changes to the original file except
@@ -284,8 +284,10 @@ ConfigUpdater was mainly developed for [PyScaffold].
 [PyPI_down-link]: https://pepy.tech/project/configupdater
 [PyPI_py-image]: https://img.shields.io/pypi/pyversions/configupdater.svg?logo=python&label=Python&logoColor=gold
 [PyPI_py-link]: https://pypi.org/project/configupdater/
-[setuptools-image]: https://img.shields.io/badge/-setuptools-E5B62F?logo=python
-[setuptools-link]: https://github.com/pypa/setuptools
+[hatch-image]: https://img.shields.io/badge/%F0%9F%A5%9A-Hatch-4051b5.svg
+[hatch-link]: https://github.com/pypa/hatch
+[uv-image]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json
+[uv-link]: https://github.com/astral-sh/uv
 [ruff-image]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
 [ruff-link]: https://github.com/charliermarsh/ruff
 [mypy-image]: https://img.shields.io/badge/Types-mypy-blue.svg

@@ -11,3 +11,14 @@ updates:
     groups:
       github-actions:
         patterns: ["*"]
+
+  # Keeps the development tools locked in uv.lock up to date.
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      dev-dependencies:
+        patterns: ["*"]
