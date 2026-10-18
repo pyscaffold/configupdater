@@ -44,9 +44,13 @@ Notes:
   Dependabot and Read the Docs configs, and audit the workflows with zizmor.
 - After changing dependency groups, run `uv lock` and commit `uv.lock`.
 - Releases happen by pushing a `v*` tag, which triggers
-  `.github/workflows/publish-package.yml`: it builds the package and uploads it to
-  PyPI via trusted publishing (no API token) in the `pypi` environment. Never upload
-  to PyPI yourself, and never create or push tags without being asked.
+  `.github/workflows/publish-package.yml`: it runs the whole CI (`ci.yml`, called as
+  a reusable workflow) on the tag, uploads the sdist and wheel the CI tested to PyPI
+  via trusted publishing (no API token) in the `pypi` environment, and creates a
+  GitHub release whose notes are the version's `CHANGELOG.rst` section, extracted by
+  `tools/release_notes.py`. A final release needs a `Version X.Y` heading without
+  `(unreleased)`, otherwise nothing is uploaded. Never upload to PyPI yourself, and
+  never create or push tags without being asked.
 - CI runs on GitHub Actions (`.github/workflows/ci.yml`): build and inspect the
   sdist/wheel, run the tests against the wheel on Linux, macOS and Windows for every
   Python version in the classifiers, and typecheck and run the doctests on the oldest

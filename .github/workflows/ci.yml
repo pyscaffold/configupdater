@@ -3,13 +3,17 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main, v4.0]
+    branches: [main]
   workflow_dispatch:
+  # publish-package.yml runs the whole CI on a release tag before uploading
+  workflow_call:
 
 permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  # Not `github.workflow`: in a called workflow it is the caller's name, and sharing
+  # the caller's concurrency group would deadlock the release run.
+  group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 env:
