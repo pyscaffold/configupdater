@@ -47,6 +47,7 @@ test = [
     "pytest-xdist",
 ]
 typing = ["mypy>=2"]
+docs = ["sphinx>=8", "furo", "sphinx-copybutton"]
 dev = [
     { include-group = "test" },
     { include-group = "typing" },
@@ -181,9 +182,7 @@ commands = [[
 
 [tool.tox.env.docs]
 description = "Invoke sphinx-build to build the docs"
-dependency_groups = []
-# requirements.txt is shared with Read the Docs
-deps = ["-r {tox_root}/docs/requirements.txt"]
+dependency_groups = ["docs"]
 set_env = { BUILD = "html" }
 commands = [[
     "sphinx-build", "--color", "-b", "{env:BUILD}",
