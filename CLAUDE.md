@@ -49,8 +49,10 @@ Notes:
   via trusted publishing (no API token) in the `pypi` environment, and creates a
   GitHub release whose notes are the version's `CHANGELOG.rst` section, extracted by
   `tools/release_notes.py`. A final release needs a `Version X.Y` heading without
-  `(unreleased)`, otherwise nothing is uploaded. Never upload to PyPI yourself, and
-  never create or push tags without being asked.
+  `(unreleased)`, otherwise nothing is uploaded. The `/release` skill
+  (`.claude/skills/release/`) runs the checks, finalizes the changelog, and creates
+  the release commit on `main` and the tag. Never upload to PyPI yourself, and never
+  create or push tags without being asked.
 - CI runs on GitHub Actions (`.github/workflows/ci.yml`): build and inspect the
   sdist/wheel, run the tests against the wheel on Linux, macOS and Windows for every
   Python version in the classifiers, and typecheck and run the doctests on the oldest
