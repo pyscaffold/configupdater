@@ -4,6 +4,7 @@ The package must be installed (``uv run tox -e docs`` and Read the Docs do that)
 autodoc imports the same code that is shipped.
 """
 
+import os
 from datetime import date
 from importlib.metadata import version as get_version
 
@@ -24,6 +25,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinx_copybutton",
+    "sphinxcontrib.googleanalytics",
 ]
 
 root_doc = "index"
@@ -57,3 +59,7 @@ html_theme_options = {
     "source_branch": "main",
     "source_directory": "docs/",
 }
+
+# Google Analytics 4, only on Read the Docs, so local builds don't send any data
+googleanalytics_id = "G-P7XJCP7XJ7"
+googleanalytics_enabled = os.environ.get("READTHEDOCS") == "True"

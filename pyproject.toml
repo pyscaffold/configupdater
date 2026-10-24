@@ -48,7 +48,7 @@ test = [
     "pytest-xdist",
 ]
 typing = ["mypy>=2"]
-docs = ["sphinx>=8", "furo", "sphinx-copybutton"]
+docs = ["sphinx>=8", "furo", "sphinx-copybutton", "sphinxcontrib-googleanalytics"]
 dev = [
     { include-group = "test" },
     { include-group = "typing" },
