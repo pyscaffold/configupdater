@@ -1,6 +1,6 @@
 """Parser for configuration files (normally ``*.cfg/*.ini``)
 
-A configuration file consists of sections, lead by a "[section]" header,
+A configuration file consists of sections, led by a "[section]" header,
 and followed by "name: value" entries, with continuations and such in
 the style of RFC 822.
 
@@ -11,7 +11,7 @@ spaces. This gives us the corresponding data structures to describe a
 configuration file.
 
 A general block object contains the lines which were parsed and make up
-the block. If a block object was not changed then during writing the same
+the block. If a block object was not changed, then during writing the same
 lines that were parsed will be used to express the block. In case a block,
 e.g. an option, was changed, it is marked as `updated` and its values will
 be transformed into a corresponding string during an update of a
@@ -20,14 +20,14 @@ configuration file.
 
 .. note::
 
-   ConfigUpdater is based on Python's ConfigParser source code, specially regarding the
-   ``parser`` module.
-   The main parsing rules and algorithm are preserved, however ConfigUpdater implements
+   ConfigUpdater is based on Python's ConfigParser source code, especially regarding
+   this ``parser`` module.
+   The main parsing rules and algorithm are preserved; however, ConfigUpdater implements
    its own modified version of the abstract syntax tree to support retaining comments
    and whitespace in an attempt to provide format-preserving document manipulation.
-   The copyright and license of the original ConfigParser code is included as an
+   The copyright and license of the original ConfigParser code are included as an
    attachment to ConfigUpdater's own license, at the root of the source code repository;
-   see the file LICENSE for details.
+   see the file LICENSE.txt for details.
 """
 
 from __future__ import annotations
@@ -72,8 +72,8 @@ PathLike = str | bytes | os.PathLike[str] | os.PathLike[bytes]
 
 
 class InconsistentStateError(Exception):  # pragma: no cover (not expected to happen)
-    """Internal parser error, some of the parsing algorithm assumptions was violated,
-    and the internal state machine ended up in an unpredicted state.
+    """Internal parser error, some of the parsing algorithm's assumptions were
+    violated, and the internal state machine ended up in an unpredicted state.
     """
 
     def __init__(
@@ -92,17 +92,16 @@ class Parser:
 
     ConfigUpdater's parser follows ConfigParser with some differences:
 
-      * inline comments are treated as part of a key's value,
       * only a single config file can be updated at a time,
-      * the original case of sections and keys are kept,
+      * the original case of sections and keys is kept,
       * control over the position of a new section/key.
 
-    Following features are **deliberately not** implemented:
+    The following features are **deliberately not** implemented:
 
       * interpolation of values,
       * propagation of parameters from the default section,
-      * conversions of values,
-      * passing key/value-pairs with ``default`` argument,
+      * conversion of values,
+      * passing key/value pairs with the ``defaults`` argument,
       * non-strict mode allowing duplicate sections and keys.
     """
 
@@ -165,14 +164,14 @@ class Parser:
         Args:
             allow_no_value (bool): allow keys without a value, default False
             delimiters (tuple): delimiters for key/value pairs, default =, :
-            comment_prefixes (tuple): prefix of comments, default # and ;
-            inline_comment_prefixes (tuple): prefix of inline comment,
+            comment_prefixes (tuple): prefixes of comments, default # and ;
+            inline_comment_prefixes (tuple): prefixes of inline comments,
                 default None
             strict (bool): each section must be unique as well as every key
                 within a section, default True
-            empty_lines_in_values (bool): each empty line marks the end of an option.
-                Otherwise, internal empty lines of a multiline option are kept as part
-                of the value, default: True.
+            empty_lines_in_values (bool): if ``False``, each empty line marks the end
+                of an option. Otherwise, internal empty lines of a multi-line option
+                are kept as part of the value, default True
             space_around_delimiters (bool): add a space before and after the
                 delimiter, default True
         """
@@ -281,7 +280,7 @@ class Parser:
         ``name`` attribute, ``<???>`` is used.
 
         Args:
-            f: file like object
+            f: file-like object
             source (Optional[str]): reference name for file object, default None
             into (Optional[Document]): object to be populated with the parsed config
         """
@@ -420,7 +419,7 @@ class Parser:
 
         Note: This method was borrowed from ConfigParser and we keep this
         mess here as close as possible to the original messod (pardon
-        this german pun) for consistency reasons and later upgrades.
+        this German pun) for consistency reasons and later upgrades.
         """
         self._document = into
         elements_added: set[str | tuple[str, str]] = set()

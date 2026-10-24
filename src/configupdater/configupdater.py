@@ -54,17 +54,16 @@ class ConfigUpdater(Document):
 
     ConfigUpdater follows the API of ConfigParser with some differences:
 
-      * inline comments are treated as part of a key's value,
       * only a single config file can be updated at a time,
-      * the original case of sections and keys are kept,
+      * the original case of sections and keys is kept,
       * control over the position of a new section/key.
 
-    Following features are **deliberately not** implemented:
+    The following features are **deliberately not** implemented:
 
       * interpolation of values,
       * propagation of parameters from the default section,
-      * conversions of values,
-      * passing key/value-pairs with ``default`` argument,
+      * conversion of values,
+      * passing key/value pairs with the ``defaults`` argument,
       * non-strict mode allowing duplicate sections and keys.
 
     **ConfigUpdater** objects can be created by passing the same kind of arguments
@@ -73,11 +72,11 @@ class ConfigUpdater(Document):
     (:meth:`read`, :meth:`read_file` and :meth:`read_string`).
 
     Once the content is loaded you can use the ConfigUpdater object more or less in the
-    same way you would use a nested dictionary. Please have a look into
+    same way you would use a nested dictionary. Please have a look at
     :class:`Document` to understand the main differences.
 
-    When you are done changing the configuration file, you can call :meth:`write` or
-    :meth:`update_file` methods.
+    When you are done changing the configuration file, you can call the :meth:`write` or
+    :meth:`update_file` method.
     """
 
     def __init__(
@@ -152,7 +151,7 @@ class ConfigUpdater(Document):
         ``read*`` call are kept for :meth:`update_file`.
 
         Args:
-            f: file like object
+            f: file-like object
             source (str): reference name for file object, default None
         """
         self.clear()
@@ -176,11 +175,11 @@ class ConfigUpdater(Document):
 
     def write(self, fp: TextIO, validate: bool = True) -> None:
         # TODO: For Python>=3.8 instead of TextIO we can define a Writeable protocol
-        """Write an .cfg/.ini-format representation of the configuration state.
+        """Write a .cfg/.ini-format representation of the configuration state.
 
         Args:
             fp (file-like object): open file handle
-            validate (Boolean): validate format before writing
+            validate (bool): validate format before writing
         """
         if validate:
             self.validate_format()
@@ -193,7 +192,7 @@ class ConfigUpdater(Document):
         :meth:`read_file`.
 
         Args:
-            validate (Boolean): validate format before writing
+            validate (bool): validate format before writing
         """
         if self._filename is None:
             raise NoConfigFileReadError()
@@ -209,8 +208,8 @@ class ConfigUpdater(Document):
         modifications), validate its INI/CFG textual representation by parsing it with
         :class:`~configparser.ConfigParser`.
 
-        The ConfigParser object is instead with the same arguments as the original
-        ConfigUpdater object, but the ``kwargs`` can be used to overwrite them.
+        The ConfigParser object is instantiated with the same arguments as the original
+        ConfigUpdater object, but ``kwargs`` can be used to override them.
 
         See :meth:`~configupdater.document.Document.validate_format`.
         """

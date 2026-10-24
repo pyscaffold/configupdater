@@ -1,5 +1,5 @@
 <div align="center">
-<img src="https://raw.githubusercontent.com/pyscaffold/configupdater/master/docs/gfx/banner-640x323.png" alt="Configupdater logo" width="500" role="img">
+<img src="https://raw.githubusercontent.com/pyscaffold/configupdater/main/docs/gfx/banner-640x323.png" alt="ConfigUpdater logo" width="500" role="img">
 </div>
 <br/>
 
@@ -12,27 +12,27 @@
 The sole purpose of [ConfigUpdater] is to easily
 update an INI config file with no changes to the original file except
 the intended ones. This means comments, the ordering of sections and
-key/value-pairs as wells as their cases are kept as in the original
+key/value pairs as well as their case are kept as in the original
 file. Thus ConfigUpdater provides complementary functionality to
-Python\'s [ConfigParser], which is primarily meant for reading config
+Python's [ConfigParser], which is primarily meant for reading config
 files and writing *new* ones.
 
 # Features
 
 The key differences to [ConfigParser] are:
 
-- minimal invasive changes in the update configuration file,
+- minimally invasive changes in the updated configuration file,
 - proper handling of comments,
 - only a single config file can be updated at a time,
-- the original case of sections and keys are kept,
-- control over the position of a new section/key
+- the original case of sections and keys is kept,
+- control over the position of a new section/key.
 
-Following features are **deliberately not** implemented:
+The following features are **deliberately not** implemented:
 
 - interpolation of values,
 - propagation of parameters from the default section,
-- conversions of values,
-- passing key/value-pairs with `default` argument,
+- conversion of values,
+- passing key/value pairs with the `defaults` argument,
 - non-strict mode allowing duplicate sections and keys.
 
 # Usage
@@ -85,12 +85,12 @@ the changed configuration file to another destination. Before actually
 writing, ConfigUpdater will automatically check that the updated
 configuration file is still valid by parsing it with the help of ConfigParser.
 
-Many of ConfigParser\'s methods still exists and it\'s best to look them
-up in the [module reference]. Let\'s look at some examples.
+Many of ConfigParser's methods still exist, and it's best to look them
+up in the [module reference]. Let's look at some examples.
 
 ## Adding and removing options
 
-Let\'s say we have the following configuration in a string:
+Let's say we have the following configuration in a string:
 
 ```python
 cfg = """
@@ -100,7 +100,7 @@ summary = The Analytical Engine
 """
 ```
 
-We can add an *license* option, i.e. a key/value pair, in the same way
+We can add a *license* option, i.e. a key/value pair, in the same way
 we would do with ConfigParser:
 
 ```python
@@ -109,7 +109,7 @@ updater.read_string(cfg)
 updater["metadata"]["license"] = "MIT"
 ```
 
-A simple `print(updater)` will give show you that the new option was
+A simple `print(updater)` will show you that the new option was
 appended to the end:
 
 ```ini
@@ -119,7 +119,7 @@ summary = The Analytical Engine
 license = MIT
 ```
 
-Since the license is really important to us let\'s say we want to add it
+Since the license is really important to us, let's say we want to add it
 before the `summary` and even add a short comment before it:
 
 ```python
@@ -154,7 +154,7 @@ updater.read_string(cfg)
 )
 ```
 
-Let\'s say we want to rename `summary` to the more common
+Let's say we want to rename `summary` to the more common
 `description`:
 
 ```python
@@ -168,10 +168,10 @@ If we wanted no summary at all, we could just do
 
 ## Adding and removing sections
 
-Adding and remove sections just works like adding and removing options
-but on a higher level. Sticking to our *Ada Lovelace* example, let\'s
+Adding and removing sections works just like adding and removing options,
+but on a higher level. Sticking to our *Ada Lovelace* example, let's
 say we want to add a section `options` just before `metadata` with a
-comment and two new lines to separate it from `metadata`:
+comment and two blank lines to separate it from `metadata`:
 
 ```python
 updater = ConfigUpdater()
@@ -197,7 +197,7 @@ summary = The Analytical Engine
 ```
 
 We could now fill the new section with options like we learnt before. If
-we wanted to rename an existing section we could do this with the help
+we wanted to rename an existing section, we could do this with the help
 of the `name` attribute:
 
 ```python
@@ -205,7 +205,7 @@ updater["metadata"].name = "MetaData"
 ```
 
 Sometimes it might be useful to inject a new section not in a
-programmatic way but more declarative. Let\'s assume we have thus
+programmatic way but more declaratively. Let's assume we have thus
 defined our new section in a multi-line string:
 
 ```python
@@ -230,8 +230,8 @@ updater.read_string(cfg)
 (updater["metadata"].add_after.space().section(sphinx_sect.detach()))
 ```
 
-The `detach` method will remove the `build_sphinx` section from the
-first object and add it to the second object. This results in:
+The `detach` method removes the `build_sphinx` section from the
+first object, so that it can be added to the second one. This results in:
 
 ```ini
 [metadata]
@@ -245,8 +245,8 @@ build_dir = docs/_build
 
 Alternatively, if you want to preserve `build_sphinx` in both
 `ConfigUpdater` objects (i.e., prevent it from being removed from the
-first while still adding a copy to the second), you call also rely on
-stdlib\'s `copy.deepcopy` function instead of `detach`:
+first while still adding a copy to the second), you can also rely on
+the stdlib's `copy.deepcopy` function instead of `detach`:
 
 ```python
 from copy import deepcopy
@@ -266,12 +266,12 @@ sections, options, comments and blank spaces.
 
 Shallow copies are discouraged in the context of ConfigUpdater because
 each configuration block keeps a reference to its container to allow
-easy document editing. When doing editions (such as adding or changing
+easy document editing. When making edits (such as adding or changing
 options and comments) based on a shallow copy, the results can be
 unreliable and unexpected.
 
-For more examples on how the API of ConfigUpdater works it\'s best to
-take a look into the [unit tests] and read the references.
+For more examples of how the API of ConfigUpdater works, it's best to
+take a look at the [unit tests] and read the [module reference].
 
 # Notes
 
@@ -305,7 +305,7 @@ formatting that humans put into them.
 [uv-image]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json
 [uv-link]: https://github.com/astral-sh/uv
 [ruff-image]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
-[ruff-link]: https://github.com/charliermarsh/ruff
+[ruff-link]: https://github.com/astral-sh/ruff
 [mypy-image]: https://img.shields.io/badge/Types-mypy-blue.svg
 [mypy-link]: https://mypy-lang.org/
 [pytest-image]: https://img.shields.io/static/v1?label=‎&message=Pytest&logo=Pytest&color=0A9EDC&logoColor=white
