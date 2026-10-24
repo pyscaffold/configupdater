@@ -139,7 +139,7 @@ class Block:
 
     @property
     def updated(self) -> bool:
-        """True if the option was changed/updated, otherwise False"""
+        """True if the block was changed/updated, otherwise False"""
         # if no lines were added, treat it as updated since we added it
         return self._updated or not self._lines
 
@@ -179,7 +179,7 @@ class Block:
             return None
 
     def detach(self) -> Self:
-        """Remove and return this block from container"""
+        """Remove this block from its container and return it"""
         self.container._remove_block(self.container_idx)
         self._container = None
         return self

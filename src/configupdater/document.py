@@ -1,7 +1,7 @@
-"""This module focus in the top level data layer API of ConfigUpdater, i.e.
-how to access and modify the sections of the configurations.
+"""This module focuses on the top-level data layer API of ConfigUpdater, i.e.
+how to access and modify the sections of the configuration.
 
-Differently from :mod:`configparser`, the different aspects of the ConfigUpdater API are
+Unlike :mod:`configparser`, the different aspects of the ConfigUpdater API are
 split between several modules.
 """
 
@@ -42,8 +42,8 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
     few methods that will work differently from what users familiar with *dict-like*
     interfaces would expect. The most notable example is :meth:`get`.
 
-    A important difference between ConfigUpdater's ``Document`` model and
-    :class:`~configparser.ConfigParser` is the behaviour of the :class:`Section`
+    An important difference between ConfigUpdater's ``Document`` model and
+    :class:`~configparser.ConfigParser` is the behavior of the :class:`Section`
     objects.
     If we represent the type of a *dict-like* (or :class:`MutableMapping`) object by
     ``M[K, V]``, where ``K`` is the type of its keys and ``V`` is the type of the
@@ -51,8 +51,8 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
     ``M[str, Option]``, while ConfigParser's would be ``M[str, str]``.
 
     This means that when you try to access a key inside a section in ConfigUpdater, you
-    are going to receive a :class:`Option` object, not its value.
-    To access the value of the option you need to call :class:`Option.value`.
+    are going to receive an :class:`Option` object, not its value.
+    To access the value of the option, use :attr:`Option.value`.
     """
 
     def _get_section_idx(self, name: str) -> int:
@@ -66,10 +66,10 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         """Converts an option key for unification
 
         By default it uses :meth:`str.lower`, which means that ConfigUpdater will
-        compare options in a case insensitive way.
+        compare options in a case-insensitive way.
 
-        This implementation mimics ConfigParser API, and can be configured as described
-        in :meth:`configparser.ConfigParser.optionxform`.
+        This implementation mimics the ConfigParser API, and can be configured as
+        described in :meth:`configparser.ConfigParser.optionxform`.
 
         Warning:
             As in ConfigParser, a custom ``optionxform`` must be idempotent, i.e.
@@ -81,7 +81,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
             ``lambda key: "prefix_" + key`` does not.
 
         Args:
-             optionstr (str): key name
+            optionstr (str): key name
 
         Returns:
             str: unified option name
@@ -187,10 +187,11 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         """Create a new section in the configuration.
 
         Raise DuplicateSectionError if a section by the specified name
-        already exists. Raise ValueError if name is DEFAULT.
+        already exists. Raise ValueError if ``section`` is neither a string nor a
+        :class:`Section`.
 
         Args:
-            section (str or :class:`Section`): name or Section type
+            section (str or :class:`Section`): name of the section or a Section object
         """
         if isinstance(section, str):
             # create a new section
@@ -244,14 +245,14 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         Warning:
             Please notice this method works differently from what is expected of
             :meth:`MutableMapping.get` (or :meth:`dict.get`).
-            Similarly to :meth:`configparser.ConfigParser.get`, will take least 2
+            Like :meth:`configparser.ConfigParser.get`, it takes at least 2
             arguments, and the second argument does not correspond to a default value.
 
             This happens because this function is not designed to return a
             :obj:`Section` of the :obj:`ConfigUpdater` document, but instead a nested
             :obj:`Option`.
 
-            See :meth:`get_section`, if instead, you want to retrieve a :obj:`Section`.
+            See :meth:`get_section` if you want to retrieve a :obj:`Section` instead.
 
         Args:
             section (str): section name
@@ -261,7 +262,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
 
         .. attention::
             When ``option`` is not present, the ``fallback`` value itself is
-            returned. If you want instead to obtain a new ``Option`` object
+            returned. If you want to obtain a new ``Option`` object instead
             with a default value associated with it, you can try the following::
 
                 configupdater.get("section", "option", fallback=Option("name", value))
@@ -319,15 +320,15 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
     ) -> list[tuple[str, Section]] | list[tuple[str, Option]]:
         """Return a list of (name, value) tuples for options or sections.
 
-        If section is given, return a list of tuples with (name, value) for
+        If section is given, return a list of tuples with (name, option) for
         each option in the section. Otherwise, return a list of tuples with
-        (section_name, section_type) for each section.
+        (section_name, section) for each section.
 
         Args:
             section (str): optional section name, default UNSET
 
         Returns:
-            list: list of :class:`Section` or :class:`Option` objects
+            list: list of (name, :class:`Section`) or (name, :class:`Option`) tuples
         """
         if section is _UNSET:
             return [(sect.name, sect) for sect in self.iter_sections()]

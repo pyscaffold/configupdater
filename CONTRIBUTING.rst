@@ -3,10 +3,10 @@ Contributing
 ============
 
 ConfigUpdater is an open-source project and needs your help to improve.
-If you experience bugs or in general issues, please file an
+If you experience bugs or other issues, please file an
 issue report on our `issue tracker`_. If you also want to contribute code
-or improve the documentation it's best to create a Pull Request (PR) on
-Github. Here is a short introduction how it works.
+or improve the documentation, it's best to create a Pull Request (PR) on
+GitHub. Here is a short introduction to how it works.
 
 
 Code Contributions
@@ -15,7 +15,7 @@ Code Contributions
 Submit an issue
 ---------------
 
-Before you work on any non-trivial code contribution it's best to first create
+Before you work on any non-trivial code contribution, it's best to first create
 an issue report to start a discussion on the subject. This often provides
 additional considerations and avoids unnecessary work.
 
@@ -29,7 +29,7 @@ version if you don't have one.
 Clone the repository
 --------------------
 
-#. `Create a Github account`_  if you do not already have one.
+#. `Create a GitHub account`_ if you do not already have one.
 #. Fork the `project repository`_: click on the *Fork* button near the top of the
    page. This creates a copy of the code under your account on the GitHub server.
 #. Clone this copy to your local disk::
@@ -53,7 +53,7 @@ Clone the repository
 
    and start making changes. Never work on the main branch!
 
-#. Start your work on this branch. When you’re done editing, do::
+#. Start your work on this branch. When you're done editing, do::
 
     git add modified_files
     git commit
@@ -68,8 +68,8 @@ Clone the repository
 
    or, for a quick run without coverage, ``uv run pytest``.
 
-   Don't forget to also add unit tests in case your contribution
-   adds an additional feature and is not just a bugfix.
+   Don't forget to add unit tests for a new feature, and a regression test for
+   a bugfix.
 
 #. The ``pre-commit`` hooks check your code style with `ruff`_ on every commit.
    You can also run them on all files with ``uv run tox -e lint``, and check the
@@ -77,14 +77,12 @@ Clone the repository
 #. Add yourself to the list of contributors in ``AUTHORS.rst``.
 #. Go to the web page of your ConfigUpdater fork, and click
    "Create pull request" to send your changes to the maintainers for review.
-   Find more detailed information `creating a PR`_.
+   Find more detailed information on `creating a PR`_.
 
 
-.. _PyPI: https://pypi.python.org/
 .. _project repository: https://github.com/pyscaffold/configupdater/
-.. _Git: https://git-scm.com/
 .. _uv: https://docs.astral.sh/uv/getting-started/installation/
 .. _issue tracker: https://github.com/pyscaffold/configupdater/issues
-.. _Create a Github account: https://github.com/join
-.. _creating a PR: https://help.github.com/articles/creating-a-pull-request/
+.. _Create a GitHub account: https://github.com/join
+.. _creating a PR: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork
 .. _ruff: https://docs.astral.sh/ruff/

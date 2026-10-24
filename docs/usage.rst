@@ -72,7 +72,7 @@ changed configuration file to another destination.
 Before actually writing, ConfigUpdater will automatically check that the updated
 configuration file is still valid by parsing it with the help of ConfigParser.
 
-Many of ConfigParser's methods still exists and it's best to look them up in the :doc:`API reference <api>`.
+Many of ConfigParser's methods still exist, and it's best to look them up in the :doc:`API reference <api>`.
 Let's look at some examples.
 
 Adding and removing options
@@ -88,7 +88,7 @@ Let's say we have the following configuration in a string:
     summary = The Analytical Engine
     """
 
-We can add an *license* option, i.e. a key/value pair, in the same way we would do with ConfigParser:
+We can add a *license* option, i.e. a key/value pair, in the same way we would do with ConfigParser:
 
 .. testcode::
 
@@ -96,7 +96,7 @@ We can add an *license* option, i.e. a key/value pair, in the same way we would 
     updater.read_string(cfg)
     updater["metadata"]["license"] = "MIT"
 
-A simple ``print(updater)`` will give show you that the new option was appended to the end:
+A simple ``print(updater)`` will show you that the new option was appended to the end:
 
 .. testcode::
     :hide:
@@ -110,7 +110,7 @@ A simple ``print(updater)`` will give show you that the new option was appended 
     summary = The Analytical Engine
     license = MIT
 
-Since the license is really important to us let's say we want to add it before the ``summary``
+Since the license is really important to us, let's say we want to add it before the ``summary``
 and even add a short comment before it:
 
 .. testcode::
@@ -223,9 +223,9 @@ To make keys case-sensitive, set ``optionxform`` before reading the file:
 Adding and removing sections
 ----------------------------
 
-Adding and remove sections just works like adding and removing options but on a higher level.
+Adding and removing sections works just like adding and removing options, but on a higher level.
 Sticking to our *Ada Lovelace* example, let's say we want to add a section ``options`` just
-before ``metadata`` with a comment and two new lines to separate it from ``metadata``:
+before ``metadata`` with a comment and two blank lines to separate it from ``metadata``:
 
 .. testcode::
 
@@ -256,7 +256,7 @@ As expected, this results in:
     summary = The Analytical Engine
 
 We could now fill the new section with options like we learnt before. If we wanted to rename
-an existing section we could do this with the help of the ``name`` attribute:
+an existing section, we could do this with the help of the ``name`` attribute:
 
 .. testcode::
 
@@ -267,7 +267,7 @@ an existing section we could do this with the help of the ``name`` attribute:
 
     assert updater.sections() == ["options", "MetaData"]
 
-Sometimes it might be useful to inject a new section not in a programmatic way but more declarative.
+Sometimes it might be useful to inject a new section not in a programmatic way but more declaratively.
 Let's assume we have thus defined our new section in a multi-line string:
 
 .. testcode::
@@ -291,8 +291,8 @@ With the help of two ConfigUpdater objects we can easily inject this section int
 
     (updater["metadata"].add_after.space().section(sphinx_sect.detach()))
 
-The :meth:`~configupdater.block.Block.detach` method will remove the ``build_sphinx``
-section from the first object and add it to the second object. This results in:
+The :meth:`~configupdater.block.Block.detach` method removes the ``build_sphinx``
+section from the first object, so that it can be added to the second one. This results in:
 
 .. testcode::
     :hide:
@@ -312,8 +312,8 @@ section from the first object and add it to the second object. This results in:
 
 Alternatively, if you want to preserve ``build_sphinx`` in both
 :class:`~configupdater.ConfigUpdater` objects (i.e., prevent it from being
-removed from the first while still adding a copy to the second), you call also
-rely on stdlib's :func:`copy.deepcopy` function instead of
+removed from the first while still adding a copy to the second), you can also
+rely on the stdlib's :func:`copy.deepcopy` function instead of
 :meth:`~configupdater.block.Block.detach`:
 
 .. testcode::
@@ -340,15 +340,15 @@ options, comments and blank spaces.
 
 Shallow copies are discouraged in the context of ConfigUpdater because each
 configuration block keeps a reference to its container to allow easy document
-editing. When doing editions (such as adding or changing options and comments)
+editing. When making edits (such as adding or changing options and comments)
 based on a shallow copy, the results can be unreliable and unexpected.
 
 Keeping comments immediately before a section
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``add_before`` inserts directly before the section block. If you have added
-comments immediately before that section using the builder, they remain before
-the newly inserted block. To keep those comments next to the original section,
+comments immediately before that section using the builder, they end up before
+the newly inserted block, separated from the section. To keep those comments next to the original section,
 use :attr:`~configupdater.Section.add_before_skip_comments` instead:
 
 .. testcode::
@@ -381,8 +381,8 @@ Only consecutive comment blocks at the document level are skipped. Blank
 spaces stop the search, and comments inside a previous section are not moved.
 This does not change how the parser associates comments with sections.
 
-For more examples on how the API of ConfigUpdater works it's best to take a look into the
-`unit tests`_ and read the references.
+For more examples of how the API of ConfigUpdater works, it's best to take a look at the
+`unit tests`_ and read the :doc:`API reference <api>`.
 
 
 .. _`unit tests`: https://github.com/pyscaffold/configupdater/blob/main/tests/test_configupdater.py

@@ -6,7 +6,7 @@ body:
     id: use-case
     attributes:
       label: Use case
-      description: What are you trying to do, and what is the problem? Ex. I'm always frustrated when [...]
+      description: What are you trying to do, and what is the problem? For example, I'm always frustrated when [...]
     validations:
       required: true
   - type: textarea

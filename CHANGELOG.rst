@@ -2,10 +2,17 @@
 Changelog
 =========
 
+Version 4.0.1 (unreleased)
+==========================
+
+- Fix spelling, grammar and factual errors in the documentation and docstrings,
+  e.g. the inverted description of ``empty_lines_in_values`` and the name of the
+  unsupported ``defaults`` argument of ConfigParser
+
 Version 4.0
 ===========
 
-- **Breaking:** Drop support for Python < 3.11, the minimum supported version is now
+- **Breaking:** Drop support for Python < 3.11; the minimum supported version is now
   Python 3.11, PR #150
 - Add support for Python 3.15, PR #160
 - Simplify type hints using Python 3.11 features (``typing.Self``, ``X | Y`` unions)
@@ -27,13 +34,13 @@ Version 4.0
 - Build with hatchling and hatch-vcs, with all metadata in ``pyproject.toml``. The
   wheel is now tagged ``py3-none-any`` (instead of ``py2.py3-none-any``), and the
   license is declared as a PEP 639 expression. The ``testing`` extra is removed;
-  development dependencies are dependency groups, e.g. ``uv sync``, PR #156
+  development dependencies are dependency groups, installed e.g. with ``uv sync``, PR #156
 - Complete the type annotations of the public API, now checked with mypy in strict
   mode, and fix the ``NoneValueDisallowed`` warning under ``python -OO``, PR #158
 - Fix ``NotAttachedError``, ``AlreadyAttachedError`` and ``AssignMultilineValueError``
   failing with an ``AttributeError`` under ``python -OO``, PR #163
 - Correct the ``NoneValueDisallowed`` message. It claimed that an option without a
-  value is written with an empty value, but the option is omitted since version 3.0.1,
+  value is written with an empty value, but the option has been omitted since version 3.0.1,
   PR #163
 - ``add_before.option`` and ``add_after.option`` pass ``delimiter`` and
   ``space_around_delimiters`` on to the new option instead of silently ignoring all
@@ -71,7 +78,7 @@ Version 3.2
 ===========
 
 - Option ``prepend_newline`` in ``set_values`` to optionally avoid new lines, issue #104
-- Fix square brackets not parsed in section names, issue #122
+- Fix square brackets in section names not being parsed, issue #122
 
 Version 3.1.1
 =============
@@ -98,7 +105,7 @@ Version 3.0
 - Fix parsing error of indented comment lines, issue #25
 - Allow handling of raw section comment, issue #25
 - More unit testing of optionxform, issue #55
-- Allowing sections/options to be copied from one document to the other, issue #47
+- Allow sections/options to be copied from one document to the other, issue #47
 - New logo, issue #29
 - Whole API was rechecked by @abravalheri and changed for consistency, issue #19
 
@@ -119,17 +126,17 @@ Version 2.0
 Version 1.1.3
 =============
 
-- Added fallback option to ConfigUpdater.get reflecting ConfigParser
+- Added ``fallback`` argument to ``ConfigUpdater.get``, mirroring ConfigParser
 
 Version 1.1.2
 =============
 
-- Fix wrongly modifying input in Option.set_value #11
+- Fix wrongly modifying input in ``Option.set_value``, issue #11
 
 Version 1.1.1
 =============
 
-- Fix iterating over the items() view of a section breaks #8
+- Fix iterating over the ``items()`` view of a section, issue #8
 
 Version 1.1
 ===========
@@ -144,17 +151,17 @@ Version 1.0.1
 =============
 
 - More sane error message if ``read_file`` is misused
-- Also run unittests with Windows
+- Also run unit tests on Windows
 
 Version 1.0
 ===========
 
-- Fix: Use \n instead of os.linesep where appropriate
+- Fix: Use ``\n`` instead of ``os.linesep`` where appropriate
 
 Version 0.3.2
 =============
 
-- Added Github and documentation link into the project's metadata
+- Added GitHub and documentation links to the project's metadata
 
 Version 0.3.1
 =============
@@ -164,7 +171,7 @@ Version 0.3.1
 Version 0.3
 ===========
 
-- Added a ``insert_at`` function at section level
+- Added an ``insert_at`` method at section level
 - Some internal code simplifications
 
 Version 0.2

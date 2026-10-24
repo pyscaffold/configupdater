@@ -1,4 +1,4 @@
-"""Options are the ultimate mean of configuration inside a configuration value.
+"""Options are the ultimate means of configuration inside a configuration file.
 
 They are always associated with a :attr:`~Option.key` (or the name of the configuration
 parameter) and a :attr:`~Option.value`.
@@ -7,7 +7,7 @@ Options can also have multi-line values that are usually interpreted as a list o
 values.
 
 When editing configuration files with ConfigUpdater, a handy way of setting a multi-line
-(or comma separated value) for an specific option is to use the
+(or comma-separated) value for a specific option is to use the
 :meth:`~Option.set_values` method.
 """
 
@@ -167,7 +167,7 @@ class Option(Block):
         :meth:`~configupdater.document.Document.optionxform`.
 
         When the option object is :obj:`detached <configupdater.block.Block.detach>`,
-        this method will raise a :obj:`NotAttachedError`.
+        accessing this property raises a :obj:`NotAttachedError`.
         """
         return self.section.document.optionxform(self._key)
 
@@ -215,7 +215,7 @@ class Option(Block):
             return [v.strip() for v in cast(str, self.value).strip().split(separator)]
 
     def append(self, value: str, **kwargs: Any) -> Option:
-        """Append a value to a mult-line value
+        """Append a value to a multi-line value
 
         Args:
             value (str): value
@@ -235,15 +235,16 @@ class Option(Block):
         indent: str | None = None,
         prepend_newline: bool = True,
     ) -> None:
-        """Sets the value to a given list of options, e.g. multi-line values
+        """Sets the value to a given list of values, e.g. multi-line values
 
         Args:
             values (iterable): sequence of values
             separator (str): separator for values, default: line separator
-            indent (optional str): indentation in case of line separator.
-                If prepend_newline is `True` 4 whitespaces by default, otherwise
-                determine automatically if `None`.
-            prepend_newline (bool): start with a new line or not, resp.
+            indent (optional str): indentation in case of a line separator.
+                By default (``None``), 4 spaces if ``prepend_newline`` is ``True``,
+                otherwise aligned with the start of the value.
+            prepend_newline (bool): whether to start the value on a new line,
+                default True
         """
         values = list(values).copy()
         self._updated = True
