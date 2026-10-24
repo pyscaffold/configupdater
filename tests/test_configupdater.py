@@ -90,6 +90,35 @@ def test_update_file_issue_68(tmp_path):
     assert file.read_text().strip() == "[section]\noption"
 
 
+def test_quoted_values_issue_132():
+    # INI has no string delimiters, so the quotes are simply part of the value
+    values = {
+        "skipSaveTrainName": "true",
+        "vendor": "Delphi",
+        "skipCheckSignatureAndVariant": "true",
+        "region": "Europe",
+        "region2": "RoW",
+        "region3": "USA",
+    }
+    updater = ConfigUpdater()
+    updater.add_section("common")
+    for key, value in values.items():
+        updater["common"][key] = f'"{value}"'
+
+    expected = dedent(
+        """\
+        [common]
+        skipSaveTrainName = "true"
+        vendor = "Delphi"
+        skipCheckSignatureAndVariant = "true"
+        region = "Europe"
+        region2 = "RoW"
+        region3 = "USA"
+        """
+    )
+    assert str(updater) == expected
+
+
 NON_ASCII_CFG = """\
 [metadata]
 author = Jürgen Weiß
