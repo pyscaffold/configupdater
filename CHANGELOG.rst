@@ -7,7 +7,7 @@ Version 4.0.1 (unreleased)
 
 - Fix spelling, grammar and factual errors in the documentation and docstrings,
   e.g. the inverted description of ``empty_lines_in_values`` and the name of the
-  unsupported ``defaults`` argument of ConfigParser
+  unsupported ``defaults`` argument of ConfigParser, PR #175
 
 Version 4.0
 ===========
