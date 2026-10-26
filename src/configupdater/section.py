@@ -71,6 +71,14 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
             entry (Option): key value pair as Option object
         """
         entry.attach(self)
+
+        # Ensure a newline before the new option if the last block
+        # doesn't end with one (e.g. file without trailing newline)
+        if self._structure and not str(self._structure[-1]).endswith("\n"):
+            space = Space(container=self)
+            space.add_line("\n")
+            self._structure.append(space)
+
         self._structure.append(entry)
         return self
 
@@ -185,8 +193,7 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
             else:
                 curr_option.value = value
         else:  # Append a new option
-            option.attach(self)
-            self._structure.append(option)
+            self.add_option(option)
 
     def __delitem__(self, key: str) -> None:
         key = self.document.optionxform(key)
