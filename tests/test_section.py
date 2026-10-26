@@ -1,8 +1,10 @@
+from configparser import ConfigParser
 from copy import deepcopy
 from textwrap import dedent
 
 import pytest
 
+from configupdater import ConfigUpdater
 from configupdater.block import AlreadyAttachedError, NotAttachedError
 from configupdater.parser import Parser
 
@@ -156,3 +158,84 @@ def test_clear_error_message():
     with pytest.raises(AlreadyAttachedError) as ex:
         section["testing"] = next(clone.iter_options())
     assert "<Option 'testing'>" in str(ex.value)
+
+
+@pytest.mark.parametrize("newline", ["\n", "\r\n"])
+@pytest.mark.parametrize(
+    "body",
+    [
+        "",
+        "key : value",
+        "key : value{nl}",
+        "# tail",
+        "key = one{nl}  two",
+        "key = v{nl}  ",
+    ],
+)
+@pytest.mark.parametrize(
+    "method", ["assignment", "set", "document_set", "update", "add_option"]
+)
+def test_append_option_no_trailing_newline(newline, body, method):
+    original = "[s]" + (newline + body.format(nl=newline) if body else "")
+    updater = ConfigUpdater().read_string(original)
+    assert str(updater) == original
+    expected = ConfigParser(interpolation=None)
+    expected.read_string(original)
+    expected.set("s", "new_key", "v")
+    section = updater["s"]
+    previous_blocks = [(block, str(block)) for block in section.structure]
+
+    if method == "assignment":
+        section["new_key"] = "v"
+    elif method == "set":
+        section.set("new_key", "v")
+    elif method == "document_set":
+        updater.set("s", "new_key", "v")
+    elif method == "update":
+        section.update({"new_key": "v"})
+    else:
+        assert section.add_option(section.create_option("new_key", "v")) is section
+
+    result = str(updater)
+    assert (
+        result == original + ("" if original.endswith("\n") else "\n") + "new_key = v\n"
+    )
+    actual = ConfigParser(interpolation=None)
+    actual.read_string(result)
+    assert dict(actual["s"]) == dict(expected["s"])
+    assert all(str(block) == raw for block, raw in previous_blocks)
+    assert section["new_key"].container is section
+    updater.validate_format()
+
+
+@pytest.mark.parametrize("method", ["assignment", "add_option"])
+def test_append_attached_option_leaves_target_unchanged(method):
+    updater = ConfigUpdater().read_string("[s]\nkey : value")
+    source = ConfigUpdater().read_string("[other]\nnew_key = v")
+    option = source["other"]["new_key"]
+    section = updater["s"]
+    original = str(updater)
+    blocks = tuple(section.structure)
+    if method == "assignment":
+        with pytest.raises(AlreadyAttachedError, match="already attached"):
+            section["new_key"] = option
+    else:
+        with pytest.raises(AlreadyAttachedError, match="already attached"):
+            section.add_option(option)
+    assert str(updater) == original
+    assert len(section.structure) == len(blocks)
+    assert all(a is b for a, b in zip(section.structure, blocks, strict=True))
+    assert option.container is source["other"]
+    assert str(source) == "[other]\nnew_key = v"
+
+
+@pytest.mark.parametrize("copy_option", [False, True])
+def test_append_detached_option_without_trailing_newline(copy_option):
+    updater = ConfigUpdater().read_string("[s]\nkey : value")
+    source = ConfigUpdater().read_string("[other]\nnew_key = v")
+    option = source["other"]["new_key"]
+    option = deepcopy(option) if copy_option else option.detach()
+    updater["s"]["new_key"] = option
+    assert updater["s"]["new_key"] is option
+    assert option.container is updater["s"]
+    assert str(updater) == "[s]\nkey : value\nnew_key = v"
