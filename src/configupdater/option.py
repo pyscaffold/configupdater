@@ -209,10 +209,11 @@ class Option(Block):
         Args:
             separator (str): separator for values, default: line separator
         """
-        if self._value_is_none:
+        value = self.value
+        if value is None:
             return []
         else:
-            return [v.strip() for v in cast(str, self.value).strip().split(separator)]
+            return [v.strip() for v in value.strip().split(separator)]
 
     def append(self, value: str, **kwargs: Any) -> Option:
         """Append a value to a multi-line value
