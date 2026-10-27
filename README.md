@@ -310,7 +310,7 @@ formatting that humans put into them.
 [mypy-link]: https://mypy-lang.org/
 [pytest-image]: https://img.shields.io/static/v1?label=‎&message=Pytest&logo=Pytest&color=0A9EDC&logoColor=white
 [pytest-link]:  https://docs.pytest.org/
-[rtd-image]: https://readthedocs.org/projects/configupdater/badge/?version=latest
+[rtd-image]: https://img.shields.io/readthedocs/configupdater/latest.svg?logo=readthedocs&logoColor=white&label=Docs
 [rtd-link]: https://configupdater.readthedocs.io/
 [precommit-image]: https://img.shields.io/static/v1?label=‎&message=pre-commit&logo=pre-commit&color=76877c
 [precommit-link]: https://pre-commit.com/
