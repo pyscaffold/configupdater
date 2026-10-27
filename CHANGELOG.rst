@@ -2,13 +2,13 @@
 Changelog
 =========
 
-Version 4.0.1 (unreleased)
-==========================
+Version 4.0.1
+=============
 
 - Insert a newline before a newly added option when the file does not end
   with one, so appending an option to the last section no longer glues the
   option onto the last line and silently corrupts the previous value
-  (related to the new-section fix in PR #142 for issue #126)
+  (related to the new-section fix in PR #142 for issue #126), PR #178
 - Fix spelling, grammar and factual errors in the documentation and docstrings,
   e.g. the inverted description of ``empty_lines_in_values`` and the name of the
   unsupported ``defaults`` argument of ConfigParser, PR #175
