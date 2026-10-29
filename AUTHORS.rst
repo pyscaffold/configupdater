@@ -10,3 +10,4 @@ Contributors
 * Sinkleberg
 * blouirts123 (GitHub)
 * bysiber (GitHub)
+* civilwarinfrance (GitHub)

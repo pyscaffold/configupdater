@@ -179,7 +179,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
             return False
 
     def clear(self) -> None:
-        for block in self._structure:
+        for block in self._structure.copy():
             block.detach()
         self._structure.clear()
 
