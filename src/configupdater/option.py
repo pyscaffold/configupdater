@@ -203,14 +203,16 @@ class Option(Block):
     def as_list(self, separator: str = "\n") -> list[str]:
         """Returns the (multi-line/element) value as a list
 
-        Empty list if value is None, single-element list for a one-element
-        value and an element for each line in a multi-element value.
+        Empty list if value is None or empty (only whitespace), single-element
+        list for a one-element value and an element for each line in a
+        multi-element value. Since an empty list and a list with a single empty
+        string are written the same way, ``set_values([])`` round-trips to ``[]``.
 
         Args:
             separator (str): separator for values, default: line separator
         """
         value = self.value
-        if value is None:
+        if value is None or not value.strip():
             return []
         else:
             return [v.strip() for v in value.strip().split(separator)]
