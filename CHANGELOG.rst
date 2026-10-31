@@ -9,7 +9,7 @@ Version 4.1 (unreleased)
   ``[""]`` for an empty value, e.g. ``key =`` or after ``set_values([])``. An
   empty list and a single empty value are written the same way, so ``set_values([])``
   now round-trips and a later ``append()`` no longer adds an empty first entry,
-  PR #TBD
+  PR #182
 
 Version 4.0.2
 =============
