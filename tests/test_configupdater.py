@@ -35,6 +35,43 @@ def test_read_write_no_changes(setup_cfg_path, setup_cfg):
     assert str(updater) == setup_cfg
 
 
+@pytest.mark.parametrize("reload", [False, True])
+@pytest.mark.parametrize(
+    "config",
+    [
+        "",
+        "[one]\nkey = 1\n",
+        "[one]\nkey = 1\n[two]\nkey = 2\n[three]\nkey = 3\n",
+        "# preamble\n\n[one]\nkey = 1\n\n[two]\nkey = 2\n",
+    ],
+)
+def test_clear_detaches_all_document_blocks(config, reload):
+    updater = ConfigUpdater().read_string(config)
+    blocks = list(updater.iter_blocks())
+    sections = list(updater.iter_sections())
+    original_values = updater.to_dict()
+
+    if reload:
+        updater.read_string("[replacement]\nvalue = new\n")
+        assert updater.sections() == ["replacement"]
+    else:
+        reference = ConfigParser()
+        reference.read_string(config)
+        reference.clear()
+        updater.clear()
+        assert str(updater) == ""
+        assert updater.sections() == reference.sections() == []
+
+    for block in blocks:
+        assert not block.has_container()
+    other = ConfigUpdater()
+    for section in sections:
+        assert all(option.container is section for option in section.iter_options())
+        other.add_section(section)
+        assert section.container is other
+    assert other.to_dict() == original_values
+
+
 def test_read_file_like(setup_cfg_path):
     updater = ConfigUpdater()
     with open(setup_cfg_path) as fp:

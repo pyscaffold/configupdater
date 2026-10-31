@@ -9,6 +9,39 @@ from configupdater.block import AlreadyAttachedError, NotAttachedError
 from configupdater.parser import Parser
 
 
+@pytest.mark.parametrize(
+    "body",
+    [
+        "",
+        "a = 1\n",
+        "a = 1\nb = 2\nc = 3\n",
+        "a = 1\n# note\nb = 2\n\nc = 3\n",
+    ],
+)
+def test_clear_detaches_all_section_blocks(body):
+    updater = ConfigUpdater().read_string("[source]\n" + body)
+    section = updater["source"]
+    blocks = list(section.iter_blocks())
+    options = list(section.iter_options())
+    original_values = section.to_dict()
+    reference = ConfigParser()
+    reference.read_string("[source]\n" + body)
+    reference["source"].clear()
+
+    section.clear()
+
+    assert section.container is updater
+    assert section.options() == list(reference["source"]) == []
+    assert str(section) == "[source]\n"
+    for block in blocks:
+        assert not block.has_container()
+    other = ConfigUpdater().read_string("[target]\n")
+    for option in options:
+        other["target"].add_option(option)
+        assert option.container is other["target"]
+    assert other["target"].to_dict() == original_values
+
+
 def test_add_before_skip_comments():
     doc = Parser().read_string("[first]\na = 1\n")
     doc["first"].add_after.space().comment("target comment").section("target")

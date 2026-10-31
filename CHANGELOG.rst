@@ -12,6 +12,9 @@ Version 4.0.2 (unreleased)
 Version 4.0.1
 =============
 
+- Detach every child block when clearing a document or section, so removed
+  sections and options can be attached elsewhere without stale parent links
+  (follow-up to PR #43).
 - Insert a newline before a newly added option when the file does not end
   with one, so appending an option to the last section no longer glues the
   option onto the last line and silently corrupts the previous value
