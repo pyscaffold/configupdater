@@ -57,6 +57,70 @@ def test_str_for_set_values():
     assert str(opt) == "opt = 1, 2, 3, 4\n"
 
 
+@pytest.mark.parametrize("separator", ["\n", ", "])
+@pytest.mark.parametrize("prepend_newline", [True, False])
+def test_as_list_and_append_after_setting_valueless_option(separator, prepend_newline):
+    source = "# keep comment\n[build]\nplugins\nother : unchanged\n"
+    cfg = ConfigUpdater(allow_no_value=True, delimiters=(":",)).read_string(source)
+    option = cfg["build"]["plugins"]
+    assert option.as_list() == []
+    assert str(cfg) == source
+    kwargs = {"separator": separator, "prepend_newline": prepend_newline}
+    option.set_values(["alpha", "beta"], **kwargs)
+    assert option.as_list(separator) == ["alpha", "beta"]
+    for value in ["gamma", "delta"]:
+        option.append(value, **kwargs)
+    assert option.as_list(separator) == ["alpha", "beta", "gamma", "delta"]
+    output = StringIO()
+    cfg.write(output)
+    assert output.getvalue().startswith("# keep comment\n[build]\nplugins :")
+    assert output.getvalue().endswith("other : unchanged\n")
+    parser = ConfigParser(allow_no_value=True, delimiters=(":",))
+    parser.read_string(output.getvalue())
+    expected = separator.join(["alpha", "beta", "gamma", "delta"])
+    if separator == "\n" and prepend_newline:
+        expected = "\n" + expected
+    assert parser["build"]["plugins"] == expected
+
+
+@pytest.mark.parametrize("initial", ["plugins", "plugins = alpha"])
+def test_as_list_after_scalar_assignment(initial):
+    cfg = ConfigUpdater(allow_no_value=True).read_string(f"[build]\n{initial}\n")
+    option = cfg["build"]["plugins"]
+    parser = ConfigParser(allow_no_value=True)
+    parser.read_string(f"[build]\n{initial}\n")
+    for value in [None, "", "beta", None, "gamma"]:
+        option.value = value
+        assert option.as_list() == ([] if value is None else [value])
+        parser.set("build", "plugins", value)
+        output = StringIO()
+        cfg.write(output)
+        reparsed = ConfigParser(allow_no_value=True)
+        reparsed.read_string(output.getvalue())
+        assert dict(reparsed["build"]) == dict(parser["build"])
+    option.value = None
+    option.append("delta")
+    option.append("epsilon")
+    assert option.as_list() == ["delta", "epsilon"]
+
+
+@pytest.mark.parametrize("initial", [None, "alpha"])
+def test_as_list_after_setting_empty_values(initial):
+    option = Option("plugins", initial)
+    option.set_values([])
+    assert option.value == ""
+    assert option.as_list() == [""]
+    assert str(option) == "plugins = \n"
+
+
+def test_append_to_new_valueless_option():
+    option = Option("plugins")
+    assert option.as_list() == []
+    option.append("alpha")
+    option.append("beta")
+    assert option.as_list() == ["alpha", "beta"]
+
+
 @pytest.mark.parametrize("delimiters", [("=", ":"), (":", "="), ("=>", ":"), ":="])
 @pytest.mark.parametrize("spaces", [True, False])
 def test_assign_value_to_parsed_no_value_option(delimiters, spaces):
