@@ -2,8 +2,8 @@
 Changelog
 =========
 
-Version 4.1 (unreleased)
-========================
+Version 4.1
+===========
 
 - **Behavior change:** ``Option.as_list()`` returns an empty list instead of
   ``[""]`` for an empty value, e.g. ``key =`` or after ``set_values([])``. An
