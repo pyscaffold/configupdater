@@ -2,8 +2,8 @@
 Changelog
 =========
 
-Version 4.0.2 (unreleased)
-==========================
+Version 4.0.2
+=============
 
 - Make ``Option.as_list()`` use the current value after assignments to or from
   ``None``, so ``append()`` no longer discards values added to a valueless option
