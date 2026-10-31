@@ -91,7 +91,7 @@ def test_as_list_after_scalar_assignment(initial):
     parser.read_string(f"[build]\n{initial}\n")
     for value in [None, "", "beta", None, "gamma"]:
         option.value = value
-        assert option.as_list() == ([] if value is None else [value])
+        assert option.as_list() == ([value] if value else [])
         parser.set("build", "plugins", value)
         output = StringIO()
         cfg.write(output)
@@ -109,8 +109,31 @@ def test_as_list_after_setting_empty_values(initial):
     option = Option("plugins", initial)
     option.set_values([])
     assert option.value == ""
-    assert option.as_list() == [""]
+    assert option.as_list() == []
     assert str(option) == "plugins = \n"
+    option.append("beta")
+    assert option.as_list() == ["beta"]
+    assert str(option) == "plugins =\n    beta\n"
+
+
+@pytest.mark.parametrize("value", ["", " ", "\n    ", "\n    \n    "])
+@pytest.mark.parametrize("separator", ["\n", ","])
+def test_as_list_of_empty_value(value, separator):
+    option = Option("plugins", "x")
+    option.set_values([value], separator=separator, prepend_newline=False)
+    assert option.as_list(separator) == []
+
+
+def test_as_list_of_parsed_empty_value():
+    source = "[build]\nplugins =\nother =\n    \n"
+    cfg = ConfigUpdater().read_string(source)
+    parser = ConfigParser()
+    parser.read_string(source)
+    assert cfg["build"]["plugins"].value == parser["build"]["plugins"] == ""
+    assert cfg["build"]["plugins"].as_list() == []
+    assert cfg["build"]["other"].as_list() == []
+    cfg["build"]["plugins"].append("alpha")
+    assert cfg["build"]["plugins"].as_list() == ["alpha"]
 
 
 def test_append_to_new_valueless_option():
