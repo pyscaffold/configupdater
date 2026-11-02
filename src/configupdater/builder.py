@@ -21,7 +21,17 @@ class BlockBuilder:
         self._idx = idx
 
     def _insert(self, block: Block) -> Self:
-        self._container.structure.insert(self._idx, block)
+        from .block import Space
+
+        structure = self._container.structure
+        preceding = structure[: self._idx]
+        # Ensure a newline before the new block if the preceding one lacks it
+        if preceding and not str(preceding[-1]).endswith("\n"):
+            space = Space(container=self._container)
+            space.add_line("\n")
+            structure.insert(self._idx, space)
+            self._idx += 1
+        structure.insert(self._idx, block)
         self._idx += 1
         return self
 
