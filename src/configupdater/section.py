@@ -71,14 +71,7 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
             entry (Option): key value pair as Option object
         """
         entry.attach(self)
-
-        # Ensure a newline before the new option if the last block
-        # doesn't end with one (e.g. file without trailing newline)
-        if self._structure and not str(self._structure[-1]).endswith("\n"):
-            space = Space(container=self)
-            space.add_line("\n")
-            self._structure.append(space)
-
+        self._ensure_newline_before(len(self._structure))
         self._structure.append(entry)
         return self
 

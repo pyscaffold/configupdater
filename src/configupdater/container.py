@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from copy import deepcopy
 from textwrap import indent
-from typing import TYPE_CHECKING, Any, Generic, Self, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, Self, TypeVar, cast
 
 if TYPE_CHECKING:
     from .block import Block
@@ -74,6 +74,26 @@ class Container(Generic[T]):
         """
         del self._structure[idx]
         return self
+
+    def _ensure_newline_before(self, idx: int) -> int:
+        """Insert a newline at index idx if the block before it doesn't end with one
+
+        This happens after the last block of a file without a trailing newline.
+        A block inserted there would otherwise be glued onto that line.
+
+        Returns:
+            index where the new block has to be inserted
+        """
+        from .block import Space
+
+        idx = min(idx, len(self._structure))
+        if idx > 0 and not str(self._structure[idx - 1]).endswith("\n"):
+            space = Space(container=self)
+            space.add_line("\n")
+            # Every container (document and section) holds `Space` blocks
+            self._structure.insert(idx, cast(T, space))
+            idx += 1
+        return idx
 
     def iter_blocks(self) -> Iterator[T]:
         """Iterate over all blocks inside container."""
