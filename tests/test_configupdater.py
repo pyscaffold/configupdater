@@ -855,6 +855,12 @@ def test_builder_insert_at_start_no_trailing_newline():
     assert str(updater) == "[s]\nfirst = 1\nkey = v"
 
 
+def test_builder_insert_past_end_no_trailing_newline():
+    updater = ConfigUpdater().read_string("[s]\nkey = v")
+    updater["s"].insert_at(10).option("new", "1").comment("note")
+    assert str(updater) == "[s]\nkey = v\nnew = 1\n# note\n"
+
+
 test6_cfg_out_overwritten = """
 [section0]
 key0 = 42
