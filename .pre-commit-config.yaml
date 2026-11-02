@@ -19,7 +19,7 @@ repos:
     args: ['--fix=auto']  # replace 'auto' with 'lf' to enforce Linux/Mac line endings or 'crlf' for Windows
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.17.0
+  rev: v0.17.3
   hooks:
     - id: ruff-check
       args: [--fix]
@@ -38,13 +38,13 @@ repos:
     args: [-w]
 
 - repo: https://github.com/abravalheri/validate-pyproject
-  rev: '0.26'
+  rev: 'v0.27'
   hooks:
   - id: validate-pyproject
     additional_dependencies: ["validate-pyproject-schema-store[all]"]
 
 - repo: https://github.com/python-jsonschema/check-jsonschema
-  rev: 0.38.2
+  rev: 0.39.0
   hooks:
   - id: check-github-workflows
   - id: check-dependabot
