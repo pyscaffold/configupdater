@@ -2,6 +2,13 @@
 Changelog
 =========
 
+Version 4.1.1 (unreleased)
+==========================
+
+- Insert a newline before blocks added with ``add_after`` or ``insert_at`` when the
+  file does not end with one, as ``add_section`` and ``add_option`` already do
+  (follow-up to PR #178)
+
 Version 4.1
 ===========
 

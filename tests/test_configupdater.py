@@ -811,6 +811,50 @@ def test_add_section_no_trailing_newline():
     assert "value2[section2]" not in result
 
 
+@pytest.mark.parametrize("newline", ["\n", "\r\n"])
+@pytest.mark.parametrize(
+    "body", ["", "{nl}key : value", "{nl}# tail", "{nl}key = one{nl}  two"]
+)
+@pytest.mark.parametrize(
+    ("method", "added"),
+    [
+        ("option", "new_key = v\n"),
+        ("comment", "# note\n"),
+        ("space", "\n"),
+        ("section", "[t]\n"),
+    ],
+)
+def test_builder_no_trailing_newline(newline, body, method, added):
+    original = "[s]" + body.format(nl=newline)
+    updater = ConfigUpdater().read_string(original)
+    expected = ConfigParser(interpolation=None)
+    expected.read_string(original)
+    section = updater["s"]
+    builder = section.insert_at(len(section.structure))
+    if method == "option":
+        builder.option("new_key", "v")
+        expected.set("s", "new_key", "v")
+    elif method == "comment":
+        builder.comment("note")
+    elif method == "space":
+        builder.space()
+    else:
+        section.add_after.section("t")
+        expected.add_section("t")
+    assert str(updater) == original + "\n" + added
+    parser = ConfigParser(interpolation=None)
+    parser.read_string(str(updater))
+    assert {s: dict(parser[s]) for s in parser} == {
+        s: dict(expected[s]) for s in expected
+    }
+
+
+def test_builder_insert_at_start_no_trailing_newline():
+    updater = ConfigUpdater().read_string("[s]\nkey = v")
+    updater["s"].insert_at(0).option("first", "1")
+    assert str(updater) == "[s]\nfirst = 1\nkey = v"
+
+
 test6_cfg_out_overwritten = """
 [section0]
 key0 = 42
