@@ -179,10 +179,11 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
         curr_option = self._find_option(given_key)
         if curr_option is not None:  # Replace an existing option
             if isinstance(value, Option):
-                idx = curr_option.container_idx
-                curr_option.detach()
-                value.attach(self)
-                self._structure.insert(idx, value)
+                if value is not curr_option:
+                    idx = curr_option.container_idx
+                    value.attach(self)
+                    curr_option.detach()
+                    self._structure.insert(idx, value)
             else:
                 curr_option.value = value
         else:  # Append a new option
