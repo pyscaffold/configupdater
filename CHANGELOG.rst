@@ -2,6 +2,14 @@
 Changelog
 =========
 
+Version 4.1.2 (unreleased)
+==========================
+
+- Detach the option or section removed with ``del``, ``pop()``, ``remove_option()``
+  or ``remove_section()``, as ``clear()`` already does, so it can be added to
+  another section or document instead of raising ``AlreadyAttachedError``
+  (follow-up to PR #180)
+
 Version 4.1.1
 =============
 
