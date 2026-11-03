@@ -272,3 +272,44 @@ def test_append_detached_option_without_trailing_newline(copy_option):
     assert updater["s"]["new_key"] is option
     assert option.container is updater["s"]
     assert str(updater) == "[s]\nkey : value\nnew_key = v"
+
+
+@pytest.mark.parametrize("source_document", [False, True])
+def test_replacing_with_attached_option_keeps_existing_option(source_document):
+    updater = ConfigUpdater().read_string("[s]\nkey : original\n[other]\nkey = other\n")
+    source = (
+        ConfigUpdater().read_string("[other]\nkey = other\n")
+        if source_document
+        else updater
+    )
+    section = updater["s"]
+    original_option = section["key"]
+    option = source["other"]["key"]
+    original = str(updater)
+    original_source = str(source)
+    blocks = tuple(section.structure)
+
+    with pytest.raises(AlreadyAttachedError, match="already attached"):
+        section["key"] = option
+
+    assert str(updater) == original
+    assert str(source) == original_source
+    assert section["key"] is original_option
+    assert original_option.container is section
+    assert option.container is source["other"]
+    assert len(section.structure) == len(blocks)
+    assert all(a is b for a, b in zip(section.structure, blocks, strict=True))
+
+
+def test_replacing_option_with_itself_keeps_parent():
+    updater = ConfigUpdater().read_string("[s]\nkey : original\n")
+    section = updater["s"]
+    option = section["key"]
+    original = str(updater)
+
+    section["key"] = option
+
+    assert str(updater) == original
+    assert section["key"] is option
+    assert option.container is section
+    assert option.container_idx == 0
