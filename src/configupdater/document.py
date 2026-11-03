@@ -398,7 +398,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         """
         try:
             idx = self._get_section_idx(name)
-            del self._structure[idx]
+            self._structure[idx].detach()
             return True
         except StopIteration:
             return False

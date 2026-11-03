@@ -192,7 +192,7 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
         key = self.document.optionxform(key)
         try:
             idx = self._get_option_idx(key=key)
-            del self._structure[idx]
+            self._structure[idx].detach()
         except StopIteration as ex:
             raise KeyError(f"No option `{key}` found", {"key": key}) from ex
 
