@@ -142,10 +142,12 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         if not isinstance(value, Section):
             raise ValueError("Value must be of type Section!")
         if key in self:
-            idx = self._get_section_idx(key)
-            self.__getitem__(key).detach()
-            value.attach(self)
-            self._structure.insert(idx, value)
+            current = self.__getitem__(key)
+            if value is not current:
+                idx = self._get_section_idx(key)
+                value.attach(self)
+                current.detach()
+                self._structure.insert(idx, value)
         else:
             if value.name != key:
                 raise ValueError(
