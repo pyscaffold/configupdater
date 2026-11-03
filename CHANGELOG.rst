@@ -2,6 +2,12 @@
 Changelog
 =========
 
+Version 4.1.2 (unreleased)
+==========================
+
+- Keep existing options and sections intact when assigning a replacement that
+  is already attached to another container and raises ``AlreadyAttachedError``.
+
 Version 4.1.1
 =============
 
