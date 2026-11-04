@@ -27,6 +27,9 @@ Version 4.2 (unreleased)
   copies the options of ``b`` into ``a`` instead; to do the same, assign a
   ``copy.deepcopy`` of ``b`` renamed to ``a``. The error message now says "section
   name" instead of "option key", PR #191
+- ``update_file()`` encodes the configuration before it opens the file, so a value
+  that the file's encoding cannot represent raises ``UnicodeEncodeError`` and leaves
+  the file untouched instead of emptying it (follow-up to PR #165), PR #190
 
 Version 4.1.1
 =============
