@@ -189,7 +189,8 @@ class ConfigUpdater(Document):
         """Update the read-in configuration file.
 
         The file is written with the encoding it was read with, see :meth:`read` and
-        :meth:`read_file`.
+        :meth:`read_file`. Serialization and encoding finish before the file is opened
+        for writing, so an encoding error leaves the original file untouched.
 
         Args:
             validate (bool): validate format before writing
@@ -199,8 +200,15 @@ class ConfigUpdater(Document):
         if validate:  # validate BEFORE opening the file!
             self.validate_format()
         encoding = io.text_encoding(self._encoding)
-        with open(self._filename, "w", encoding=encoding) as fb:
-            self.write(fb, validate=False)
+        with (
+            io.BytesIO() as buffer,
+            io.TextIOWrapper(buffer, encoding=encoding) as stream,
+        ):
+            self.write(stream, validate=False)
+            stream.flush()
+            data = buffer.getvalue()
+        with open(self._filename, "wb") as fb:
+            fb.write(data)
         return self
 
     def validate_format(self, **kwargs: Any) -> bool:

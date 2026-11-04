@@ -229,6 +229,67 @@ def test_update_file_after_read_string_keeps_file_and_encoding(tmp_path):
     assert file.read_text(encoding="utf-16") == NON_ASCII_UPDATED
 
 
+@pytest.mark.parametrize("encoding", ["ascii", "latin-1"])
+@pytest.mark.parametrize("read_method", ["read", "read_file"])
+@pytest.mark.parametrize("validate", [False, True])
+def test_update_file_preserves_original_on_encoding_error(
+    tmp_path, encoding, read_method, validate
+):
+    file = tmp_path / "file.cfg"
+    original = b"# keep this comment\n[section]\nkey = original\n"
+    file.write_bytes(original)
+    updater = ConfigUpdater()
+    if read_method == "read":
+        updater.read(file, encoding=encoding)
+    else:
+        with file.open(encoding=encoding) as stream:
+            updater.read_file(stream)
+    updater["section"]["key"] = "snowman: \u2603"
+
+    with pytest.raises(UnicodeEncodeError, match="can't encode"):
+        updater.update_file(validate=validate)
+
+    assert file.read_bytes() == original
+    updater["section"]["key"] = "recovered"
+    assert updater.update_file(validate=validate) is updater
+    assert file.read_text(encoding=encoding) == original.decode().replace(
+        "key = original", "key = recovered"
+    )
+
+
+def test_update_file_preserves_original_when_custom_write_fails(tmp_path):
+    class FailingWriter(ConfigUpdater):
+        def write(self, fp, validate=True):
+            super().write(fp, validate=validate)
+            raise RuntimeError("serialization interrupted")
+
+    file = tmp_path / "file.cfg"
+    original = b"[section]\nkey = original\n"
+    file.write_bytes(original)
+    updater = FailingWriter().read(file, encoding="utf-8")
+    updater["section"]["key"] = "changed"
+
+    with pytest.raises(RuntimeError, match="serialization interrupted"):
+        updater.update_file()
+
+    assert file.read_bytes() == original
+
+
+@pytest.mark.parametrize("encoding", ["utf-8", "utf-8-sig", "utf-16", "utf-32"])
+def test_update_file_preserves_encoding_and_bom(tmp_path, encoding):
+    file = tmp_path / "file.cfg"
+    text = "# keep this comment\n[section]\nkey = original\n"
+    file.write_text(text, encoding=encoding)
+    updater = ConfigUpdater().read(file, encoding=encoding)
+    updater["section"]["key"] = "snowman: \u2603"
+    expected = text.replace("key = original", "key = snowman: \u2603")
+
+    assert updater.update_file() is updater
+
+    assert file.read_bytes() == expected.replace("\n", os.linesep).encode(encoding)
+    assert ConfigUpdater().read(file, encoding=encoding).to_dict() == updater.to_dict()
+
+
 def test_encoding_warning_points_to_caller(tmp_path):
     # `-X warn_default_encoding` (PEP 597) cannot be enabled in a running interpreter
     file = tmp_path / "file.cfg"
