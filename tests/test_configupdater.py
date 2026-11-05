@@ -1968,3 +1968,34 @@ def test_none_value_disallowed_message_without_docstrings():
     code = "configupdater.NoneValueDisallowed.warn('key')"
     message = _message_under_python_OO(NoneValueDisallowed, code)
     assert message == str(record[0].message)
+
+
+def test_replacing_with_attached_section_keeps_existing_section():
+    updater = ConfigUpdater().read_string("[s]\nkey : original\n")
+    source = ConfigUpdater().read_string("[s]\nkey = other\n")
+    section = source["s"]
+    original_section = updater["s"]
+    original = str(updater)
+    original_source = str(source)
+
+    with pytest.raises(AlreadyAttachedError, match="already attached"):
+        updater["s"] = section
+
+    assert str(updater) == original
+    assert str(source) == original_source
+    assert updater["s"] is original_section
+    assert original_section.container is updater
+    assert section.container is source
+
+
+def test_replacing_section_with_itself_keeps_parent():
+    updater = ConfigUpdater().read_string("[s]\nkey : original\n")
+    section = updater["s"]
+    original = str(updater)
+
+    updater["s"] = section
+
+    assert str(updater) == original
+    assert updater["s"] is section
+    assert section.container is updater
+    assert section.container_idx == 0
