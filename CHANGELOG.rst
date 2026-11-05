@@ -6,7 +6,8 @@ Version 4.1.2 (unreleased)
 ==========================
 
 - Keep existing options and sections intact when assigning a replacement that
-  is already attached to another container and raises ``AlreadyAttachedError``.
+  is already attached to another container and raises ``AlreadyAttachedError``,
+  PR #189
 - **Behavior change:** Removing an option or section with ``del``, ``pop()``,
   ``popitem()``, ``remove_option()`` or ``remove_section()`` detaches it, as
   ``clear()`` and ``detach()`` already do, so it can be added to another section or
