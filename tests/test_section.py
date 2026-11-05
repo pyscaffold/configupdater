@@ -42,6 +42,32 @@ def test_clear_detaches_all_section_blocks(body):
     assert other["target"].to_dict() == original_values
 
 
+@pytest.mark.parametrize("method", ["del", "pop", "remove_option"])
+def test_removed_option_is_detached(method):
+    config = "[source]\na = 1\nb = 2\n[target]\n"
+    updater = ConfigUpdater().read_string(config)
+    source = updater["source"]
+    option = source["a"]
+    reference = ConfigParser()
+    reference.read_string(config)
+    reference.remove_option("source", "a")
+
+    if method == "del":
+        del source["a"]
+    elif method == "pop":
+        assert source.pop("a") is option
+    else:
+        assert updater.remove_option("source", "a") is True
+
+    assert not option.has_container()
+    assert source.options() == list(reference["source"]) == ["b"]
+    assert str(updater) == "[source]\nb = 2\n[target]\n"
+    updater["target"]["a"] = option
+    assert option.container is updater["target"]
+    assert str(updater) == "[source]\nb = 2\n[target]\na = 1\n"
+    updater.validate_format()
+
+
 def test_add_before_skip_comments():
     doc = Parser().read_string("[first]\na = 1\n")
     doc["first"].add_after.space().comment("target comment").section("target")
