@@ -139,8 +139,32 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         raise KeyError(f"No section `{key}` found", {"key": key})
 
     def __setitem__(self, key: str, value: Section) -> None:
+        """Add the section ``value`` or replace the existing section ``key`` with it.
+
+        ``value`` must be a :class:`~configupdater.section.Section` whose name is
+        ``key``, and it is inserted itself, not copied. Assigning a section to its
+        own key does nothing.
+
+        This deviates from ConfigParser, where ``parser[key] = value`` copies the
+        options of any mapping into the section ``key``, so ``parser["a"] =
+        parser["b"]`` gives ``a`` the options of ``b``. Here this raises a
+        :class:`ValueError` because the names differ. To copy a section, assign a
+        :func:`copy.deepcopy` of it after renaming the copy with
+        :attr:`~configupdater.section.Section.name`.
+
+        Raises:
+            ValueError: if ``value`` is not a
+                :class:`~configupdater.section.Section` or its name is not ``key``
+            AlreadyAttachedError: if ``value`` belongs to another document
+        """
         if not isinstance(value, Section):
             raise ValueError("Value must be of type Section!")
+        # The name check also rejects sections of this document stored under
+        # another key, which would otherwise end up twice in ``_structure``.
+        if value.name != key:
+            raise ValueError(
+                f"Set key `{key}` does not equal section name `{value.name}`"
+            )
         if key in self:
             current = self.__getitem__(key)
             if value is not current:
@@ -149,10 +173,6 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
                 current.detach()
                 self._structure.insert(idx, value)
         else:
-            if value.name != key:
-                raise ValueError(
-                    f"Set key `{key}` does not equal option key `{value.name}`"
-                )
             self.add_section(value)
 
     def __delitem__(self, key: str) -> None:

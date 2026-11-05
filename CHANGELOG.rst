@@ -19,6 +19,14 @@ Version 4.1.2 (unreleased)
   ``Option.raw_key`` and ``Section.name`` keep working. A section popped from
   ``ConfigParser`` cannot be read either, so read it before removing it
   (follow-up to PR #180), PR #188
+- **Behavior change:** ``updater[key] = section`` raises a ``ValueError`` if the
+  section's name is not ``key`` also when it replaces an existing section, as it
+  already did when it adds one. Before, ``updater["a"] = updater["b"]`` put the same
+  section twice into the document, and a copied or detached section replaced
+  ``[a]`` under its own name, so ``updater["a"]`` was gone afterwards. ConfigParser
+  copies the options of ``b`` into ``a`` instead; to do the same, assign a
+  ``copy.deepcopy`` of ``b`` renamed to ``a``. The error message now says "section
+  name" instead of "option key", PR #191
 
 Version 4.1.1
 =============
