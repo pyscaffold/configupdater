@@ -14,7 +14,7 @@ Version 4.1.2 (unreleased)
   ``[a]`` under its own name, so ``updater["a"]`` was gone afterwards. ConfigParser
   copies the options of ``b`` into ``a`` instead; to do the same, assign a
   ``copy.deepcopy`` of ``b`` renamed to ``a``. The error message now says "section
-  name" instead of "option key"
+  name" instead of "option key", PR #191
 
 Version 4.1.1
 =============
