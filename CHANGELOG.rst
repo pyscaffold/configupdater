@@ -5,10 +5,17 @@ Changelog
 Version 4.1.2 (unreleased)
 ==========================
 
-- Detach the option or section removed with ``del``, ``pop()``, ``remove_option()``
-  or ``remove_section()``, as ``clear()`` already does, so it can be added to
-  another section or document instead of raising ``AlreadyAttachedError``
-  (follow-up to PR #180)
+- **Behavior change:** Removing an option or section with ``del``, ``pop()``,
+  ``popitem()``, ``remove_option()`` or ``remove_section()`` detaches it, as
+  ``clear()`` and ``detach()`` already do, so it can be added to another section or
+  document instead of raising ``AlreadyAttachedError``. Like any detached block, it
+  no longer reaches its former parent: ``Option.key``, ``Option.section``,
+  ``Section.document`` and reading or changing the options of a removed section,
+  e.g. ``section["key"]``, ``in``, ``get()``, ``set()`` or ``to_dict()``, raise
+  ``NotAttachedError`` until it is added again. ``Option.value``,
+  ``Option.raw_key`` and ``Section.name`` keep working. A section popped from
+  ``ConfigParser`` cannot be read either, so read it before removing it
+  (follow-up to PR #180), PR #188
 
 Version 4.1.1
 =============
