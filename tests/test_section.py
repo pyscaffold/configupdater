@@ -313,3 +313,21 @@ def test_replacing_option_with_itself_keeps_parent():
     assert section["key"] is option
     assert option.container is section
     assert option.container_idx == 0
+
+
+def test_replacing_option_with_another_option_of_same_section():
+    # Unlike `Document.__setitem__`, the key check already prevented the option from
+    # ending up twice in the section
+    cfg = "[s]\na = 1\nb = 2\n"
+    updater = ConfigUpdater().read_string(cfg)
+    section = updater["s"]
+    blocks = tuple(section.structure)
+
+    with pytest.raises(ValueError, match="does not equal option key `b`"):
+        section["a"] = section["b"]
+
+    assert str(updater) == cfg
+    assert section.options() == ["a", "b"]
+    assert len(section.structure) == len(blocks)
+    assert all(a is b for a, b in zip(section.structure, blocks, strict=True))
+    assert all(block.container is section for block in blocks)

@@ -878,7 +878,7 @@ def test_set_item_section():
         updater["section"] = "newsection"
     sect_updater.read_string(test6_cfg_in)
     section = sect_updater["section0"]
-    with pytest.raises(ValueError, match="does not equal option key"):
+    with pytest.raises(ValueError, match="does not equal section name"):
         updater["new_section"] = section
     section.name = "new_section"
     updater["new_section"] = section.detach()
@@ -1973,3 +1973,55 @@ def test_replacing_section_with_itself_keeps_parent():
     assert updater["s"] is section
     assert section.container is updater
     assert section.container_idx == 0
+
+
+@pytest.mark.parametrize(
+    "make_value",
+    [
+        pytest.param(lambda updater: updater["t"], id="same-document"),
+        pytest.param(lambda updater: copy.deepcopy(updater["t"]), id="deepcopy"),
+        pytest.param(lambda updater: Section("t"), id="detached-existing-name"),
+        pytest.param(lambda updater: Section("x"), id="detached-new-name"),
+    ],
+)
+def test_replacing_section_with_differently_named_section(make_value):
+    # Without a name check, `updater["s"] = updater["t"]` put the same section twice
+    # into the document (`[t]` twice, no `[s]`) and the deepcopy did the same by name
+    cfg = "[s]\nk = 1\n[t]\nk = 2\n"
+    updater = ConfigUpdater().read_string(cfg)
+    blocks = list(updater.iter_blocks())
+    value = make_value(updater)
+    was_attached = any(block is value for block in blocks)
+
+    with pytest.raises(ValueError, match=f"does not equal section name `{value.name}`"):
+        updater["s"] = value
+
+    assert str(updater) == cfg
+    assert updater.sections() == ["s", "t"]
+    assert len(updater.structure) == len(blocks)
+    assert all(a is b for a, b in zip(updater.structure, blocks, strict=True))
+    assert all(block.container is updater for block in blocks)
+    assert value.has_container() is was_attached
+    assert updater.validate_format()
+
+
+def test_replacing_section_with_copy_of_another_section_like_configparser():
+    # ConfigParser copies the options of `t` into `s`. A ConfigUpdater section can
+    # only be in one place, so the equivalent is assigning a renamed deepcopy
+    cfg = "[s]\nk = 1\n[t]\nk = 2\nx = 3\n"
+    parser = ConfigParser()
+    parser.read_string(cfg)
+    parser["s"] = parser["t"]
+
+    updater = ConfigUpdater().read_string(cfg)
+    original_t = updater["t"]
+    copied = copy.deepcopy(original_t)
+    copied.name = "s"
+    updater["s"] = copied
+
+    assert updater.to_dict() == {s: dict(parser[s]) for s in parser.sections()}
+    assert str(updater) == "[s]\nk = 2\nx = 3\n[t]\nk = 2\nx = 3\n"
+    assert updater["s"] is copied
+    assert updater["t"] is original_t
+    assert copied.container is updater
+    assert updater.validate_format()
