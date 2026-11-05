@@ -5,6 +5,9 @@ Changelog
 Version 4.1.2 (unreleased)
 ==========================
 
+- Keep existing options and sections intact when assigning a replacement that
+  is already attached to another container and raises ``AlreadyAttachedError``,
+  PR #189
 - **Behavior change:** Removing an option or section with ``del``, ``pop()``,
   ``popitem()``, ``remove_option()`` or ``remove_section()`` detaches it, as
   ``clear()`` and ``detach()`` already do, so it can be added to another section or
@@ -16,8 +19,6 @@ Version 4.1.2 (unreleased)
   ``Option.raw_key`` and ``Section.name`` keep working. A section popped from
   ``ConfigParser`` cannot be read either, so read it before removing it
   (follow-up to PR #180), PR #188
-- Keep existing options and sections intact when assigning a replacement that
-  is already attached to another container and raises ``AlreadyAttachedError``.
 - **Behavior change:** ``updater[key] = section`` raises a ``ValueError`` if the
   section's name is not ``key`` also when it replaces an existing section, as it
   already did when it adds one. Before, ``updater["a"] = updater["b"]`` put the same
