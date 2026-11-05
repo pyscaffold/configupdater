@@ -72,6 +72,32 @@ def test_clear_detaches_all_document_blocks(config, reload):
     assert other.to_dict() == original_values
 
 
+@pytest.mark.parametrize("method", ["del", "pop", "remove_section"])
+def test_removed_section_is_detached(method):
+    config = "[one]\nkey = 1\n[two]\nkey = 2\n"
+    updater = ConfigUpdater().read_string(config)
+    section = updater["one"]
+    reference = ConfigParser()
+    reference.read_string(config)
+    reference.remove_section("one")
+
+    if method == "del":
+        del updater["one"]
+    elif method == "pop":
+        assert updater.pop("one") is section
+    else:
+        assert updater.remove_section("one") is True
+
+    assert not section.has_container()
+    assert updater.sections() == reference.sections() == ["two"]
+    assert str(updater) == "[two]\nkey = 2\n"
+    assert all(option.container is section for option in section.iter_options())
+    other = ConfigUpdater()
+    other.add_section(section)
+    assert section.container is other
+    assert other.to_dict() == {"one": {"key": "1"}}
+
+
 def test_read_file_like(setup_cfg_path):
     updater = ConfigUpdater()
     with open(setup_cfg_path) as fp:

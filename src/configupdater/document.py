@@ -372,6 +372,12 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
     def remove_option(self, section: str, option: str) -> bool:
         """Remove an option.
 
+        The removed option is :meth:`detached <configupdater.block.Block.detach>`,
+        as with ``del section[option]`` or ``section.pop(option)``, so it can be
+        added to another section. Until then, its
+        :attr:`~configupdater.option.Option.key` raises
+        :obj:`~configupdater.block.NotAttachedError`.
+
         Args:
             section (str): section name
             option (str): option name
@@ -392,6 +398,11 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
     def remove_section(self, name: str) -> bool:
         """Remove a file section.
 
+        The removed section is :meth:`detached <configupdater.block.Block.detach>`,
+        as with ``del document[name]`` or ``document.pop(name)``, so it can be
+        added to another document. Until then, accessing its options raises
+        :obj:`~configupdater.block.NotAttachedError`.
+
         Args:
             name: name of the section
 
@@ -400,7 +411,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         """
         try:
             idx = self._get_section_idx(name)
-            del self._structure[idx]
+            self._structure[idx].detach()
             return True
         except StopIteration:
             return False

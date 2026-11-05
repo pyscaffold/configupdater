@@ -14,3 +14,4 @@ Contributors
 * AlexXuz (GitHub)
 * youdie006 (GitHub)
 * jeromeyyy (GitHub)
+* TohruSu (GitHub)
