@@ -343,13 +343,19 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         Args:
             section (str): optional section name, default UNSET
 
+        Raises:
+            :class:`NoSectionError`: if ``section`` is given and cannot be found
+
         Returns:
             list: list of (name, :class:`Section`) or (name, :class:`Option`) tuples
         """
         if section is _UNSET:
             return [(sect.name, sect) for sect in self.iter_sections()]
 
-        section_obj = self.__getitem__(section)
+        try:
+            section_obj = self.__getitem__(section)
+        except KeyError:
+            raise NoSectionError(section) from None
         return [(opt.key, opt) for opt in section_obj.iter_options()]
 
     def has_option(self, section: str, option: str) -> bool:
