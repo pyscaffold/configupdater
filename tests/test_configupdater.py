@@ -511,6 +511,17 @@ def test_items(setup_cfg_path):
     assert all(isinstance(o, Option) for o in opts)
 
 
+def test_items_of_missing_section():
+    config = "[section]\nkey = value\n"
+    parser = ConfigParser()
+    parser.read_string(config)
+    with pytest.raises(NoSectionError, match="No section: 'missing'"):
+        parser.items("missing")
+    updater = ConfigUpdater().read_string(config)
+    with pytest.raises(NoSectionError, match="No section: 'missing'"):
+        updater.items("missing")
+
+
 def test_get_method(setup_cfg_path):
     updater = ConfigUpdater()
     updater.read(setup_cfg_path)

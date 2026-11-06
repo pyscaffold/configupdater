@@ -30,6 +30,9 @@ Version 4.2 (unreleased)
 - ``update_file()`` encodes the configuration before it opens the file, so a value
   that the file's encoding cannot represent raises ``UnicodeEncodeError`` and leaves
   the file untouched instead of emptying it (follow-up to PR #165), PR #190
+- **Behavior change:** ``items(section)`` raises ``NoSectionError`` instead of
+  ``KeyError`` for a missing section, like ``ConfigParser.items()`` and the other
+  methods that take a section name, e.g. ``options()``, ``get()`` and ``set()``
 
 Version 4.1.1
 =============
