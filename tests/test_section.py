@@ -5,7 +5,11 @@ from textwrap import dedent
 import pytest
 
 from configupdater import ConfigUpdater
-from configupdater.block import AlreadyAttachedError, NotAttachedError
+from configupdater.block import (
+    AlreadyAttachedError,
+    AssignMultilineValueError,
+    NotAttachedError,
+)
 from configupdater.parser import Parser
 
 
@@ -150,6 +154,39 @@ def test_set():
 
     section.set("testing", ["pyscaffoldext-markdown", "rst-to-myst"])
     assert section["testing"].value == "\n    pyscaffoldext-markdown\n    rst-to-myst"
+
+
+def test_set_does_not_insert_option_when_multiline_string_is_rejected():
+    original = "[section]\nexisting = 1"
+    doc = ConfigUpdater().read_string(original)
+    section = doc["section"]
+
+    with pytest.raises(AssignMultilineValueError):
+        section.set("new", "one\ntwo")
+
+    assert section.options() == ["existing"]
+    assert str(doc) == original
+    assert section.set("new", ["one", "two"]) is section
+    assert ConfigUpdater().read_string(str(doc))["section"]["new"].as_list() == [
+        "one",
+        "two",
+    ]
+
+
+def test_set_does_not_insert_option_when_value_iterator_fails():
+    original = "[section]\nexisting = 1"
+    doc = ConfigUpdater().read_string(original)
+    section = doc["section"]
+
+    def values():
+        yield "one"
+        raise RuntimeError("value iterator failed")
+
+    with pytest.raises(RuntimeError, match="value iterator failed"):
+        section.set("new", values())
+
+    assert section.options() == ["existing"]
+    assert str(doc) == original
 
 
 def test_deepcopy():

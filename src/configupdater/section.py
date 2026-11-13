@@ -289,13 +289,15 @@ class Section(Block, Container[Content], MutableMapping[str, Option]):
             value: value, default None
         """
         opt = self._find_option(self.document.optionxform(option))
+        is_new = opt is None
         if opt is None:
             opt = self.create_option(option)
-            self.add_option(opt)
         if not isinstance(value, Iterable) or isinstance(value, str):
             opt.value = value
         else:
             opt.set_values(value)
+        if is_new:
+            self.add_option(opt)
         return self
 
     def create_option(
