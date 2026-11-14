@@ -173,6 +173,13 @@ class Option(Block):
 
     @key.setter
     def key(self, value: str) -> None:
+        if self._lines and not self._updated:
+            first = self._lines[0]
+            start = first.find(self._key)
+            end = start + len(self._key)
+            self._lines[0] = f"{first[:start]}{value}{first[end:]}"
+            self._key = value
+            return
         self._join_multiline_value()
         self._key = value
         self._updated = True
