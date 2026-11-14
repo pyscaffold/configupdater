@@ -1095,6 +1095,44 @@ def test_rename_option_key():
     updater["section"]["option"].key = "option"
 
 
+def test_rename_multiline_option_key_issue_195():
+    cfg = dedent(
+        """\
+        [testenv]
+        setenv =
+            TZ = UTC
+            APP_ENV = test
+        deps =
+            pytest
+            coverage
+        """
+    )
+    updater = ConfigUpdater()
+    updater.read_string(cfg)
+    updater["testenv"]["setenv"].key = "set_env"
+    updater["testenv"]["deps"].key = "dependencies"
+    expected = cfg.replace("setenv =", "set_env =").replace("deps =", "dependencies =")
+    assert str(updater) == expected
+    updater.validate_format()
+    parser = ConfigParser()
+    parser.read_string(str(updater))
+    assert parser.options("testenv") == ["set_env", "dependencies"]
+    assert parser["testenv"]["set_env"] == "\nTZ = UTC\nAPP_ENV = test"
+    assert updater["testenv"]["set_env"].value == parser["testenv"]["set_env"]
+
+
+def test_rename_option_key_keeps_delimiter_spacing_issue_195():
+    updater = ConfigUpdater()
+    updater.read_string("[section]\nOption=42\n")
+    option = updater["section"]["option"]
+    option.key = "renamed"
+    assert str(updater) == "[section]\nrenamed=42\n"
+    assert option.key == "renamed"
+    assert option.value == "42"
+    option.value = "43"
+    assert str(updater) == "[section]\nrenamed = 43\n"
+
+
 test13_cfg_in = """
 [section]
 CAPITAL = 1

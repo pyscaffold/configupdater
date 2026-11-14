@@ -33,6 +33,10 @@ Version 4.2 (unreleased)
 - **Behavior change:** ``items(section)`` raises ``NoSectionError`` instead of
   ``KeyError`` for a missing section, like ``ConfigParser.items()`` and the other
   methods that take a section name, e.g. ``options()``, ``get()`` and ``set()``
+- Renaming an option by setting ``Option.key`` keeps its original lines and only
+  replaces the key, so the continuation lines of a multi-line value stay indented
+  instead of turning into new options. A renamed option also keeps its delimiter
+  spacing, e.g. ``opt=42`` becomes ``new=42`` instead of ``new = 42``, issue #195
 
 Version 4.1.1
 =============
