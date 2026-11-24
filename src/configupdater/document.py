@@ -89,7 +89,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         return optionstr.lower()
 
     def validate_format(self, **kwargs: Any) -> bool:
-        """Call ConfigParser to validate config
+        """Call ConfigParser to validate config with this document's optionxform.
 
         Args:
             kwargs: are passed to :class:`configparser.ConfigParser`
@@ -102,6 +102,7 @@ class Document(Container[ConfigContent], MutableMapping[str, Section]):
         """
         kwargs.pop("space_around_delimiters", None)
         parser = ConfigParser(**kwargs)
+        parser.optionxform = self.optionxform  # type: ignore[method-assign]
         parser.read_string(str(self))
         return True
 

@@ -1,4 +1,5 @@
-from configparser import ConfigParser
+from configparser import ConfigParser, DuplicateOptionError
+from io import StringIO
 from textwrap import dedent
 
 import pytest
@@ -46,6 +47,78 @@ def test_custom():
     assert list(custom["section1"].keys()) == ["key"]
     assert custom["section1"]["key"].value == "value"
     assert custom["section1"]["key"].raw_key == "k_e_y"
+
+
+def test_validate_format_uses_optionxform():
+    config = "[section]\nKey = first\nkey = second\n"
+    updater = ConfigUpdater()
+    updater.optionxform = str
+    updater.read_string(config)
+    parser = ConfigParser()
+    parser.optionxform = str
+    parser.read_string(config)
+
+    assert updater.validate_format() is True
+    assert updater.to_dict() == {"section": dict(parser["section"])}
+    assert str(updater) == config
+
+
+def test_write_uses_optionxform():
+    config = "[section]\nKey = first\nkey = second\n"
+    updater = ConfigUpdater()
+    updater.optionxform = str
+    updater.read_string(config)
+    output = StringIO()
+
+    updater.write(output)
+
+    assert output.getvalue() == config
+    parser = ConfigParser()
+    parser.optionxform = str
+    parser.read_string(output.getvalue())
+    assert dict(parser["section"]) == {"Key": "first", "key": "second"}
+
+
+def test_update_file_uses_optionxform(tmp_path):
+    path = tmp_path / "settings.ini"
+    path.write_text("[section]\nKey = first\nkey = second\n", encoding="utf-8")
+    updater = ConfigUpdater()
+    updater.optionxform = str
+    updater.read(path, encoding="utf-8")
+    updater["section"]["Key"].value = "updated"
+
+    assert updater.update_file() is updater
+
+    assert path.read_text(encoding="utf-8") == (
+        "[section]\nKey = updated\nkey = second\n"
+    )
+    parser = ConfigParser()
+    parser.optionxform = str
+    parser.read(path, encoding="utf-8")
+    assert dict(parser["section"]) == {"Key": "updated", "key": "second"}
+
+
+@pytest.mark.parametrize(
+    ("optionxform", "other_key"),
+    [(str.lower, "KEY"), (lambda key: key.replace("_", ""), "k_e_y")],
+    ids=["default", "custom"],
+)
+def test_validate_format_rejects_normalized_duplicates(optionxform, other_key):
+    config = f"[section]\nkey = first\n{other_key} = second\n"
+    updater = ConfigUpdater()
+    updater.optionxform = str
+    updater.read_string(config)
+    updater.optionxform = optionxform
+    parser = ConfigParser()
+    parser.optionxform = optionxform
+
+    with pytest.raises(DuplicateOptionError, match="option 'key'"):
+        parser.read_string(config)
+    with pytest.raises(DuplicateOptionError, match="option 'key'"):
+        updater.validate_format()
+
+    assert updater.validate_format(strict=False) is True
+    assert str(updater) == config
 
 
 def test_section_contains():
