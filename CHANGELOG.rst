@@ -5,6 +5,10 @@ Changelog
 Version 4.2 (unreleased)
 ========================
 
+- Use the configured ``optionxform`` in ``validate_format()``, ``write()`` and
+  ``update_file()``. Case-sensitive options can be saved without false duplicate
+  errors, and duplicates introduced by custom normalization are rejected
+  (PR #198; follow-up to PR #69).
 - Keep existing options and sections intact when assigning a replacement that
   is already attached to another container and raises ``AlreadyAttachedError``,
   PR #189
